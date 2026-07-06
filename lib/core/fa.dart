@@ -22,6 +22,19 @@ String dayKeyOf(DateTime d) =>
 
 String todayKey() => dayKeyOf(DateTime.now());
 
+/// Shifts a day key by [days] (negative for the past).
+String shiftDayKey(String key, int days) {
+  final parts = key.split('-').map(int.parse).toList();
+  return dayKeyOf(DateTime(parts[0], parts[1], parts[2] + days));
+}
+
+/// «۱۶ تیر» — short Jalali label for a day key.
+String faDayLabel(String dayKey) {
+  final parts = dayKey.split('-').map(int.parse).toList();
+  final j = Jalali.fromDateTime(DateTime(parts[0], parts[1], parts[2]));
+  return '${faNum(j.day)} ${j.formatter.mN}';
+}
+
 /// «سه‌شنبه، ۱۶ تیر» — Jalali date for the header.
 String faTodayLabel() {
   final j = Jalali.now();

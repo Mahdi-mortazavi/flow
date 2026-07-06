@@ -13,42 +13,50 @@ import '../../state/providers.dart';
 import '../widgets/glass.dart';
 
 /// Entry point: pick a duration, then start the session and open the arena.
+/// Pass [fixedMinutes] (e.g. the fun block) to skip the duration sheet.
 Future<void> startFocusFlow(
   BuildContext context,
   WidgetRef ref, {
   required String? taskId,
   required String title,
+  String kind = 'task',
+  int? fixedMinutes,
 }) async {
-  final minutes = await showGlassSheet<int>(
-    context,
-    builder: (ctx) => Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SheetHeader('چند دقیقه تمرکز؟'),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Row(
-              children: [
-                for (final m in const [25, 50, 90]) ...[
-                  Expanded(
-                    child: Pill(faNum(m), onTap: () => Navigator.pop(ctx, m)),
-                  ),
-                  if (m != 90) const SizedBox(width: 10),
-                ],
-              ],
-            ),
+  final minutes =
+      fixedMinutes ??
+      await showGlassSheet<int>(
+        context,
+        builder: (ctx) => Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SheetHeader('چند دقیقه تمرکز؟'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Row(
+                  children: [
+                    for (final m in const [25, 50, 90]) ...[
+                      Expanded(
+                        child: Pill(
+                          faNum(m),
+                          onTap: () => Navigator.pop(ctx, m),
+                        ),
+                      ),
+                      if (m != 90) const SizedBox(width: 10),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
   if (minutes == null || !context.mounted) return;
   await ref
       .read(focusProvider.notifier)
-      .start(taskId: taskId, title: title, minutes: minutes);
+      .start(taskId: taskId, title: title, minutes: minutes, kind: kind);
   if (!context.mounted) return;
   unawaited(HapticFeedback.mediumImpact());
   unawaited(Navigator.of(context).push(FocusScreen.route()));
@@ -102,12 +110,12 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
             children: [
               const Spacer(flex: 2),
               Text(
-                'تمرکز',
+                view.focus.isFun ? 'وقتِ آزاد' : 'تمرکز',
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
                   letterSpacing: .5,
-                  color: Tone.ink3,
+                  color: view.focus.isFun ? Tone.ember : Tone.ink3,
                 ),
               ),
               const SizedBox(height: 10),
@@ -265,6 +273,13 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
   Future<void> _onTimeUp(FocusView view) async {
     unawaited(HapticFeedback.heavyImpact());
     final focus = view.focus;
+    if (focus.isFun) {
+      await ref.read(focusProvider.notifier).end(completed: true);
+      if (mounted) {
+        showToast(context, 'وقتِ آزاد تمام شد — بدونِ گناه، برگرد.');
+      }
+      return;
+    }
     final choice = await showGlassSheet<String>(
       context,
       isDismissible: false,

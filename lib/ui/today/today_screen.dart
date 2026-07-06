@@ -11,6 +11,10 @@ import '../../services/notifications.dart';
 import '../../state/providers.dart';
 import '../evening/evening_sheet.dart';
 import '../focus/focus_screen.dart';
+import '../habits/friction_sheet.dart';
+import '../habits/habit_editor.dart';
+import '../stats/review_sheet.dart';
+import '../stats/stats_screen.dart';
 import '../vault/vault_sheet.dart';
 import '../widgets/glass.dart';
 import '../wizard/morning_wizard.dart';
@@ -50,6 +54,16 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
     if (_bootstrapped) return;
     _bootstrapped = true;
     await Notifications.instance.requestPermissions();
+    // Wire up notification actions («انجام شد ✓» on a habit reminder).
+    Notifications.instance.onHabitsChanged = () {
+      if (mounted) ref.invalidate(habitsProvider);
+    };
+    await Notifications.instance.consumeLaunchAction();
+    // Idempotent re-sync of daily habit reminders.
+    final habits = await ref.read(habitsProvider.future);
+    if (!mounted) return;
+    await Notifications.instance.syncHabitReminders(habits);
+    if (!mounted) return;
     final restored = await ref.read(focusProvider.notifier).restore();
     if (!mounted) return;
     if (restored) {
@@ -144,6 +158,7 @@ class _TodayBody extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
       children: [
         _Header(plan: plan),
+        const _ReviewBanner(),
         const SizedBox(height: 6),
         const _Eyebrow('تخته‌سنگِ امروز'),
         BoulderCard(plan: plan),
@@ -152,6 +167,13 @@ class _TodayBody extends ConsumerWidget {
           const _Eyebrow('دو کارِ دیگر'),
           for (final t in plan.others) _OtherTaskRow(plan: plan, task: t),
         ],
+        const SizedBox(height: 22),
+        const _HabitsSection(),
+        const SizedBox(height: 22),
+        const _Eyebrow('وقتِ آزادِ بی‌گناه'),
+        const _FunCard(),
+        const SizedBox(height: 22),
+        const _EnergyCard(),
         if (plan.planned) ...[
           const SizedBox(height: 26),
           _EveningCta(plan: plan),
@@ -192,6 +214,11 @@ class _Header extends ConsumerWidget {
               ],
             ),
           ),
+          _IconBtn(
+            icon: Icons.bar_chart_rounded,
+            onTap: () => Navigator.of(context).push(StatsScreen.route()),
+          ),
+          const SizedBox(width: 8),
           _IconBtn(
             icon: Icons.edit_rounded,
             onTap: () {
@@ -659,6 +686,523 @@ class _EveningCta extends ConsumerWidget {
     ),
     child: Icon(Icons.nightlight_round, size: 17, color: Tone.ink2),
   );
+}
+
+/// Weekly zero-based review nudge.
+class _ReviewBanner extends ConsumerWidget {
+  const _ReviewBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final due = ref.watch(statsProvider).value?.reviewDue ?? false;
+    if (!due) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: GlassCard(
+        radius: 22,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        onTap: () => openReviewSheet(context),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.local_fire_department_rounded,
+              size: 18,
+              color: Tone.ember,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'وقتِ بازبینی مبنا-صفر است',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    'لیستِ کوتاه، نصفِ تمرکز است — ۵ دقیقه',
+                    style: TextStyle(fontSize: 11, color: Tone.ink3),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_left_rounded, size: 18, color: Tone.ink3),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ==================== HABITS ====================
+
+class _HabitsSection extends ConsumerWidget {
+  const _HabitsSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final habitsAsync = ref.watch(habitsProvider);
+    final habits = habitsAsync.value ?? const <Habit>[];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(6, 0, 6, 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'عادت‌ها',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: Tone.ink3,
+                    letterSpacing: .4,
+                  ),
+                ),
+              ),
+              Pressable(
+                onTap: () => openHabitEditor(context),
+                child: Text(
+                  '+ عادت',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: Tone.ink2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (habits.isEmpty)
+          GlassCard(
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              'عادت یعنی: بعد از یک رویدادِ همیشگی، یک رفتارِ کوچک.\nبا «+ عادت» اولین لنگر را بگذار.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.5, color: Tone.ink3, height: 2),
+            ),
+          )
+        else
+          for (final h in habits)
+            h.isBad ? _BadHabitRow(habit: h) : _GoodHabitRow(habit: h),
+      ],
+    );
+  }
+}
+
+class _GoodHabitRow extends ConsumerWidget {
+  final Habit habit;
+  const _GoodHabitRow({required this.habit});
+
+  /// Recovery-first messaging instead of a punishing streak.
+  (String, Color)? _note(String today) {
+    if (habit.doneOn(today)) return null;
+    final y = shiftDayKey(today, -1);
+    final y2 = shiftDayKey(today, -2);
+    final missedY = habit.created.compareTo(y) <= 0 && !habit.doneOn(y);
+    final missedY2 = habit.created.compareTo(y2) <= 0 && !habit.doneOn(y2);
+    if (missedY && missedY2) {
+      return ('دو روز شد — فقط نسخهٔ ۲ دقیقه‌ای را بزن', Tone.warn);
+    }
+    if (missedY) {
+      return ('دیروز جا ماند — امروز برگرد، زنجیره سالم می‌ماند', Tone.ember);
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final today = ref.watch(dayKeyProvider);
+    final done = habit.doneOn(today);
+    final note = _note(today);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 9),
+      child: GlassCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        onTap: () => openHabitEditor(context, habit: habit),
+        child: Row(
+          children: [
+            CheckCircle(
+              on: done,
+              onTap: () => ref
+                  .read(habitsProvider.notifier)
+                  .log(habit.id, done ? null : 'done'),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    habit.title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: done ? Tone.ink3 : Tone.ink,
+                      decoration: done ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                  Text(
+                    'بعد از ${habit.cue}',
+                    style: TextStyle(fontSize: 11.5, color: Tone.ink3),
+                  ),
+                  if (note != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        note.$1,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: note.$2,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (habit.reminderMinutes != null)
+              Icon(
+                Icons.notifications_none_rounded,
+                size: 14,
+                color: Tone.ink3,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BadHabitRow extends ConsumerWidget {
+  final Habit habit;
+  const _BadHabitRow({required this.habit});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final today = ref.watch(dayKeyProvider);
+    final status = habit.statusOn(today);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 9),
+      child: GlassCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        onTap: () => openHabitEditor(context, habit: habit),
+        child: Row(
+          children: [
+            Container(
+              width: 27,
+              height: 27,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Tone.warn.withValues(alpha: .10),
+                border: Border.all(color: Tone.warn.withValues(alpha: .3)),
+              ),
+              child: Icon(
+                Icons.block_rounded,
+                size: 13,
+                color: Tone.warn.withValues(alpha: .8),
+              ),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    habit.title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    'بعد از ${habit.cue}',
+                    style: TextStyle(fontSize: 11.5, color: Tone.ink3),
+                  ),
+                  if (status == 'resisted')
+                    const Padding(
+                      padding: EdgeInsets.only(top: 2),
+                      child: Text(
+                        'امروز مقاومت کردی ✓',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Tone.ember,
+                        ),
+                      ),
+                    )
+                  else if (status == 'slip')
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        'لغزش ثبت شد — فردا روزِ جدید است',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Tone.ink3,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (status == null)
+              Pressable(
+                onTap: () => openFrictionSheet(context, habit),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Tone.warn.withValues(alpha: .08),
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(color: Tone.warn.withValues(alpha: .2)),
+                  ),
+                  child: Text(
+                    'وسوسه شدم',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: Tone.warn.withValues(alpha: .9),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ==================== FUN ====================
+
+class _FunCard extends ConsumerWidget {
+  const _FunCard();
+
+  Future<void> _edit(
+    BuildContext context,
+    WidgetRef ref,
+    FunConfig? fun,
+  ) async {
+    final title = TextEditingController(text: fun?.title ?? '');
+    final minutes = TextEditingController(text: '${fun?.minutes ?? 45}');
+    final saved = await showGlassSheet<bool>(
+      context,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SheetHeader(
+              'وقتِ آزاد',
+              sub:
+                  'تفریح، باقی‌ماندهٔ روز نیست؛ بخشِ رسمی برنامه است. زمان‌دار و بی‌گناه.',
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+              child: Column(
+                children: [
+                  GlassField(
+                    controller: title,
+                    label: 'چه کاری؟',
+                    hint: 'مثلاً: گیم، سریال، موسیقی',
+                  ),
+                  const SizedBox(height: 12),
+                  GlassField(
+                    controller: minutes,
+                    label: 'چند دقیقه؟',
+                    hint: '45',
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+                  Pill(
+                    'ذخیره',
+                    style: PillStyle.ember,
+                    onTap: () => Navigator.pop(ctx, true),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    final t = title.text.trim();
+    final m = (int.tryParse(minutes.text) ?? 45).clamp(5, 240);
+    title.dispose();
+    minutes.dispose();
+    if (saved != true) return;
+    if (t.isEmpty) {
+      if (context.mounted) showToast(context, 'اسمِ تفریح را بنویس');
+      return;
+    }
+    await ref.read(funProvider.notifier).save(FunConfig(title: t, minutes: m));
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fun = ref.watch(funProvider).value;
+    if (fun == null) {
+      return GlassCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        onTap: () => _edit(context, ref, null),
+        child: Row(
+          children: [
+            Icon(Icons.add_rounded, size: 16, color: Tone.ink3),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'یک تفریحِ زمان‌دار تعریف کن — بدون آن، فان به وسطِ کار نشت می‌کند',
+                style: TextStyle(fontSize: 13, color: Tone.ink3, height: 1.7),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return GlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      onTap: () => _edit(context, ref, fun),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fun.title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  'بی‌گناه. بخشِ رسمی برنامه.',
+                  style: TextStyle(fontSize: 11.5, color: Tone.ink3),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .05),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: Tone.line),
+            ),
+            child: Text(
+              '${faNum(fun.minutes)} دقیقه',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: Tone.ink3,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Pressable(
+            onTap: () => unawaited(
+              startFocusFlow(
+                context,
+                ref,
+                taskId: null,
+                title: fun.title,
+                kind: 'fun',
+                fixedMinutes: fun.minutes,
+              ),
+            ),
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .05),
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: Tone.line),
+              ),
+              child: Icon(Icons.play_arrow_rounded, size: 18, color: Tone.ink2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ==================== ENERGY ====================
+
+class _EnergyCard extends ConsumerWidget {
+  const _EnergyCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    Widget chip(String label, int level, IconData icon) => Expanded(
+      child: Pressable(
+        onTap: () async {
+          await ref.read(repoProvider).addEnergyCheck(level);
+          ref.invalidate(statsProvider);
+          if (context.mounted) {
+            unawaited(HapticFeedback.selectionClick());
+            showToast(
+              context,
+              'ثبت شد — بعد از چند روز، ساعتِ طلایی‌ات پیدا می‌شود',
+            );
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: .04),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Tone.line),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, size: 16, color: Tone.ink2),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: Tone.ink3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return GlassCard(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'انرژی الان چطور است؟',
+            style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              chip('کم', 1, Icons.battery_2_bar_rounded),
+              const SizedBox(width: 8),
+              chip('متوسط', 2, Icons.battery_4_bar_rounded),
+              const SizedBox(width: 8),
+              chip('زیاد', 3, Icons.battery_full_rounded),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _VaultFab extends StatelessWidget {

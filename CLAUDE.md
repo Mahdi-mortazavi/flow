@@ -21,12 +21,19 @@ boulder (تخته‌سنگ) and primary CTAs. Font: Vazirmatn (bundled, weights 
   promote to today/backlog. Also reachable *inside* the focus screen.
 
 ## Roadmap
-- Phase 2: habits (anchor cue + actionable notifications), bad-habit friction
-  + replacement, recovery messaging, guilt-free fun block.
-- Phase 3: stats "mirror" (win rate, prediction-optimism gap, recovery rate),
-  focus-session archive, interrupt patterns, weekly zero-based review,
-  energy check-ins.
+- Phase 2 (done, v0.2.0): habits with anchor cue + daily actionable
+  notifications («انجام شد ✓» action), bad-habit friction sheet (10s pause +
+  cost + one-tap replacement), recovery messaging, guilt-free fun block.
+- Phase 3 (done, v0.2.0): stats "mirror" screen (win rate, prediction-optimism
+  gap, recovery rate, 7-day deep-work chart, interrupt patterns, last nights),
+  weekly zero-based review, energy check-ins + golden hour.
 - Phase 4: home widget, live activity, identity/values layer, DND, export.
+
+## Releases
+- Pushing a `v*` tag builds and publishes a GitHub Release with the
+  arm64-v8a APK + sha256 (softprops/action-gh-release, needs
+  `permissions: contents: write`). Release body comes from RELEASE_NOTES.md —
+  update it BEFORE tagging. Version lives in pubspec (`version: x.y.z+n`).
 
 ## Architecture
 - `lib/core/` — `theme.dart` (class `Tone`: design tokens; NOT `Ink` — clashes

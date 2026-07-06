@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:sqflite/sqflite.dart';
 
+import '../core/fa.dart';
 import 'database.dart';
 import 'models.dart';
 
@@ -266,6 +267,7 @@ class Repo {
     required String? taskId,
     required String title,
     required int plannedMin,
+    String kind = 'task',
   }) async {
     final id = _uid();
     await (await _db).insert('focus_sessions', {
@@ -276,6 +278,7 @@ class Repo {
       'planned_min': plannedMin,
       'started_at': DateTime.now().millisecondsSinceEpoch,
       'completed': 0,
+      'kind': kind,
     });
     return id;
   }
@@ -294,6 +297,294 @@ class Repo {
       },
       where: 'id = ?',
       whereArgs: [sessionId],
+    );
+  }
+
+  // ---------- habits ----------
+
+  Future<List<Habit>> habits() async {
+    final d = await _db;
+    final rows = await d.query('habits', orderBy: 'sort ASC, created ASC');
+    final logRows = await d.query('habit_logs');
+    final logs = <String, Map<String, String>>{};
+    for (final r in logRows) {
+      (logs[r['habit_id'] as String] ??= {})[r['day_key'] as String] =
+          r['status'] as String;
+    }
+    return rows
+        .map(
+          (r) => Habit(
+            id: r['id'] as String,
+            title: r['title'] as String,
+            cue: r['cue'] as String,
+            created: r['created'] as String,
+            isBad: (r['is_bad'] as int) == 1,
+            badCost: r['bad_cost'] as String,
+            replacement: r['replacement'] as String,
+            reminderMinutes: r['reminder_minutes'] as int?,
+            logs: logs[r['id'] as String] ?? const {},
+          ),
+        )
+        .toList();
+  }
+
+  Future<Habit> addHabit({
+    required String title,
+    required String cue,
+    required bool isBad,
+    required String badCost,
+    required String replacement,
+    required int? reminderMinutes,
+  }) async {
+    final d = await _db;
+    final maxSort =
+        Sqflite.firstIntValue(
+          await d.rawQuery('SELECT MAX(sort) FROM habits'),
+        ) ??
+        -1;
+    final habit = Habit(
+      id: _uid(),
+      title: title,
+      cue: cue,
+      created: todayKey(),
+      isBad: isBad,
+      badCost: badCost,
+      replacement: replacement,
+      reminderMinutes: reminderMinutes,
+      logs: const {},
+    );
+    await d.insert('habits', {
+      'id': habit.id,
+      'title': title,
+      'cue': cue,
+      'created': habit.created,
+      'is_bad': isBad ? 1 : 0,
+      'bad_cost': badCost,
+      'replacement': replacement,
+      'reminder_minutes': reminderMinutes,
+      'sort': maxSort + 1,
+    });
+    return habit;
+  }
+
+  Future<void> updateHabit({
+    required String id,
+    required String title,
+    required String cue,
+    required bool isBad,
+    required String badCost,
+    required String replacement,
+    required int? reminderMinutes,
+  }) async {
+    await (await _db).update(
+      'habits',
+      {
+        'title': title,
+        'cue': cue,
+        'is_bad': isBad ? 1 : 0,
+        'bad_cost': badCost,
+        'replacement': replacement,
+        'reminder_minutes': reminderMinutes,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> deleteHabit(String id) async {
+    final d = await _db;
+    await d.delete('habits', where: 'id = ?', whereArgs: [id]);
+    await d.delete('habit_logs', where: 'habit_id = ?', whereArgs: [id]);
+  }
+
+  /// Records today's status for a habit; pass null to clear it.
+  Future<void> logHabit(String habitId, String dayKey, String? status) async {
+    final d = await _db;
+    if (status == null) {
+      await d.delete(
+        'habit_logs',
+        where: 'habit_id = ? AND day_key = ?',
+        whereArgs: [habitId, dayKey],
+      );
+    } else {
+      await d.insert('habit_logs', {
+        'habit_id': habitId,
+        'day_key': dayKey,
+        'status': status,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+  }
+
+  // ---------- settings / fun ----------
+
+  Future<String?> getSetting(String key) async {
+    final rows = await (await _db).query(
+      'settings',
+      where: 'k = ?',
+      whereArgs: [key],
+    );
+    return rows.isEmpty ? null : rows.first['v'] as String;
+  }
+
+  Future<void> setSetting(String key, String value) async {
+    await (await _db).insert('settings', {
+      'k': key,
+      'v': value,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<FunConfig?> funConfig() async =>
+      FunConfig.fromJson(await getSetting('fun'));
+
+  Future<void> setFunConfig(FunConfig fun) => setSetting('fun', fun.toJson());
+
+  // ---------- energy ----------
+
+  Future<void> addEnergyCheck(int level) async {
+    await (await _db).insert('energy_checks', {
+      'id': _uid(),
+      'day_key': todayKey(),
+      'hour': DateTime.now().hour,
+      'level': level,
+    });
+  }
+
+  // ---------- zero-based review ----------
+
+  Future<void> markReviewDone() => setSetting('last_review', todayKey());
+
+  // ---------- stats (the mirror) ----------
+
+  Future<StatsData> stats() async {
+    final d = await _db;
+    final today = todayKey();
+
+    // Closed nights with a prediction.
+    final closed = await d.query(
+      'days',
+      where: 'closed_at IS NOT NULL AND prediction IS NOT NULL',
+      orderBy: 'day_key DESC',
+    );
+    final closedCount = closed.length;
+    int? winRate;
+    int? avgPrediction;
+    int? gap;
+    if (closedCount > 0) {
+      final wins = closed.where((r) => r['outcome'] == 1).length;
+      winRate = (wins / closedCount * 100).round();
+      avgPrediction =
+          (closed.fold<int>(0, (s, r) => s + (r['prediction'] as int)) /
+                  closedCount)
+              .round();
+      gap = avgPrediction - winRate;
+    }
+    final lastNights = closed
+        .take(7)
+        .map(
+          (r) => NightRow(
+            dayKey: r['day_key'] as String,
+            prediction: r['prediction'] as int,
+            outcome: r['outcome'] == 1,
+          ),
+        )
+        .toList();
+
+    // Habit recovery: a missed day followed by a done day (last 45 days).
+    final allHabits = await habits();
+    var misses = 0;
+    var recoveries = 0;
+    for (final h in allHabits.where((h) => !h.isBad)) {
+      var key = h.created.compareTo(shiftDayKey(today, -45)) > 0
+          ? h.created
+          : shiftDayKey(today, -45);
+      while (key.compareTo(today) < 0) {
+        if (!h.doneOn(key)) {
+          misses++;
+          if (h.doneOn(shiftDayKey(key, 1))) recoveries++;
+        }
+        key = shiftDayKey(key, 1);
+      }
+    }
+    final recoveryRate = misses > 0
+        ? (recoveries / misses * 100).round()
+        : null;
+
+    // Deep-work minutes per day, last 7 days.
+    final weekStart = shiftDayKey(today, -6);
+    final sessions = await d.query(
+      'focus_sessions',
+      where: "ended_at IS NOT NULL AND kind = 'task' AND day_key >= ?",
+      whereArgs: [weekStart],
+    );
+    final focusMinutes = List<int>.filled(7, 0);
+    for (final s in sessions) {
+      final idx =
+          6 -
+          DateTime.parse(
+            today,
+          ).difference(DateTime.parse(s['day_key'] as String)).inDays;
+      if (idx < 0 || idx > 6) continue;
+      final ms = (s['ended_at'] as int) - (s['started_at'] as int);
+      focusMinutes[idx] += (ms / 60000).round().clamp(0, 24 * 60);
+    }
+
+    // Interrupt patterns: most recent early-end reasons.
+    final interrupts = await d.query(
+      'focus_sessions',
+      where: "interrupt_note IS NOT NULL AND interrupt_note != ''",
+      orderBy: 'started_at DESC',
+      limit: 5,
+    );
+
+    // Golden hour: the 3-hour bucket with the highest average energy.
+    final checks = await d.query(
+      'energy_checks',
+      where: 'day_key >= ?',
+      whereArgs: [shiftDayKey(today, -30)],
+    );
+    int? goldenHour;
+    if (checks.length >= 6) {
+      final sums = List<int>.filled(8, 0);
+      final counts = List<int>.filled(8, 0);
+      for (final c in checks) {
+        final bucket = (c['hour'] as int) ~/ 3;
+        sums[bucket] += c['level'] as int;
+        counts[bucket]++;
+      }
+      var best = -1.0;
+      for (var i = 0; i < 8; i++) {
+        if (counts[i] == 0) continue;
+        final avg = sums[i] / counts[i];
+        if (avg > best) {
+          best = avg;
+          goldenHour = i * 3;
+        }
+      }
+    }
+
+    // Zero-based review cadence: after 6 closed nights, then weekly.
+    final lastReview = await getSetting('last_review');
+    final reviewDue =
+        (lastReview == null && closedCount >= 6) ||
+        (lastReview != null &&
+            DateTime.parse(
+                  today,
+                ).difference(DateTime.parse(lastReview)).inDays >=
+                7);
+
+    return StatsData(
+      closedCount: closedCount,
+      winRate: winRate,
+      avgPrediction: avgPrediction,
+      gap: gap,
+      recoveryRate: recoveryRate,
+      lastNights: lastNights,
+      focusMinutesLast7: focusMinutes,
+      recentInterrupts: interrupts
+          .map((r) => r['interrupt_note'] as String)
+          .toList(),
+      goldenHour: goldenHour,
+      reviewDue: reviewDue,
     );
   }
 }

@@ -52,18 +52,21 @@ class FocusController extends Notifier<FocusView?> {
     required String? taskId,
     required String title,
     required int minutes,
+    String kind = 'task',
   }) async {
     final sessionId = await _repo.startFocusSession(
       dayKey: todayKey(),
       taskId: taskId,
       title: title,
       plannedMin: minutes,
+      kind: kind,
     );
     final totalSec = minutes * 60;
     final focus = ActiveFocus(
       sessionId: sessionId,
       taskId: taskId,
       title: title,
+      kind: kind,
       totalSec: totalSec,
       endAtMs: DateTime.now()
           .add(Duration(seconds: totalSec))

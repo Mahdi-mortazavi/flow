@@ -13,9 +13,10 @@ class AppDatabase {
     final dir = await getDatabasesPath();
     final database = await openDatabase(
       p.join(dir, 'taknoghte.db'),
-      version: 1,
+      version: 2,
       onConfigure: (d) => d.execute('PRAGMA foreign_keys = ON'),
       onCreate: _createAll,
+      onUpgrade: _upgrade,
     );
     _db = database;
     return database;
@@ -69,8 +70,57 @@ class AppDatabase {
         started_at INTEGER NOT NULL,
         ended_at INTEGER,
         completed INTEGER NOT NULL DEFAULT 0,
-        interrupt_note TEXT
+        interrupt_note TEXT,
+        kind TEXT NOT NULL DEFAULT 'task'
       )
     ''');
+    await _createV2(d);
+  }
+
+  Future<void> _createV2(Database d) async {
+    await d.execute('''
+      CREATE TABLE IF NOT EXISTS habits(
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        cue TEXT NOT NULL,
+        created TEXT NOT NULL,
+        is_bad INTEGER NOT NULL DEFAULT 0,
+        bad_cost TEXT NOT NULL DEFAULT '',
+        replacement TEXT NOT NULL DEFAULT '',
+        reminder_minutes INTEGER,
+        sort INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    await d.execute('''
+      CREATE TABLE IF NOT EXISTS habit_logs(
+        habit_id TEXT NOT NULL,
+        day_key TEXT NOT NULL,
+        status TEXT NOT NULL,
+        PRIMARY KEY(habit_id, day_key)
+      )
+    ''');
+    await d.execute('''
+      CREATE TABLE IF NOT EXISTS energy_checks(
+        id TEXT PRIMARY KEY,
+        day_key TEXT NOT NULL,
+        hour INTEGER NOT NULL,
+        level INTEGER NOT NULL
+      )
+    ''');
+    await d.execute('''
+      CREATE TABLE IF NOT EXISTS settings(
+        k TEXT PRIMARY KEY,
+        v TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _upgrade(Database d, int from, int to) async {
+    if (from < 2) {
+      await d.execute(
+        "ALTER TABLE focus_sessions ADD COLUMN kind TEXT NOT NULL DEFAULT 'task'",
+      );
+      await _createV2(d);
+    }
   }
 }

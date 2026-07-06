@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/fa.dart';
 import '../data/models.dart';
 import '../data/repo.dart';
+import '../services/notifications.dart';
 import 'focus_controller.dart';
 
 final repoProvider = Provider<Repo>((ref) => Repo());
@@ -121,3 +122,94 @@ final thoughtsProvider =
 final focusProvider = NotifierProvider<FocusController, FocusView?>(
   FocusController.new,
 );
+
+/// Habits + today's logs. Mutations write to the DB, then reload and
+/// re-sync the OS reminders.
+class HabitsController extends AsyncNotifier<List<Habit>> {
+  Repo get _repo => ref.read(repoProvider);
+
+  @override
+  Future<List<Habit>> build() {
+    ref.watch(dayKeyProvider);
+    return _repo.habits();
+  }
+
+  Future<void> _reload() async {
+    state = AsyncData(await _repo.habits());
+  }
+
+  Future<void> save({
+    String? id,
+    required String title,
+    required String cue,
+    required bool isBad,
+    required String badCost,
+    required String replacement,
+    required int? reminderMinutes,
+  }) async {
+    if (id == null) {
+      final habit = await _repo.addHabit(
+        title: title,
+        cue: cue,
+        isBad: isBad,
+        badCost: badCost,
+        replacement: replacement,
+        reminderMinutes: reminderMinutes,
+      );
+      await Notifications.instance.scheduleHabitReminder(habit);
+    } else {
+      await _repo.updateHabit(
+        id: id,
+        title: title,
+        cue: cue,
+        isBad: isBad,
+        badCost: badCost,
+        replacement: replacement,
+        reminderMinutes: reminderMinutes,
+      );
+      final habit = (await _repo.habits()).firstWhere((h) => h.id == id);
+      await Notifications.instance.scheduleHabitReminder(habit);
+    }
+    await _reload();
+  }
+
+  Future<void> remove(String id) async {
+    await _repo.deleteHabit(id);
+    await Notifications.instance.cancelHabitReminder(id);
+    await _reload();
+  }
+
+  Future<void> log(String habitId, String? status) async {
+    await _repo.logHabit(habitId, ref.read(dayKeyProvider), status);
+    await _reload();
+  }
+
+  Future<void> reload() => _reload();
+}
+
+final habitsProvider = AsyncNotifierProvider<HabitsController, List<Habit>>(
+  HabitsController.new,
+);
+
+/// The guilt-free fun block config.
+class FunController extends AsyncNotifier<FunConfig?> {
+  @override
+  Future<FunConfig?> build() => ref.read(repoProvider).funConfig();
+
+  Future<void> save(FunConfig fun) async {
+    await ref.read(repoProvider).setFunConfig(fun);
+    state = AsyncData(fun);
+  }
+}
+
+final funProvider = AsyncNotifierProvider<FunController, FunConfig?>(
+  FunController.new,
+);
+
+/// The mirror. Recomputed whenever today's data changes.
+final statsProvider = FutureProvider<StatsData>((ref) {
+  ref
+    ..watch(todayProvider)
+    ..watch(habitsProvider);
+  return ref.read(repoProvider).stats();
+});

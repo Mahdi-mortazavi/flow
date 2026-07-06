@@ -103,12 +103,105 @@ class Thought {
   });
 }
 
+/// A habit anchored to an existing routine (implementation intention).
+/// Bad habits carry their long-term cost and a one-tap replacement behavior.
+class Habit {
+  final String id;
+  final String title;
+  final String cue;
+  final String created; // dayKey
+  final bool isBad;
+  final String badCost;
+  final String replacement;
+  final int? reminderMinutes; // minutes since midnight, null = no reminder
+  final Map<String, String> logs; // dayKey -> done | slip | resisted
+
+  const Habit({
+    required this.id,
+    required this.title,
+    required this.cue,
+    required this.created,
+    required this.isBad,
+    required this.badCost,
+    required this.replacement,
+    required this.reminderMinutes,
+    required this.logs,
+  });
+
+  String? statusOn(String dayKey) => logs[dayKey];
+  bool doneOn(String dayKey) => logs[dayKey] == 'done';
+}
+
+/// The official, guilt-free fun block.
+class FunConfig {
+  final String title;
+  final int minutes;
+  const FunConfig({required this.title, required this.minutes});
+
+  String toJson() => jsonEncode({'title': title, 'minutes': minutes});
+
+  static FunConfig? fromJson(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final m = jsonDecode(raw) as Map<String, dynamic>;
+      return FunConfig(
+        title: m['title'] as String,
+        minutes: m['minutes'] as int,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+/// One closed night in the mirror.
+class NightRow {
+  final String dayKey;
+  final int prediction;
+  final bool outcome;
+  const NightRow({
+    required this.dayKey,
+    required this.prediction,
+    required this.outcome,
+  });
+}
+
+/// Everything the mirror (stats screen) shows, computed in one pass.
+class StatsData {
+  final int closedCount;
+  final int? winRate; // % of closed days where the boulder fell
+  final int? avgPrediction;
+  final int? gap; // avgPrediction - winRate (optimism when positive)
+  final int? recoveryRate; // % of habit misses followed by a done next day
+  final List<NightRow> lastNights;
+  final List<int> focusMinutesLast7; // [0]=6 days ago ... [6]=today
+  final List<String> recentInterrupts;
+  final int? goldenHour; // start hour of the highest-energy 3h bucket
+  final bool reviewDue;
+
+  const StatsData({
+    required this.closedCount,
+    required this.winRate,
+    required this.avgPrediction,
+    required this.gap,
+    required this.recoveryRate,
+    required this.lastNights,
+    required this.focusMinutesLast7,
+    required this.recentInterrupts,
+    required this.goldenHour,
+    required this.reviewDue,
+  });
+
+  int get focusMinutesWeek => focusMinutesLast7.fold(0, (sum, m) => sum + m);
+}
+
 /// Serialized into shared_preferences while a focus session is running,
 /// so the timer survives process death (endAt is a wall-clock timestamp).
 class ActiveFocus {
   final String sessionId;
   final String? taskId;
   final String title;
+  final String kind; // task | fun
   final int totalSec;
   final int endAtMs;
   final bool paused;
@@ -122,7 +215,10 @@ class ActiveFocus {
     required this.endAtMs,
     required this.paused,
     required this.pausedLeftSec,
+    this.kind = 'task',
   });
+
+  bool get isFun => kind == 'fun';
 
   int remainingSec() {
     if (paused) return pausedLeftSec;
@@ -139,6 +235,7 @@ class ActiveFocus {
     sessionId: sessionId,
     taskId: taskId,
     title: title,
+    kind: kind,
     totalSec: totalSec ?? this.totalSec,
     endAtMs: endAtMs ?? this.endAtMs,
     paused: paused ?? this.paused,
@@ -149,6 +246,7 @@ class ActiveFocus {
     'sessionId': sessionId,
     'taskId': taskId,
     'title': title,
+    'kind': kind,
     'totalSec': totalSec,
     'endAtMs': endAtMs,
     'paused': paused,
@@ -163,6 +261,7 @@ class ActiveFocus {
         sessionId: m['sessionId'] as String,
         taskId: m['taskId'] as String?,
         title: m['title'] as String,
+        kind: (m['kind'] as String?) ?? 'task',
         totalSec: m['totalSec'] as int,
         endAtMs: m['endAtMs'] as int,
         paused: m['paused'] as bool,
