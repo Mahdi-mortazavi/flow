@@ -3,8 +3,10 @@ import 'package:shamsi_date/shamsi_date.dart';
 const _faDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
 
 /// Converts every Latin digit in [value] to its Persian equivalent.
-String faNum(Object value) => '$value'
-    .replaceAllMapped(RegExp('[0-9]'), (m) => _faDigits[int.parse(m[0]!)]);
+String faNum(Object value) => '$value'.replaceAllMapped(
+  RegExp('[0-9]'),
+  (m) => _faDigits[int.parse(m[0]!)],
+);
 
 /// mm:ss with Persian digits.
 String faClock(int totalSeconds) {

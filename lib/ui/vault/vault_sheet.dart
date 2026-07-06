@@ -55,8 +55,10 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SheetHeader('مخزنِ ذهن',
-            sub: 'هر چه ذهن را سنگین می‌کند، اینجا بگذار. هیچ چیز گم نمی‌شود.'),
+        const SheetHeader(
+          'مخزنِ ذهن',
+          sub: 'هر چه ذهن را سنگین می‌کند، اینجا بگذار. هیچ چیز گم نمی‌شود.',
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
           child: Column(
@@ -73,10 +75,12 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Pill(_editingId == null ? 'ثبت' : 'ذخیره',
-                      style: PillStyle.ember,
-                      expanded: false,
-                      onTap: _submit),
+                  Pill(
+                    _editingId == null ? 'ثبت' : 'ذخیره',
+                    style: PillStyle.ember,
+                    expanded: false,
+                    onTap: _submit,
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -171,14 +175,18 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
             Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: .05),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: Text(t.category.label,
-                      style: TextStyle(fontSize: 10, color: Tone.ink2)),
+                  child: Text(
+                    t.category.label,
+                    style: TextStyle(fontSize: 10, color: Tone.ink2),
+                  ),
                 ),
                 const Spacer(),
                 _tinyBtn(Icons.edit_rounded, () {
@@ -200,14 +208,16 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
             const SizedBox(height: 10),
             Pressable(
               onTap: () async {
-                final onToday =
-                    await ref.read(thoughtsProvider.notifier).promote(t);
+                final onToday = await ref
+                    .read(thoughtsProvider.notifier)
+                    .promote(t);
                 if (!mounted) return;
                 showToast(
-                    context,
-                    onToday
-                        ? 'به کارهای امروز اضافه شد'
-                        : 'برای ویزارد فردا ذخیره شد');
+                  context,
+                  onToday
+                      ? 'به کارهای امروز اضافه شد'
+                      : 'برای ویزارد فردا ذخیره شد',
+                );
               },
               child: Container(
                 width: double.infinity,
@@ -220,14 +230,20 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.arrow_circle_up_rounded,
-                        size: 14, color: Tone.ember.withValues(alpha: .7)),
+                    Icon(
+                      Icons.arrow_circle_up_rounded,
+                      size: 14,
+                      color: Tone.ember.withValues(alpha: .7),
+                    ),
                     const SizedBox(width: 6),
-                    Text('ارتقا به کار',
-                        style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: Tone.ember.withValues(alpha: .7))),
+                    Text(
+                      'ارتقا به کار',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: Tone.ember.withValues(alpha: .7),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -239,11 +255,11 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
   }
 
   Widget _tinyBtn(IconData icon, VoidCallback onTap) => Pressable(
-        onTap: onTap,
-        child: SizedBox(
-          width: 30,
-          height: 30,
-          child: Icon(icon, size: 14, color: Tone.ink3),
-        ),
-      );
+    onTap: onTap,
+    child: SizedBox(
+      width: 30,
+      height: 30,
+      child: Icon(icon, size: 14, color: Tone.ink3),
+    ),
+  );
 }

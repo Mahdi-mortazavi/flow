@@ -21,8 +21,9 @@ class DayKeyController extends Notifier<String> {
   }
 }
 
-final dayKeyProvider =
-    NotifierProvider<DayKeyController, String>(DayKeyController.new);
+final dayKeyProvider = NotifierProvider<DayKeyController, String>(
+  DayKeyController.new,
+);
 
 /// Today's plan + mutations. Every mutation writes to the DB first, then
 /// reloads, so the DB stays the single source of truth.
@@ -70,8 +71,9 @@ class TodayController extends AsyncNotifier<DayPlan> {
   Future<void> reload() => _reload();
 }
 
-final todayProvider =
-    AsyncNotifierProvider<TodayController, DayPlan>(TodayController.new);
+final todayProvider = AsyncNotifierProvider<TodayController, DayPlan>(
+  TodayController.new,
+);
 
 class ThoughtsController extends AsyncNotifier<List<Thought>> {
   Repo get _repo => ref.read(repoProvider);
@@ -89,7 +91,10 @@ class ThoughtsController extends AsyncNotifier<List<Thought>> {
   }
 
   Future<void> updateThought(
-      String id, String text, ThoughtCategory category) async {
+    String id,
+    String text,
+    ThoughtCategory category,
+  ) async {
     await _repo.updateThought(id, text, category);
     await _reload();
   }
@@ -101,8 +106,7 @@ class ThoughtsController extends AsyncNotifier<List<Thought>> {
 
   /// Returns true if the thought landed directly on today's list.
   Future<bool> promote(Thought t) async {
-    final onToday =
-        await _repo.promoteThought(t, ref.read(dayKeyProvider));
+    final onToday = await _repo.promoteThought(t, ref.read(dayKeyProvider));
     await _reload();
     ref.invalidate(todayProvider);
     return onToday;
@@ -111,7 +115,9 @@ class ThoughtsController extends AsyncNotifier<List<Thought>> {
 
 final thoughtsProvider =
     AsyncNotifierProvider<ThoughtsController, List<Thought>>(
-        ThoughtsController.new);
+      ThoughtsController.new,
+    );
 
-final focusProvider =
-    NotifierProvider<FocusController, FocusView?>(FocusController.new);
+final focusProvider = NotifierProvider<FocusController, FocusView?>(
+  FocusController.new,
+);

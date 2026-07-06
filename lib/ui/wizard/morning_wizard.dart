@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,10 +12,7 @@ import '../widgets/glass.dart';
 
 /// The 60-second morning ritual: pick ≤3 tasks, star the boulder, predict.
 Future<void> openMorningWizard(BuildContext context, WidgetRef ref) {
-  return showGlassSheet(
-    context,
-    builder: (_) => const _MorningWizard(),
-  );
+  return showGlassSheet(context, builder: (_) => const _MorningWizard());
 }
 
 class _MorningWizard extends ConsumerStatefulWidget {
@@ -100,13 +99,15 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
     final selected = [
       for (final id in _selected) backlog.firstWhere((b) => b.id == id),
     ];
-    await ref.read(todayProvider.notifier).plan(
+    await ref
+        .read(todayProvider.notifier)
+        .plan(
           selected: selected,
           boulderId: boulderId,
           prediction: _prediction.round(),
         );
     if (!mounted) return;
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     Navigator.pop(context);
     showToast(context, 'روز چیده شد. حالا فقط اجرا.');
   }
@@ -155,8 +156,11 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          child: Pill('شروع روز',
-              style: PillStyle.ember, onTap: ready ? _go : null),
+          child: Pill(
+            'شروع روز',
+            style: PillStyle.ember,
+            onTap: ready ? _go : null,
+          ),
         ),
       ],
     );
@@ -193,8 +197,9 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: Colors.white.withValues(alpha: .25),
-                      width: 1.5),
+                    color: Colors.white.withValues(alpha: .25),
+                    width: 1.5,
+                  ),
                 ),
                 child: Center(
                   child: AnimatedScale(
@@ -205,16 +210,22 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
                       width: 11,
                       height: 11,
                       decoration: const BoxDecoration(
-                          shape: BoxShape.circle, color: Tone.ink),
+                        shape: BoxShape.circle,
+                        color: Tone.ink,
+                      ),
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(b.title,
-                    style: const TextStyle(
-                        fontSize: 14.5, fontWeight: FontWeight.w500)),
+                child: Text(
+                  b.title,
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
               if (on)
                 Pressable(
@@ -226,26 +237,34 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
                       color: star ? Tone.emberSoft : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
                       border: star
-                          ? Border.all(
-                              color: Tone.ember.withValues(alpha: .3))
+                          ? Border.all(color: Tone.ember.withValues(alpha: .3))
                           : null,
                     ),
-                    child: Icon(Icons.star_rounded,
-                        size: 18, color: star ? Tone.ember : Tone.ink3),
+                    child: Icon(
+                      Icons.star_rounded,
+                      size: 18,
+                      color: star ? Tone.ember : Tone.ink3,
+                    ),
                   ),
                 )
               else
                 Pressable(
                   onTap: () async {
                     await ref.read(repoProvider).deleteBacklog(b.id);
-                    setState(() => _backlog =
-                        _backlog?.where((x) => x.id != b.id).toList());
+                    setState(
+                      () => _backlog = _backlog
+                          ?.where((x) => x.id != b.id)
+                          .toList(),
+                    );
                   },
                   child: SizedBox(
                     width: 32,
                     height: 32,
-                    child:
-                        Icon(Icons.close_rounded, size: 15, color: Tone.ink3),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 15,
+                      color: Tone.ink3,
+                    ),
                   ),
                 ),
             ],
@@ -270,13 +289,19 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(faNum(_prediction.round()),
-                  style: const TextStyle(
-                      fontSize: 44, fontWeight: FontWeight.w200)),
+              Text(
+                faNum(_prediction.round()),
+                style: const TextStyle(
+                  fontSize: 44,
+                  fontWeight: FontWeight.w200,
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.only(top: 14),
-                child: Text('٪',
-                    style: TextStyle(fontSize: 16, color: Tone.ink3)),
+                child: Text(
+                  '٪',
+                  style: TextStyle(fontSize: 16, color: Tone.ink3),
+                ),
               ),
             ],
           ),

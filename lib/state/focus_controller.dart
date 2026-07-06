@@ -73,7 +73,9 @@ class FocusController extends Notifier<FocusView?> {
     );
     await _persist(focus);
     await Notifications.instance.scheduleFocusEnd(
-        DateTime.fromMillisecondsSinceEpoch(focus.endAtMs), title);
+      DateTime.fromMillisecondsSinceEpoch(focus.endAtMs),
+      title,
+    );
     _publish(focus);
     _startTicker();
   }
@@ -98,7 +100,9 @@ class FocusController extends Notifier<FocusView?> {
     );
     await _persist(updated);
     await Notifications.instance.scheduleFocusEnd(
-        DateTime.fromMillisecondsSinceEpoch(updated.endAtMs), updated.title);
+      DateTime.fromMillisecondsSinceEpoch(updated.endAtMs),
+      updated.title,
+    );
     _publish(updated);
     _startTicker();
   }
@@ -117,7 +121,9 @@ class FocusController extends Notifier<FocusView?> {
     );
     await _persist(updated);
     await Notifications.instance.scheduleFocusEnd(
-        DateTime.fromMillisecondsSinceEpoch(updated.endAtMs), updated.title);
+      DateTime.fromMillisecondsSinceEpoch(updated.endAtMs),
+      updated.title,
+    );
     _publish(updated);
     _startTicker();
   }

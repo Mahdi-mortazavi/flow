@@ -31,11 +31,13 @@ class Notifications {
     await init();
     await _plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestNotificationsPermission();
     await _plugin
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
+          IOSFlutterLocalNotificationsPlugin
+        >()
         ?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
@@ -50,7 +52,6 @@ class Notifications {
         importance: Importance.max,
         priority: Priority.high,
         category: AndroidNotificationCategory.alarm,
-        vibrationPattern: null,
       ),
       iOS: DarwinNotificationDetails(
         presentAlert: true,

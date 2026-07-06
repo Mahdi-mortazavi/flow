@@ -1,1 +1,31 @@
 include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    - prefer_const_constructors
+    - prefer_const_constructors_in_immutables
+    - prefer_const_declarations
+    - prefer_const_literals_to_create_immutables
+    - prefer_final_locals
+    - prefer_final_in_for_each
+    - avoid_redundant_argument_values
+    - unnecessary_await_in_return
+    - unnecessary_lambdas
+    - unnecessary_parenthesis
+    - use_named_constants
+    - cascade_invocations
+    - directives_ordering
+    - unawaited_futures
+    - avoid_slow_async_io
+    - close_sinks
+    - cancel_subscriptions
+    - use_build_context_synchronously
+    - sized_box_shrink_expand
+    - use_decorated_box
+    - use_colored_box

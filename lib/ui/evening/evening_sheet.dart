@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,8 +42,10 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
 
   Future<void> _save() async {
     final plan = await ref.read(todayProvider.future);
-    final whys =
-        _whys.map((c) => c.text.trim()).where((t) => t.isNotEmpty).toList();
+    final whys = _whys
+        .map((c) => c.text.trim())
+        .where((t) => t.isNotEmpty)
+        .toList();
     if (!plan.boulderDone && whys.isEmpty) {
       if (mounted) {
         showToast(context, 'حداقل یک «چرا» — همین‌جا یادگیری اتفاق می‌افتد');
@@ -52,13 +56,14 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
         .read(todayProvider.notifier)
         .closeDay(whys: whys, note: _note.text.trim());
     if (!mounted) return;
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     Navigator.pop(context);
     showToast(
-        context,
-        plan.boulderDone
-            ? 'ثبت شد. روزِ برنده.'
-            : 'ثبت شد. فردا با سیستمِ اصلاح‌شده.');
+      context,
+      plan.boulderDone
+          ? 'ثبت شد. روزِ برنده.'
+          : 'ثبت شد. فردا با سیستمِ اصلاح‌شده.',
+    );
   }
 
   @override
@@ -79,18 +84,23 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-                  child: Text('چک نهایی',
-                      style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: Tone.ink3)),
+                  child: Text(
+                    'چک نهایی',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Tone.ink3,
+                    ),
+                  ),
                 ),
                 for (final t in plan.tasks)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: GlassCard(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 15, vertical: 13),
+                        horizontal: 15,
+                        vertical: 13,
+                      ),
                       child: Row(
                         children: [
                           CheckCircle(
@@ -144,8 +154,11 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            child:
-                Pill('ثبت و بستنِ روز', style: PillStyle.ember, onTap: _save),
+            child: Pill(
+              'ثبت و بستنِ روز',
+              style: PillStyle.ember,
+              onTap: _save,
+            ),
           ),
         ],
       ),
@@ -158,8 +171,11 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
         padding: const EdgeInsets.only(top: 14),
         child: Text(
           'تخته‌سنگ افتاد — پیش‌بینی‌ات ${faNum(prediction ?? 0)}٪ بود. ثبت می‌شود.',
-          style:
-              const TextStyle(fontSize: 11.5, color: Tone.ember, height: 1.9),
+          style: const TextStyle(
+            fontSize: 11.5,
+            color: Tone.ember,
+            height: 1.9,
+          ),
         ),
       );
     }

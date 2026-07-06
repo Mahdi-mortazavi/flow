@@ -28,6 +28,12 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Run tests
+        run: flutter test
+
       - name: Build release APK (arm64-v8a)
         run: flutter build apk --release --target-platform android-arm64 --split-per-abi
 

@@ -120,8 +120,9 @@ class Pill extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 14.5,
-            fontWeight:
-                style == PillStyle.quiet ? FontWeight.w600 : FontWeight.w700,
+            fontWeight: style == PillStyle.quiet
+                ? FontWeight.w600
+                : FontWeight.w700,
             color: fg,
           ),
         ),
@@ -146,8 +147,9 @@ class Pill extends StatelessWidget {
                   end: Alignment.bottomCenter,
                   colors: [Tone.glassA, Tone.glassB],
                 ),
-          border:
-              style == PillStyle.ember ? null : Border.all(color: Tone.line),
+          border: style == PillStyle.ember
+              ? null
+              : Border.all(color: Tone.line),
           boxShadow: style == PillStyle.ember
               ? [
                   BoxShadow(
@@ -203,7 +205,9 @@ class CheckCircle extends StatelessWidget {
           border: on
               ? null
               : Border.all(
-                  color: Colors.white.withValues(alpha: .22), width: 1.5),
+                  color: Colors.white.withValues(alpha: .22),
+                  width: 1.5,
+                ),
           boxShadow: on
               ? [
                   BoxShadow(
@@ -238,7 +242,7 @@ Future<T?> showGlassSheet<T>(
       filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
       child: Container(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(ctx).size.height * .88,
+          maxHeight: MediaQuery.sizeOf(ctx).height * .88,
         ),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -250,9 +254,7 @@ Future<T?> showGlassSheet<T>(
           border: Border.all(color: Tone.line),
         ),
         child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-          ),
+          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -289,15 +291,20 @@ class SheetHeader extends StatelessWidget {
         children: [
           SizedBox(
             width: double.infinity,
-            child: Text(title,
-                style: const TextStyle(
-                    fontSize: 18.5, fontWeight: FontWeight.w700)),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           if (sub != null) ...[
             const SizedBox(height: 4),
-            Text(sub!,
-                style:
-                    TextStyle(fontSize: 12.5, color: Tone.ink2, height: 1.9)),
+            Text(
+              sub!,
+              style: TextStyle(fontSize: 12.5, color: Tone.ink2, height: 1.9),
+            ),
           ],
         ],
       ),
@@ -330,7 +337,7 @@ class GlassField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final field = Container(
+    final field = DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: .055),
         borderRadius: BorderRadius.circular(16),
@@ -348,8 +355,10 @@ class GlassField extends StatelessWidget {
           hintText: hint,
           hintStyle: TextStyle(color: Tone.ink3, fontSize: 15),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 15,
+            vertical: 14,
+          ),
         ),
       ),
     );
@@ -359,11 +368,14 @@ class GlassField extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(label!,
-              style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: Tone.ink3)),
+          child: Text(
+            label!,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: Tone.ink3,
+            ),
+          ),
         ),
         const SizedBox(height: 7),
         field,
@@ -378,7 +390,7 @@ void showToast(BuildContext context, String message) {
   late final OverlayEntry entry;
   entry = OverlayEntry(
     builder: (ctx) => Positioned(
-      top: MediaQuery.of(ctx).padding.top + 14,
+      top: MediaQuery.paddingOf(ctx).top + 14,
       left: 0,
       right: 0,
       child: Center(
@@ -396,8 +408,7 @@ void showToast(BuildContext context, String message) {
               ),
             ),
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
                 color: const Color(0xFF1C1C21),
                 borderRadius: BorderRadius.circular(999),
@@ -414,9 +425,10 @@ void showToast(BuildContext context, String message) {
                 message,
                 textDirection: TextDirection.rtl,
                 style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Tone.ink),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Tone.ink,
+                ),
               ),
             ),
           ),
@@ -462,15 +474,19 @@ Future<(bool, String?)> showConfirmSheet(
             child: Row(
               children: [
                 Expanded(
-                  child: Pill(noLabel,
-                      style: PillStyle.quiet,
-                      onTap: () => Navigator.pop(ctx, false)),
+                  child: Pill(
+                    noLabel,
+                    style: PillStyle.quiet,
+                    onTap: () => Navigator.pop(ctx, false),
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Pill(yesLabel,
-                      style: emberYes ? PillStyle.ember : PillStyle.glass,
-                      onTap: () => Navigator.pop(ctx, true)),
+                  child: Pill(
+                    yesLabel,
+                    style: emberYes ? PillStyle.ember : PillStyle.glass,
+                    onTap: () => Navigator.pop(ctx, true),
+                  ),
                 ),
               ],
             ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -33,9 +34,7 @@ Future<void> startFocusFlow(
               children: [
                 for (final m in const [25, 50, 90]) ...[
                   Expanded(
-                    child: Pill(faNum(m),
-                        style: PillStyle.glass,
-                        onTap: () => Navigator.pop(ctx, m)),
+                    child: Pill(faNum(m), onTap: () => Navigator.pop(ctx, m)),
                   ),
                   if (m != 90) const SizedBox(width: 10),
                 ],
@@ -51,19 +50,19 @@ Future<void> startFocusFlow(
       .read(focusProvider.notifier)
       .start(taskId: taskId, title: title, minutes: minutes);
   if (!context.mounted) return;
-  HapticFeedback.mediumImpact();
-  Navigator.of(context).push(FocusScreen.route());
+  unawaited(HapticFeedback.mediumImpact());
+  unawaited(Navigator.of(context).push(FocusScreen.route()));
 }
 
 class FocusScreen extends ConsumerStatefulWidget {
   const FocusScreen({super.key});
 
-  static Route route() => PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const FocusScreen(),
-        transitionsBuilder: (_, anim, __, child) =>
-            FadeTransition(opacity: anim, child: child),
-        transitionDuration: const Duration(milliseconds: 500),
-      );
+  static Route<void> route() => PageRouteBuilder<void>(
+    pageBuilder: (_, __, ___) => const FocusScreen(),
+    transitionsBuilder: (_, anim, __, child) =>
+        FadeTransition(opacity: anim, child: child),
+    transitionDuration: const Duration(milliseconds: 500),
+  );
 
   @override
   ConsumerState<FocusScreen> createState() => _FocusScreenState();
@@ -102,12 +101,15 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           child: Column(
             children: [
               const Spacer(flex: 2),
-              Text('تمرکز',
-                  style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: .5,
-                      color: Tone.ink3)),
+              Text(
+                'تمرکز',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: .5,
+                  color: Tone.ink3,
+                ),
+              ),
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -115,34 +117,37 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                   view.focus.title,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w500,
-                      color: Tone.ink2,
-                      height: 1.8),
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w500,
+                    color: Tone.ink2,
+                    height: 1.8,
+                  ),
                 ),
               ),
               const SizedBox(height: 38),
-              SizedBox(
-                width: 272,
-                height: 272,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _RingPainter(progress: view.progress),
+              RepaintBoundary(
+                child: SizedBox(
+                  width: 272,
+                  height: 272,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _RingPainter(progress: view.progress),
+                        ),
                       ),
-                    ),
-                    Text(
-                      view.clock,
-                      textDirection: TextDirection.ltr,
-                      style: const TextStyle(
-                        fontSize: 62,
-                        fontWeight: FontWeight.w200,
-                        fontFeatures: [FontFeature.tabularFigures()],
+                      Text(
+                        view.clock,
+                        textDirection: TextDirection.ltr,
+                        style: const TextStyle(
+                          fontSize: 62,
+                          fontWeight: FontWeight.w200,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 30),
@@ -171,11 +176,14 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                 onTap: () => _attemptEarlyEnd(view),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
-                  child: Text('پایان زودهنگام',
-                      style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: Tone.ink3)),
+                  child: Text(
+                    'پایان زودهنگام',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: Tone.ink3,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
@@ -197,8 +205,10 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SheetHeader('فکر مزاحم؟ رهایش کن اینجا',
-                sub: 'ثبت می‌شود و هیچ‌جا نمی‌رود. تو برگرد به تمرکز.'),
+            const SheetHeader(
+              'فکر مزاحم؟ رهایش کن اینجا',
+              sub: 'ثبت می‌شود و هیچ‌جا نمی‌رود. تو برگرد به تمرکز.',
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
               child: GlassField(
@@ -210,9 +220,11 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Pill('ثبت و بازگشت به تمرکز',
-                  style: PillStyle.ember,
-                  onTap: () => Navigator.pop(ctx, true)),
+              child: Pill(
+                'ثبت و بازگشت به تمرکز',
+                style: PillStyle.ember,
+                onTap: () => Navigator.pop(ctx, true),
+              ),
             ),
           ],
         ),
@@ -221,9 +233,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     final text = controller.text.trim();
     controller.dispose();
     if (saved == true && text.isNotEmpty) {
-      await ref
-          .read(thoughtsProvider.notifier)
-          .add(text, ThoughtCategory.idea);
+      await ref.read(thoughtsProvider.notifier).add(text, ThoughtCategory.idea);
       if (mounted) showToast(context, 'ثبت شد. ذهنت آزاد است.');
     }
   }
@@ -253,7 +263,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
   }
 
   Future<void> _onTimeUp(FocusView view) async {
-    HapticFeedback.heavyImpact();
+    unawaited(HapticFeedback.heavyImpact());
     final focus = view.focus;
     final choice = await showGlassSheet<String>(
       context,
@@ -264,29 +274,36 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SheetHeader('وقت تمام شد',
-                sub: 'کمال‌گرایی را رها کن. هر چه ساختی را همین حالا ثبت کن.'),
+            const SheetHeader(
+              'وقت تمام شد',
+              sub: 'کمال‌گرایی را رها کن. هر چه ساختی را همین حالا ثبت کن.',
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
               child: Column(
                 children: [
-                  Pill('انجام شد',
-                      style: PillStyle.ember,
-                      icon: Icons.check_rounded,
-                      onTap: () => Navigator.pop(ctx, 'done')),
+                  Pill(
+                    'انجام شد',
+                    style: PillStyle.ember,
+                    icon: Icons.check_rounded,
+                    onTap: () => Navigator.pop(ctx, 'done'),
+                  ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
                       Expanded(
-                        child: Pill('+۱۰ دقیقه',
-                            style: PillStyle.glass,
-                            onTap: () => Navigator.pop(ctx, 'extend')),
+                        child: Pill(
+                          '+۱۰ دقیقه',
+                          onTap: () => Navigator.pop(ctx, 'extend'),
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Pill('هنوز نه',
-                            style: PillStyle.quiet,
-                            onTap: () => Navigator.pop(ctx, 'not_yet')),
+                        child: Pill(
+                          'هنوز نه',
+                          style: PillStyle.quiet,
+                          onTap: () => Navigator.pop(ctx, 'not_yet'),
+                        ),
                       ),
                     ],
                   ),
@@ -364,8 +381,13 @@ class _RingPainter extends CustomPainter {
       ..color = Tone.ember;
     // Remaining portion of the ring, shrinking clockwise from 12 o'clock.
     final sweep = 2 * math.pi * (1 - progress);
-    canvas.drawArc(Rect.fromCircle(center: center, radius: radius),
-        -math.pi / 2, sweep, false, arc);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      sweep,
+      false,
+      arc,
+    );
   }
 
   @override

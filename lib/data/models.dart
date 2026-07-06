@@ -20,8 +20,12 @@ class DayTask {
     required this.sort,
   });
 
-  DayTask copyWith({bool? done}) =>
-      DayTask(taskId: taskId, title: title, done: done ?? this.done, sort: sort);
+  DayTask copyWith({bool? done}) => DayTask(
+    taskId: taskId,
+    title: title,
+    done: done ?? this.done,
+    sort: sort,
+  );
 }
 
 /// The full state of one day: plan, boulder, prediction, evening review.
@@ -49,16 +53,16 @@ class DayPlan {
   });
 
   factory DayPlan.empty(String dayKey) => DayPlan(
-        dayKey: dayKey,
-        planned: false,
-        boulderId: null,
-        prediction: null,
-        tasks: const [],
-        closed: false,
-        outcome: null,
-        whys: const [],
-        note: '',
-      );
+    dayKey: dayKey,
+    planned: false,
+    boulderId: null,
+    prediction: null,
+    tasks: const [],
+    closed: false,
+    outcome: null,
+    whys: const [],
+    note: '',
+  );
 
   DayTask? get boulder {
     for (final t in tasks) {
@@ -131,26 +135,25 @@ class ActiveFocus {
     int? endAtMs,
     bool? paused,
     int? pausedLeftSec,
-  }) =>
-      ActiveFocus(
-        sessionId: sessionId,
-        taskId: taskId,
-        title: title,
-        totalSec: totalSec ?? this.totalSec,
-        endAtMs: endAtMs ?? this.endAtMs,
-        paused: paused ?? this.paused,
-        pausedLeftSec: pausedLeftSec ?? this.pausedLeftSec,
-      );
+  }) => ActiveFocus(
+    sessionId: sessionId,
+    taskId: taskId,
+    title: title,
+    totalSec: totalSec ?? this.totalSec,
+    endAtMs: endAtMs ?? this.endAtMs,
+    paused: paused ?? this.paused,
+    pausedLeftSec: pausedLeftSec ?? this.pausedLeftSec,
+  );
 
   String toJson() => jsonEncode({
-        'sessionId': sessionId,
-        'taskId': taskId,
-        'title': title,
-        'totalSec': totalSec,
-        'endAtMs': endAtMs,
-        'paused': paused,
-        'pausedLeftSec': pausedLeftSec,
-      });
+    'sessionId': sessionId,
+    'taskId': taskId,
+    'title': title,
+    'totalSec': totalSec,
+    'endAtMs': endAtMs,
+    'paused': paused,
+    'pausedLeftSec': pausedLeftSec,
+  });
 
   static ActiveFocus? fromJson(String? raw) {
     if (raw == null || raw.isEmpty) return null;

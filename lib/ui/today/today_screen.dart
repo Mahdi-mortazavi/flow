@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,14 +53,14 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
     final restored = await ref.read(focusProvider.notifier).restore();
     if (!mounted) return;
     if (restored) {
-      Navigator.of(context).push(FocusScreen.route());
+      unawaited(Navigator.of(context).push(FocusScreen.route()));
       return;
     }
     final plan = await ref.read(todayProvider.future);
     if (!mounted) return;
     if (!plan.planned) {
-      await Future.delayed(const Duration(milliseconds: 600));
-      if (mounted) openMorningWizard(context, ref);
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      if (mounted) unawaited(openMorningWizard(context, ref));
     }
   }
 
@@ -76,8 +78,11 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
                 child: planAsync.when(
                   loading: () => const SizedBox.shrink(),
                   error: (e, _) => Center(
-                      child: Text('$e',
-                          style: TextStyle(color: Tone.ink3, fontSize: 12))),
+                    child: Text(
+                      '$e',
+                      style: TextStyle(color: Tone.ink3, fontSize: 12),
+                    ),
+                  ),
                   data: (plan) => _TodayBody(plan: plan),
                 ),
               ),
@@ -86,9 +91,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-      floatingActionButton: _VaultFab(
-        onTap: () => openVaultSheet(context),
-      ),
+      floatingActionButton: _VaultFab(onTap: () => openVaultSheet(context)),
     );
   }
 }
@@ -99,15 +102,17 @@ class _Ambient extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final size = MediaQuery.sizeOf(context);
     return IgnorePointer(
       child: Stack(
         children: [
           Positioned(
             top: -size.height * .22,
             right: -size.width * .18,
-            child: _blob(size.width * .75,
-                const Color(0xFF788CBE).withValues(alpha: .10)),
+            child: _blob(
+              size.width * .75,
+              const Color(0xFF788CBE).withValues(alpha: .10),
+            ),
           ),
           Positioned(
             bottom: -size.height * .25,
@@ -120,13 +125,13 @@ class _Ambient extends StatelessWidget {
   }
 
   Widget _blob(double d, Color color) => Container(
-        width: d,
-        height: d,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
-        ),
-      );
+    width: d,
+    height: d,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
+    ),
+  );
 }
 
 class _TodayBody extends ConsumerWidget {
@@ -171,15 +176,19 @@ class _Header extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(faTodayLabel(),
-                    style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                        color: Tone.ink3)),
+                Text(
+                  faTodayLabel(),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: Tone.ink3,
+                  ),
+                ),
                 const SizedBox(height: 3),
-                const Text('تک‌نقطه',
-                    style:
-                        TextStyle(fontSize: 25, fontWeight: FontWeight.w800)),
+                const Text(
+                  'تک‌نقطه',
+                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800),
+                ),
               ],
             ),
           ),
@@ -234,12 +243,15 @@ class _Eyebrow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(6, 0, 6, 10),
-      child: Text(text,
-          style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: Tone.ink3,
-              letterSpacing: .4)),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w600,
+          color: Tone.ink3,
+          letterSpacing: .4,
+        ),
+      ),
     );
   }
 }
@@ -258,7 +270,7 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
   late final AnimationController _breath = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 7),
-  )..repeat(reverse: true);
+  );
 
   @override
   void dispose() {
@@ -266,9 +278,21 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
     super.dispose();
   }
 
+  /// The ember only breathes while the boulder is alive — saves frames and
+  /// visually mirrors "the fire went quiet" once it's done.
+  void _syncBreath() {
+    final active = widget.plan.planned && !(widget.plan.boulder?.done ?? false);
+    if (active && !_breath.isAnimating) {
+      _breath.repeat(reverse: true);
+    } else if (!active && _breath.isAnimating) {
+      _breath.stop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final plan = widget.plan;
+    _syncBreath();
     if (!plan.planned) {
       return GlassCard(
         radius: Tone.rCard,
@@ -282,15 +306,18 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
             Text(
               'امروز هنوز چیده نشده. سه کار، یک تخته‌سنگ، یک پیش‌بینی — کمتر از یک دقیقه.',
               style: TextStyle(
-                  fontSize: 15.5,
-                  color: Tone.ink2,
-                  fontWeight: FontWeight.w500,
-                  height: 1.7),
+                fontSize: 15.5,
+                color: Tone.ink2,
+                fontWeight: FontWeight.w500,
+                height: 1.7,
+              ),
             ),
             const SizedBox(height: 17),
-            Pill('چیدنِ امروز',
-                style: PillStyle.ember,
-                onTap: () => openMorningWizard(context, ref)),
+            Pill(
+              'چیدنِ امروز',
+              style: PillStyle.ember,
+              onTap: () => openMorningWizard(context, ref),
+            ),
           ],
         ),
       );
@@ -324,15 +351,20 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
               const SizedBox(height: 5),
               Row(
                 children: [
-                  Text('پیش‌بینی صبح: ${faNum(plan.prediction ?? 0)}٪',
-                      style: TextStyle(fontSize: 12.5, color: Tone.ink2)),
+                  Text(
+                    'پیش‌بینی صبح: ${faNum(plan.prediction ?? 0)}٪',
+                    style: TextStyle(fontSize: 12.5, color: Tone.ink2),
+                  ),
                   if (b.done) ...[
                     const SizedBox(width: 6),
-                    const Text('— انجام شد',
-                        style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: Tone.ember)),
+                    const Text(
+                      '— انجام شد',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: Tone.ember,
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -341,18 +373,23 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
                 children: [
                   if (!b.done) ...[
                     Expanded(
-                      child: Pill('شروع تمرکز',
-                          style: PillStyle.ember,
-                          icon: Icons.play_arrow_rounded,
-                          onTap: () => startFocusFlow(context, ref,
-                              taskId: b.taskId, title: b.title)),
+                      child: Pill(
+                        'شروع تمرکز',
+                        style: PillStyle.ember,
+                        icon: Icons.play_arrow_rounded,
+                        onTap: () => startFocusFlow(
+                          context,
+                          ref,
+                          taskId: b.taskId,
+                          title: b.title,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 10),
                   ],
                   Expanded(
                     child: Pill(
                       b.done ? 'برگردان' : 'علامتِ انجام',
-                      style: PillStyle.glass,
                       onTap: () => _toggleBoulder(context, ref, plan, b),
                     ),
                   ),
@@ -368,18 +405,22 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
           child: IgnorePointer(
             child: FadeTransition(
               opacity: _breath.drive(
-                Tween(begin: .5, end: 1.0)
-                    .chain(CurveTween(curve: Curves.easeInOut)),
+                Tween(
+                  begin: .5,
+                  end: 1.0,
+                ).chain(CurveTween(curve: Curves.easeInOut)),
               ),
               child: Container(
                 width: 200,
                 height: 150,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: RadialGradient(colors: [
-                    Tone.ember.withValues(alpha: b.done ? .05 : .14),
-                    Tone.ember.withValues(alpha: 0),
-                  ]),
+                  gradient: RadialGradient(
+                    colors: [
+                      Tone.ember.withValues(alpha: b.done ? .05 : .14),
+                      Tone.ember.withValues(alpha: 0),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -390,7 +431,11 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
   }
 
   void _toggleBoulder(
-      BuildContext context, WidgetRef ref, DayPlan plan, DayTask b) {
+    BuildContext context,
+    WidgetRef ref,
+    DayPlan plan,
+    DayTask b,
+  ) {
     final newDone = !b.done;
     ref.read(todayProvider.notifier).setTaskDone(b.taskId, newDone);
     if (newDone) {
@@ -416,14 +461,20 @@ class _EmberTag extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.local_fire_department_rounded,
-              size: 12, color: Tone.ember),
+          const Icon(
+            Icons.local_fire_department_rounded,
+            size: 12,
+            color: Tone.ember,
+          ),
           const SizedBox(width: 6),
-          Text(text,
-              style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Tone.ember)),
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Tone.ember,
+            ),
+          ),
         ],
       ),
     );
@@ -464,14 +515,16 @@ class _OtherTaskRow extends ConsumerWidget {
                         fontWeight: FontWeight.w500,
                         height: 1.5,
                         color: task.done ? Tone.ink3 : Tone.ink,
-                        decoration:
-                            task.done ? TextDecoration.lineThrough : null,
+                        decoration: task.done
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                     if (locked)
-                      Text('پشتِ تخته‌سنگ در صف',
-                          style:
-                              TextStyle(fontSize: 11.5, color: Tone.ink3)),
+                      Text(
+                        'پشتِ تخته‌سنگ در صف',
+                        style: TextStyle(fontSize: 11.5, color: Tone.ink3),
+                      ),
                   ],
                 ),
               ),
@@ -486,8 +539,11 @@ class _OtherTaskRow extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(13),
                       border: Border.all(color: Tone.line),
                     ),
-                    child: Icon(Icons.play_arrow_rounded,
-                        size: 18, color: Tone.ink2),
+                    child: Icon(
+                      Icons.play_arrow_rounded,
+                      size: 18,
+                      color: Tone.ink2,
+                    ),
                   ),
                 ),
             ],
@@ -509,13 +565,19 @@ class _OtherTaskRow extends ConsumerWidget {
       );
       if (!context.mounted) return;
       if (goBoulder && b != null) {
-        startFocusFlow(context, ref, taskId: b.taskId, title: b.title);
+        unawaited(
+          startFocusFlow(context, ref, taskId: b.taskId, title: b.title),
+        );
       } else if (!goBoulder) {
-        startFocusFlow(context, ref, taskId: task.taskId, title: task.title);
+        unawaited(
+          startFocusFlow(context, ref, taskId: task.taskId, title: task.title),
+        );
       }
       return;
     }
-    startFocusFlow(context, ref, taskId: task.taskId, title: task.title);
+    unawaited(
+      startFocusFlow(context, ref, taskId: task.taskId, title: task.title),
+    );
   }
 }
 
@@ -539,11 +601,17 @@ class _EveningCta extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('روز بسته شد',
-                        style: TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w600)),
-                    Text('فردا، دوباره از تخته‌سنگ.',
-                        style: TextStyle(fontSize: 11.5, color: Tone.ink3)),
+                    const Text(
+                      'روز بسته شد',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'فردا، دوباره از تخته‌سنگ.',
+                      style: TextStyle(fontSize: 11.5, color: Tone.ink3),
+                    ),
                   ],
                 ),
               ),
@@ -564,11 +632,14 @@ class _EveningCta extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('مرور شب',
-                    style:
-                        TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                Text('۶۰ ثانیه — چک، چرا، یک خط',
-                    style: TextStyle(fontSize: 11.5, color: Tone.ink3)),
+                const Text(
+                  'مرور شب',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  '۶۰ ثانیه — چک، چرا، یک خط',
+                  style: TextStyle(fontSize: 11.5, color: Tone.ink3),
+                ),
               ],
             ),
           ),
@@ -579,15 +650,15 @@ class _EveningCta extends ConsumerWidget {
   }
 
   Widget _moon() => Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: .05),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Tone.line),
-        ),
-        child: Icon(Icons.nightlight_round, size: 17, color: Tone.ink2),
-      );
+    width: 40,
+    height: 40,
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: .05),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Tone.line),
+    ),
+    child: Icon(Icons.nightlight_round, size: 17, color: Tone.ink2),
+  );
 }
 
 class _VaultFab extends StatelessWidget {
@@ -624,11 +695,14 @@ class _VaultFab extends StatelessWidget {
           children: [
             Icon(Icons.psychology_outlined, size: 18, color: Tone.ink2),
             const SizedBox(width: 8),
-            Text('تخلیهٔ ذهن',
-                style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: Tone.ink2)),
+            Text(
+              'تخلیهٔ ذهن',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: Tone.ink2,
+              ),
+            ),
           ],
         ),
       ),
