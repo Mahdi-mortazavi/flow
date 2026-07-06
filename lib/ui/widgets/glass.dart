@@ -51,6 +51,35 @@ class GlassCard extends StatelessWidget {
   }
 }
 
+/// Staggered entrance: gentle rise + fade, one section after another —
+/// the calm cascade Apple uses instead of everything popping at once.
+/// Animates once per mount; data reloads don't replay it.
+class Reveal extends StatelessWidget {
+  final Widget child;
+  final int order;
+  const Reveal({super.key, required this.child, this.order = 0});
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    final delayMs = 55 * order;
+    final totalMs = 480 + delayMs;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: totalMs),
+      curve: Interval(delayMs / totalMs, 1, curve: Curves.easeOutCubic),
+      builder: (_, v, child) => Opacity(
+        opacity: v,
+        child: Transform.translate(
+          offset: Offset(0, (1 - v) * 14),
+          child: child,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
 /// Scale-on-press wrapper (the `.press`/`:active` feel of the web version).
 class Pressable extends StatefulWidget {
   final Widget child;

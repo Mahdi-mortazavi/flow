@@ -27,6 +27,22 @@ abstract final class Tone {
   static const dur = Duration(milliseconds: 420);
 }
 
+/// iOS-feel scrolling everywhere: rubber-band bounce instead of glow.
+class AppScrollBehavior extends MaterialScrollBehavior {
+  const AppScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => child;
+}
+
 ThemeData buildTheme() {
   final base = ThemeData(
     brightness: Brightness.dark,
@@ -65,6 +81,13 @@ ThemeData buildTheme() {
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
+    ),
+    // Apple-style horizontal slide with edge-swipe back on every route.
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      },
     ),
   );
 }

@@ -157,27 +157,53 @@ class _TodayBody extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
       children: [
-        _Header(plan: plan),
-        const _ReviewBanner(),
+        Reveal(child: _Header(plan: plan)),
+        const Reveal(order: 1, child: _ReviewBanner()),
         const SizedBox(height: 6),
-        const _Eyebrow('تخته‌سنگِ امروز'),
-        BoulderCard(plan: plan),
-        if (plan.planned && plan.others.isNotEmpty) ...[
-          const SizedBox(height: 22),
-          const _Eyebrow('دو کارِ دیگر'),
-          for (final t in plan.others) _OtherTaskRow(plan: plan, task: t),
-        ],
+        Reveal(
+          order: 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _Eyebrow('تخته‌سنگِ امروز'),
+              BoulderCard(plan: plan),
+            ],
+          ),
+        ),
+        if (plan.planned && plan.others.isNotEmpty)
+          Reveal(
+            order: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 22),
+                const _Eyebrow('دو کارِ دیگر'),
+                for (final t in plan.others) _OtherTaskRow(plan: plan, task: t),
+              ],
+            ),
+          ),
         const SizedBox(height: 22),
-        const _HabitsSection(),
+        const Reveal(order: 3, child: _HabitsSection()),
         const SizedBox(height: 22),
-        const _Eyebrow('وقتِ آزادِ بی‌گناه'),
-        const _FunCard(),
-        const SizedBox(height: 22),
-        const _EnergyCard(),
-        if (plan.planned) ...[
-          const SizedBox(height: 26),
-          _EveningCta(plan: plan),
-        ],
+        const Reveal(
+          order: 4,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [_Eyebrow('وقتِ آزادِ بی‌گناه'), _FunCard()],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const Reveal(order: 5, child: _EnergyCard()),
+        if (plan.planned)
+          Reveal(
+            order: 6,
+            child: Column(
+              children: [
+                const SizedBox(height: 26),
+                _EveningCta(plan: plan),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -359,6 +385,17 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
           radius: Tone.rCard,
           emberRing: true,
           padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+          // The whole hero card is the primary action: tap → start focus.
+          onTap: b.done
+              ? null
+              : () => unawaited(
+                  startFocusFlow(
+                    context,
+                    ref,
+                    taskId: b.taskId,
+                    title: b.title,
+                  ),
+                ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1142,63 +1179,55 @@ class _EnergyCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    Widget chip(String label, int level, IconData icon) => Expanded(
-      child: Pressable(
-        onTap: () async {
-          await ref.read(repoProvider).addEnergyCheck(level);
-          ref.invalidate(statsProvider);
-          if (context.mounted) {
-            unawaited(HapticFeedback.selectionClick());
-            showToast(
-              context,
-              'ثبت شد — بعد از چند روز، ساعتِ طلایی‌ات پیدا می‌شود',
-            );
-          }
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: .04),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Tone.line),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, size: 16, color: Tone.ink2),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  color: Tone.ink3,
-                ),
-              ),
-            ],
+    Widget chip(String label, int level) => Pressable(
+      onTap: () async {
+        await ref.read(repoProvider).addEnergyCheck(level);
+        ref.invalidate(statsProvider);
+        if (context.mounted) {
+          unawaited(HapticFeedback.selectionClick());
+          showToast(context, 'ثبت شد — ساعتِ طلایی‌ات کم‌کم پیدا می‌شود');
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .04),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Tone.line),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
+            color: Tone.ink2,
           ),
         ),
       ),
     );
 
+    // One slim row — a two-second check-in, not a form.
     return GlassCard(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+      child: Row(
         children: [
-          const Text(
-            'انرژی الان چطور است؟',
-            style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+          const Icon(Icons.bolt_rounded, size: 16, color: Tone.ember),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'انرژی الان؟',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Tone.ink2,
+              ),
+            ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              chip('کم', 1, Icons.battery_2_bar_rounded),
-              const SizedBox(width: 8),
-              chip('متوسط', 2, Icons.battery_4_bar_rounded),
-              const SizedBox(width: 8),
-              chip('زیاد', 3, Icons.battery_full_rounded),
-            ],
-          ),
+          chip('کم', 1),
+          const SizedBox(width: 6),
+          chip('متوسط', 2),
+          const SizedBox(width: 6),
+          chip('زیاد', 3),
         ],
       ),
     );
