@@ -27,7 +27,22 @@ boulder (تخته‌سنگ) and primary CTAs. Font: Vazirmatn (bundled, weights 
 - Phase 3 (done, v0.2.0): stats "mirror" screen (win rate, prediction-optimism
   gap, recovery rate, 7-day deep-work chart, interrupt patterns, last nights),
   weekly zero-based review, energy check-ins + golden hour.
-- Phase 4: home widget, live activity, identity/values layer, DND, export.
+- Reliability sprint (done, v0.4.1): smart morning/evening/weekly OS
+  reminders (skip when planned/closed; times set in onboarding + settings
+  sheet), midnight rollover watcher, launcher icon + monochrome notif icon
+  (`ic_stat_dot`), JSON backup/restore (share_plus/file_picker), undo for
+  deletes, deferred review deletions, exact-alarm request + hint, battery
+  guide (android_intent_plus), a11y (44px targets, ink3=38%, Semantics,
+  textScale clamp 1.3), human ErrorCard.
+- Phase 4: home widget, live activity, identity/values layer, DND.
+
+## Known quirks
+- The v0.4.0 GitHub release/tag was cut from a stale commit (commit failed
+  because the -m here-string contained double quotes → tag landed on the
+  old HEAD). v0.4.1 is the correct release. Write commit messages to a temp
+  file and use `git commit -F` when they contain quotes.
+- Test files each set `AppDatabase.fileName` in setUpAll — parallel test
+  isolates must not share one sqlite file.
 
 ## Releases
 - Pushing a `v*` tag builds and publishes a GitHub Release with the
