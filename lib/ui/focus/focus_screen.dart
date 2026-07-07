@@ -269,23 +269,93 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     final wasPaused = view.focus.paused;
     if (!wasPaused) await n.pause();
     if (!mounted) return;
-    final (end, note) = await showConfirmSheet(
-      context,
-      title: 'پایان زودهنگام؟',
-      sub:
-          'یک خط: چه چیزی قطعش کرد؟ (الگوی قطع‌شدن‌ها بعداً خودش را نشان می‌دهد)',
-      yesLabel: 'پایان',
-      noLabel: 'برگرد به تمرکز',
-      withInput: true,
-      inputHint: 'چه چیزی قطعش کرد؟',
-      emberYes: false,
-    );
+    final result = await _showInterruptSheet();
     if (!mounted) return;
-    if (end) {
-      await n.end(completed: false, interruptNote: note);
-    } else if (!wasPaused) {
-      await n.resume();
+    if (result == null) {
+      // Cancelled → back to focus.
+      if (!wasPaused) await n.resume();
+      return;
     }
+    await n.end(
+      completed: false,
+      interruptTag: result.$1.db,
+      interruptNote: result.$2,
+    );
+  }
+
+  /// One-tap interrupt taxonomy — the friction of typing was why the pattern
+  /// stayed empty. A tag is enough; the note is optional.
+  Future<(InterruptTag, String?)?> _showInterruptSheet() {
+    return showGlassSheet<(InterruptTag, String?)>(
+      context,
+      builder: (ctx) {
+        final noteController = TextEditingController();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SheetHeader(
+                'چه چیزی قطعش کرد؟',
+                sub: 'یک ضربه کافی است — الگویش هفتگی خودش را نشان می‌دهد.',
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final tag in InterruptTag.values)
+                      Pressable(
+                        onTap: () => Navigator.pop(ctx, (
+                          tag,
+                          noteController.text.trim().isEmpty
+                              ? null
+                              : noteController.text.trim(),
+                        )),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 15,
+                            vertical: 11,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: .05),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Tone.line),
+                          ),
+                          child: Text(
+                            '${tag.emoji}  ${tag.label}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: GlassField(
+                  controller: noteController,
+                  hint: 'یک خط، اگر خواستی (اختیاری)…',
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: Pill(
+                  'برگرد به تمرکز',
+                  style: PillStyle.quiet,
+                  onTap: () => Navigator.pop(ctx),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _onTimeUp(FocusView view) async {

@@ -62,6 +62,16 @@ class TodayController extends AsyncNotifier<DayPlan> {
     await _reload();
   }
 
+  Future<void> renameTask(String taskId, String title) async {
+    await _repo.renameTask(_dayKey, taskId, title);
+    await _reload();
+  }
+
+  Future<void> removeTask(String taskId) async {
+    await _repo.removeTaskFromDay(_dayKey, taskId);
+    await _reload();
+  }
+
   Future<void> closeDay({
     required List<String> whys,
     required String note,

@@ -239,4 +239,128 @@ void main() {
       expect(fun?.minutes, 45);
     });
   });
+
+  group('task editing', () {
+    Future<void> planThree() async {
+      final a = await repo.addBacklog('کار الف');
+      final b = await repo.addBacklog('کار ب');
+      final c = await repo.addBacklog('کار ج');
+      await repo.planDay(
+        dayKey: todayKey(),
+        selected: [a, b, c],
+        boulderId: a.id,
+        prediction: 70,
+      );
+    }
+
+    test('rename updates both today list and backlog', () async {
+      await planThree();
+      final plan = await repo.dayPlan(todayKey());
+      final id = plan.boulderId!;
+      await repo.renameTask(todayKey(), id, 'عنوان درست');
+      final after = await repo.dayPlan(todayKey());
+      expect(after.boulder!.title, 'عنوان درست');
+      expect(
+        (await repo.backlog()).firstWhere((b) => b.id == id).title,
+        'عنوان درست',
+      );
+    });
+
+    test('deleting the boulder promotes the next task', () async {
+      await planThree();
+      final plan = await repo.dayPlan(todayKey());
+      final boulderId = plan.boulderId!;
+      final nextId = plan.others.first.taskId;
+      await repo.removeTaskFromDay(todayKey(), boulderId);
+      final after = await repo.dayPlan(todayKey());
+      expect(after.tasks.length, 2);
+      expect(after.boulderId, nextId);
+      expect(after.planned, true);
+      expect((await repo.backlog()).any((b) => b.id == boulderId), false);
+    });
+
+    test('deleting the last task falls back to unplanned', () async {
+      final a = await repo.addBacklog('تنها کار');
+      await repo.planDay(
+        dayKey: todayKey(),
+        selected: [a],
+        boulderId: a.id,
+        prediction: 60,
+      );
+      await repo.removeTaskFromDay(todayKey(), a.id);
+      final after = await repo.dayPlan(todayKey());
+      expect(after.tasks, isEmpty);
+      expect(after.planned, false);
+      expect(after.boulderId, isNull);
+    });
+  });
+
+  group('interrupt patterns', () {
+    test('tag counts aggregate over recent sessions', () async {
+      final db = await AppDatabase.instance.db;
+      Future<void> ended(String tag) async {
+        final id = await repo.startFocusSession(
+          dayKey: todayKey(),
+          taskId: null,
+          title: 'کار',
+          plannedMin: 25,
+        );
+        await repo.endFocusSession(
+          sessionId: id,
+          completed: false,
+          interruptTag: tag,
+        );
+      }
+
+      await ended('phone');
+      await ended('phone');
+      await ended('tired');
+      // A session with only a note (no tag) must not count in the pattern.
+      final noteId = await repo.startFocusSession(
+        dayKey: todayKey(),
+        taskId: null,
+        title: 'کار',
+        plannedMin: 25,
+      );
+      await repo.endFocusSession(
+        sessionId: noteId,
+        completed: false,
+        interruptNote: 'چیزی',
+      );
+
+      final s = await repo.stats();
+      expect(s.interruptCounts[InterruptTag.phone], 2);
+      expect(s.interruptCounts[InterruptTag.tired], 1);
+      expect(s.interruptCounts.containsKey(InterruptTag.people), false);
+      expect(db.isOpen, true);
+    });
+  });
+
+  group('optimism reliability', () {
+    test('needs at least the minimum closed nights', () async {
+      final db = await AppDatabase.instance.db;
+      for (var i = 1; i <= StatsData.optimismMinNights - 1; i++) {
+        await db.insert('days', {
+          'day_key': shiftDayKey(todayKey(), -i),
+          'planned': 1,
+          'prediction': 90,
+          'closed_at': 1,
+          'outcome': 0,
+          'whys': '[]',
+          'note': '',
+        });
+      }
+      expect((await repo.stats()).optimismReliable, false);
+      await db.insert('days', {
+        'day_key': shiftDayKey(todayKey(), -StatsData.optimismMinNights),
+        'planned': 1,
+        'prediction': 90,
+        'closed_at': 1,
+        'outcome': 0,
+        'whys': '[]',
+        'note': '',
+      });
+      expect((await repo.stats()).optimismReliable, true);
+    });
+  });
 }
