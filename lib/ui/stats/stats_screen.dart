@@ -92,16 +92,24 @@ class _StatsBody extends ConsumerWidget {
           children: [
             _stat('${_fmt(s.winRate)}٪', 'تخته‌سنگ‌های افتاده'),
             const SizedBox(width: 9),
+            // Optimism is noisy below a handful of nights — hide the number
+            // (and the warning color) until it means something.
             _stat(
-              s.gap == null ? '—' : '${s.gap! > 0 ? '+' : ''}${faNum(s.gap!)}',
+              !s.optimismReliable || s.gap == null
+                  ? '—'
+                  : '${s.gap! > 0 ? '+' : ''}${faNum(s.gap!)}',
               'خوش‌بینیِ پیش‌بینی',
-              warn: (s.gap ?? 0) > 15,
+              warn: s.optimismReliable && (s.gap ?? 0) > 15,
             ),
             const SizedBox(width: 9),
             _stat('${_fmt(s.recoveryRate)}٪', 'بازگشت بعد از شکست'),
           ],
         ),
-        if ((s.gap ?? 0) > 15)
+        if (!s.optimismReliable)
+          _hint(
+            'خوش‌بینیِ پیش‌بینی بعد از ${faNum(StatsData.optimismMinNights)} شبِ بسته معنا پیدا می‌کند — فعلاً داده کم است.',
+          )
+        else if ((s.gap ?? 0) > 15)
           _hint(
             'پیش‌بینی‌هایت به‌طور میانگین ${faNum(s.gap!)} واحد خوش‌بینانه است — فردا صبح، عدد را صادقانه‌تر بگذار.',
           ),
@@ -137,38 +145,10 @@ class _StatsBody extends ConsumerWidget {
             ),
           ),
         ],
-        if (s.recentInterrupts.isNotEmpty) ...[
+        if (s.interruptCounts.isNotEmpty) ...[
           const SizedBox(height: 24),
-          _eyebrow('الگوی قطع‌شدن‌ها'),
-          GlassCard(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Column(
-              children: [
-                for (final note in s.recentInterrupts)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      border: note != s.recentInterrupts.last
-                          ? Border(
-                              bottom: BorderSide(
-                                color: Colors.white.withValues(alpha: .05),
-                              ),
-                            )
-                          : null,
-                    ),
-                    child: Text(
-                      note,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: Tone.ink2,
-                        height: 1.6,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+          _eyebrow('الگوی قطع‌شدن‌ها — ۳۰ روز'),
+          _InterruptPattern(counts: s.interruptCounts),
         ],
         const SizedBox(height: 24),
         _eyebrow('هفت شبِ آخر'),
@@ -344,6 +324,80 @@ class _FocusChart extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Ranked interrupt reasons as labeled bars — the actual "pattern", not a
+/// list of one-off notes.
+class _InterruptPattern extends StatelessWidget {
+  final Map<InterruptTag, int> counts;
+  const _InterruptPattern({required this.counts});
+
+  @override
+  Widget build(BuildContext context) {
+    final ranked = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final max = ranked.first.value;
+    return GlassCard(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Column(
+        children: [
+          for (final e in ranked)
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: e.key == ranked.last.key ? 0 : 12,
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 96,
+                    child: Text(
+                      '${e.key.emoji}  ${e.key.label}',
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: Stack(
+                        children: [
+                          Container(
+                            height: 6,
+                            color: Colors.white.withValues(alpha: .05),
+                          ),
+                          FractionallySizedBox(
+                            widthFactor: e.value / max,
+                            child: Container(
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: Tone.ember.withValues(alpha: .55),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    faNum(e.value),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Tone.ink2,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

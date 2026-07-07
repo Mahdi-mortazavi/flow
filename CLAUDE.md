@@ -34,6 +34,14 @@ boulder (تخته‌سنگ) and primary CTAs. Font: Vazirmatn (bundled, weights 
   deletes, deferred review deletions, exact-alarm request + hint, battery
   guide (android_intent_plus), a11y (44px targets, ink3=38%, Semantics,
   textScale clamp 1.3), human ErrorCard.
+- Product-gap sprint (done, v0.5.0): long-press task edit/delete
+  (renameTask/removeTaskFromDay — boulder deletion promotes next), one-tap
+  interrupt tag chips (InterruptTag enum) + ranked 30-day pattern in mirror,
+  fun soft-lock until boulder falls (temptation bundling), optimism hint
+  gated to ≥5 closed nights (StatsData.optimismReliable), quick_actions app
+  shortcut «ثبت فکر». DB v3 adds focus_sessions.interrupt_tag + day/tag
+  indexes. Screenshots (README preview) still pending a real device — see
+  docs/screenshots/README.md.
 - Phase 4: home widget, live activity, identity/values layer, DND.
 
 ## Known quirks

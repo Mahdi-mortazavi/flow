@@ -132,6 +132,69 @@ class Repo {
     );
   }
 
+  /// Renames a task everywhere its title is stored (today's list is a
+  /// denormalized copy of the backlog title).
+  Future<void> renameTask(String dayKey, String taskId, String title) async {
+    final d = await _db;
+    await d.transaction((tx) async {
+      await tx.update(
+        'day_tasks',
+        {'title': title},
+        where: 'day_key = ? AND task_id = ?',
+        whereArgs: [dayKey, taskId],
+      );
+      await tx.update(
+        'backlog',
+        {'title': title},
+        where: 'id = ?',
+        whereArgs: [taskId],
+      );
+    });
+  }
+
+  /// Removes a task from today's plan (and the backlog). If it was the
+  /// boulder, the first remaining task inherits the crown; if nothing remains,
+  /// the day falls back to unplanned.
+  Future<void> removeTaskFromDay(String dayKey, String taskId) async {
+    final d = await _db;
+    await d.transaction((tx) async {
+      await tx.delete(
+        'day_tasks',
+        where: 'day_key = ? AND task_id = ?',
+        whereArgs: [dayKey, taskId],
+      );
+      await tx.delete('backlog', where: 'id = ?', whereArgs: [taskId]);
+      final dayRows = await tx.query(
+        'days',
+        where: 'day_key = ?',
+        whereArgs: [dayKey],
+      );
+      if (dayRows.isEmpty) return;
+      if (dayRows.first['boulder_id'] != taskId) return;
+      final remaining = await tx.query(
+        'day_tasks',
+        where: 'day_key = ?',
+        whereArgs: [dayKey],
+        orderBy: 'sort ASC',
+      );
+      if (remaining.isEmpty) {
+        await tx.update(
+          'days',
+          {'boulder_id': null, 'planned': 0},
+          where: 'day_key = ?',
+          whereArgs: [dayKey],
+        );
+      } else {
+        await tx.update(
+          'days',
+          {'boulder_id': remaining.first['task_id']},
+          where: 'day_key = ?',
+          whereArgs: [dayKey],
+        );
+      }
+    });
+  }
+
   /// Adds a task to today's list (used by "promote thought"). Also ensures it
   /// exists in the backlog so a replan doesn't lose it.
   Future<void> addTaskToDay(String dayKey, BacklogItem item) async {
@@ -300,6 +363,7 @@ class Repo {
     required String sessionId,
     required bool completed,
     String? interruptNote,
+    String? interruptTag,
     int? endedAtMs,
   }) async {
     await (await _db).update(
@@ -308,6 +372,7 @@ class Repo {
         'ended_at': endedAtMs ?? DateTime.now().millisecondsSinceEpoch,
         'completed': completed ? 1 : 0,
         if (interruptNote != null) 'interrupt_note': interruptNote,
+        if (interruptTag != null) 'interrupt_tag': interruptTag,
       },
       where: 'id = ?',
       whereArgs: [sessionId],
@@ -622,7 +687,21 @@ class Repo {
       focusMinutes[idx] += (ms / 60000).round().clamp(0, 24 * 60);
     }
 
-    // Interrupt patterns: most recent early-end reasons.
+    // Interrupt patterns: tag counts over the last 30 days (the real "pattern")
+    // plus a few recent free-text notes for color.
+    final tagRows = await d.query(
+      'focus_sessions',
+      columns: ['interrupt_tag'],
+      where: "interrupt_tag IS NOT NULL AND day_key >= ?",
+      whereArgs: [shiftDayKey(today, -30)],
+    );
+    final interruptCounts = <InterruptTag, int>{};
+    for (final r in tagRows) {
+      final tag = InterruptTag.fromDb(r['interrupt_tag'] as String?);
+      if (tag != null) {
+        interruptCounts[tag] = (interruptCounts[tag] ?? 0) + 1;
+      }
+    }
     final interrupts = await d.query(
       'focus_sessions',
       where: "interrupt_note IS NOT NULL AND interrupt_note != ''",
@@ -677,6 +756,7 @@ class Repo {
       recentInterrupts: interrupts
           .map((r) => r['interrupt_note'] as String)
           .toList(),
+      interruptCounts: interruptCounts,
       goldenHour: goldenHour,
       reviewDue: reviewDue,
     );

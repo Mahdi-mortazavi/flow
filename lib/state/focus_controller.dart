@@ -144,7 +144,11 @@ class FocusController extends Notifier<FocusView?> {
 
   /// Ends the session and clears all persisted state.
   /// [completed] marks the session (not the task) as finished-on-purpose.
-  Future<void> end({required bool completed, String? interruptNote}) async {
+  Future<void> end({
+    required bool completed,
+    String? interruptNote,
+    String? interruptTag,
+  }) async {
     final f = state?.focus;
     _stopTicker();
     await Notifications.instance.cancelFocusEnd();
@@ -153,6 +157,7 @@ class FocusController extends Notifier<FocusView?> {
         sessionId: f.sessionId,
         completed: completed,
         interruptNote: interruptNote,
+        interruptTag: interruptTag,
       );
     }
     final prefs = await SharedPreferences.getInstance();

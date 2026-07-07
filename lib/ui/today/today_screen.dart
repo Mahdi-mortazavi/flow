@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quick_actions/quick_actions.dart';
 
 import '../../core/fa.dart';
 import '../../core/theme.dart';
@@ -19,6 +20,7 @@ import '../stats/stats_screen.dart';
 import '../vault/vault_sheet.dart';
 import '../widgets/glass.dart';
 import '../wizard/morning_wizard.dart';
+import 'task_edit_sheet.dart';
 
 class TodayScreen extends ConsumerStatefulWidget {
   const TodayScreen({super.key});
@@ -89,12 +91,29 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
       unawaited(Navigator.of(context).push(FocusScreen.route()));
       return;
     }
+    _setupQuickActions();
     final plan = await ref.read(todayProvider.future);
     if (!mounted) return;
     if (!plan.planned) {
       await Future<void>.delayed(const Duration(milliseconds: 600));
       if (mounted) unawaited(openMorningWizard(context, ref));
     }
+  }
+
+  /// Long-press the launcher icon → «ثبت فکر»: capture a thought without the
+  /// full trip through the home screen. Fires on cold start too.
+  void _setupQuickActions() {
+    const QuickActions()
+      ..initialize((type) {
+        if (type == 'new_thought' && mounted) openVaultSheet(context);
+      })
+      ..setShortcutItems(const [
+        ShortcutItem(
+          type: 'new_thought',
+          localizedTitle: 'ثبت فکر',
+          icon: 'ic_stat_dot',
+        ),
+      ]);
   }
 
   @override
@@ -401,94 +420,107 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
 
     return Stack(
       children: [
-        GlassCard(
-          radius: Tone.rCard,
-          emberRing: true,
-          padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
-          // The whole hero card is the primary action: tap → start focus.
-          onTap: b.done
-              ? null
-              : () => unawaited(
-                  startFocusFlow(
-                    context,
-                    ref,
-                    taskId: b.taskId,
-                    title: b.title,
-                  ),
-                ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _EmberTag('تخته‌سنگ'),
-              const SizedBox(height: 13),
-              Text(
-                b.title,
-                style: TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w700,
-                  height: 1.45,
-                  color: b.done ? Tone.ink3 : Tone.ink,
-                  decoration: b.done ? TextDecoration.lineThrough : null,
-                  decorationColor: Tone.ember.withValues(alpha: .5),
-                ),
-              ),
-              const SizedBox(height: 5),
-              Row(
-                children: [
-                  Text(
-                    'پیش‌بینی صبح: ${faNum(plan.prediction ?? 0)}٪',
-                    style: TextStyle(fontSize: 12.5, color: Tone.ink2),
-                  ),
-                  if (b.done) ...[
-                    const SizedBox(width: 6),
-                    const Text(
-                      '— انجام شد',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: Tone.ember,
-                      ),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onLongPress: () {
+            HapticFeedback.mediumImpact();
+            openTaskEditSheet(
+              context,
+              ref,
+              taskId: b.taskId,
+              title: b.title,
+              isBoulder: true,
+            );
+          },
+          child: GlassCard(
+            radius: Tone.rCard,
+            emberRing: true,
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+            // The whole hero card is the primary action: tap → start focus.
+            onTap: b.done
+                ? null
+                : () => unawaited(
+                    startFocusFlow(
+                      context,
+                      ref,
+                      taskId: b.taskId,
+                      title: b.title,
                     ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 17),
-              // Absorb stray taps around the buttons so a near-miss never
-              // triggers the card's start-focus action by accident.
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {},
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Row(
-                    children: [
-                      if (!b.done) ...[
-                        Expanded(
-                          child: Pill(
-                            'شروع تمرکز',
-                            style: PillStyle.ember,
-                            icon: Icons.play_arrow_rounded,
-                            onTap: () => startFocusFlow(
-                              context,
-                              ref,
-                              taskId: b.taskId,
-                              title: b.title,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                      ],
-                      Expanded(
-                        child: Pill(
-                          b.done ? 'برگردان' : 'علامتِ انجام',
-                          onTap: () => _toggleBoulder(context, ref, plan, b),
+                  ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _EmberTag('تخته‌سنگ'),
+                const SizedBox(height: 13),
+                Text(
+                  b.title,
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w700,
+                    height: 1.45,
+                    color: b.done ? Tone.ink3 : Tone.ink,
+                    decoration: b.done ? TextDecoration.lineThrough : null,
+                    decorationColor: Tone.ember.withValues(alpha: .5),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  children: [
+                    Text(
+                      'پیش‌بینی صبح: ${faNum(plan.prediction ?? 0)}٪',
+                      style: TextStyle(fontSize: 12.5, color: Tone.ink2),
+                    ),
+                    if (b.done) ...[
+                      const SizedBox(width: 6),
+                      const Text(
+                        '— انجام شد',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: Tone.ember,
                         ),
                       ),
                     ],
+                  ],
+                ),
+                const SizedBox(height: 17),
+                // Absorb stray taps around the buttons so a near-miss never
+                // triggers the card's start-focus action by accident.
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {},
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Row(
+                      children: [
+                        if (!b.done) ...[
+                          Expanded(
+                            child: Pill(
+                              'شروع تمرکز',
+                              style: PillStyle.ember,
+                              icon: Icons.play_arrow_rounded,
+                              onTap: () => startFocusFlow(
+                                context,
+                                ref,
+                                taskId: b.taskId,
+                                title: b.title,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                        ],
+                        Expanded(
+                          child: Pill(
+                            b.done ? 'برگردان' : 'علامتِ انجام',
+                            onTap: () => _toggleBoulder(context, ref, plan, b),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         // breathing ember glow, top-start corner
@@ -586,60 +618,73 @@ class _OtherTaskRow extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 9),
       child: Opacity(
         opacity: task.done ? .55 : (locked ? .55 : 1),
-        child: GlassCard(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-          child: Row(
-            children: [
-              CheckCircle(
-                on: task.done,
-                onTap: () => ref
-                    .read(todayProvider.notifier)
-                    .setTaskDone(task.taskId, !task.done),
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      task.title,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        height: 1.5,
-                        color: task.done ? Tone.ink3 : Tone.ink,
-                        decoration: task.done
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
-                    ),
-                    if (locked)
-                      Text(
-                        'پشتِ تخته‌سنگ در صف',
-                        style: TextStyle(fontSize: 11.5, color: Tone.ink3),
-                      ),
-                  ],
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onLongPress: () {
+            HapticFeedback.mediumImpact();
+            openTaskEditSheet(
+              context,
+              ref,
+              taskId: task.taskId,
+              title: task.title,
+              isBoulder: false,
+            );
+          },
+          child: GlassCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+            child: Row(
+              children: [
+                CheckCircle(
+                  on: task.done,
+                  onTap: () => ref
+                      .read(todayProvider.notifier)
+                      .setTaskDone(task.taskId, !task.done),
                 ),
-              ),
-              if (!task.done)
-                Pressable(
-                  onTap: () => _play(context, ref),
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .05),
-                      borderRadius: BorderRadius.circular(13),
-                      border: Border.all(color: Tone.line),
-                    ),
-                    child: Icon(
-                      Icons.play_arrow_rounded,
-                      size: 18,
-                      color: Tone.ink2,
-                    ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        task.title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          height: 1.5,
+                          color: task.done ? Tone.ink3 : Tone.ink,
+                          decoration: task.done
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                      if (locked)
+                        Text(
+                          'پشتِ تخته‌سنگ در صف',
+                          style: TextStyle(fontSize: 11.5, color: Tone.ink3),
+                        ),
+                    ],
                   ),
                 ),
-            ],
+                if (!task.done)
+                  Pressable(
+                    onTap: () => _play(context, ref),
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .05),
+                        borderRadius: BorderRadius.circular(13),
+                        border: Border.all(color: Tone.line),
+                      ),
+                      child: Icon(
+                        Icons.play_arrow_rounded,
+                        size: 18,
+                        color: Tone.ink2,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1112,9 +1157,42 @@ class _FunCard extends ConsumerWidget {
     await ref.read(funProvider.notifier).save(FunConfig(title: t, minutes: m));
   }
 
+  /// Temptation bundling: before the boulder falls, fun is soft-locked — an
+  /// honest speed-bump, not a wall. Once it's done, play runs immediately.
+  Future<void> _play(
+    BuildContext context,
+    WidgetRef ref,
+    FunConfig fun,
+    bool locked,
+  ) async {
+    if (locked) {
+      final (goBoulder, _) = await showConfirmSheet(
+        context,
+        title: 'اول تخته‌سنگ؟',
+        sub:
+            'تفریح بعد از افتادنِ تخته‌سنگ، واقعاً بی‌گناه می‌شود. الان مطمئنی؟',
+        yesLabel: 'صبر می‌کنم',
+        noLabel: 'به‌هرحال شروع کن',
+      );
+      if (!context.mounted || goBoulder) return;
+    }
+    unawaited(
+      startFocusFlow(
+        context,
+        ref,
+        taskId: null,
+        title: fun.title,
+        kind: 'fun',
+        fixedMinutes: fun.minutes,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fun = ref.watch(funProvider).value;
+    final plan = ref.watch(todayProvider).value;
+    final locked = (plan?.planned ?? false) && !(plan?.boulderDone ?? false);
     if (fun == null) {
       return GlassCard(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1150,8 +1228,15 @@ class _FunCard extends ConsumerWidget {
                   ),
                 ),
                 Text(
-                  'بی‌گناه. بخشِ رسمی برنامه.',
-                  style: TextStyle(fontSize: 11.5, color: Tone.ink3),
+                  locked
+                      ? 'تخته‌سنگ بیفتد، بی‌گناه‌تر می‌شود'
+                      : 'بی‌گناه. بخشِ رسمی برنامه.',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: locked
+                        ? Tone.ember.withValues(alpha: .75)
+                        : Tone.ink3,
+                  ),
                 ),
               ],
             ),
@@ -1174,16 +1259,7 @@ class _FunCard extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           Pressable(
-            onTap: () => unawaited(
-              startFocusFlow(
-                context,
-                ref,
-                taskId: null,
-                title: fun.title,
-                kind: 'fun',
-                fixedMinutes: fun.minutes,
-              ),
-            ),
+            onTap: () => _play(context, ref, fun, locked),
             child: Container(
               width: 38,
               height: 38,
@@ -1192,7 +1268,11 @@ class _FunCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(13),
                 border: Border.all(color: Tone.line),
               ),
-              child: Icon(Icons.play_arrow_rounded, size: 18, color: Tone.ink2),
+              child: Icon(
+                locked ? Icons.lock_outline_rounded : Icons.play_arrow_rounded,
+                size: 18,
+                color: locked ? Tone.ember.withValues(alpha: .75) : Tone.ink2,
+              ),
             ),
           ),
         ],

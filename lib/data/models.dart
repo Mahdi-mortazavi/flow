@@ -154,6 +154,28 @@ class FunConfig {
   }
 }
 
+/// The one-tap taxonomy for what broke a focus session. Order = display order.
+enum InterruptTag {
+  phone('phone', '📱', 'موبایل'),
+  people('people', '👥', 'آدم‌ها'),
+  tired('tired', '😴', 'خستگی'),
+  thought('thought', '💭', 'فکر مزاحم'),
+  other('other', '✍️', 'دیگر');
+
+  final String db;
+  final String emoji;
+  final String label;
+  const InterruptTag(this.db, this.emoji, this.label);
+
+  static InterruptTag? fromDb(String? v) {
+    if (v == null) return null;
+    for (final t in values) {
+      if (t.db == v) return t;
+    }
+    return null;
+  }
+}
+
 /// One closed night in the mirror.
 class NightRow {
   final String dayKey;
@@ -176,6 +198,7 @@ class StatsData {
   final List<NightRow> lastNights;
   final List<int> focusMinutesLast7; // [0]=6 days ago ... [6]=today
   final List<String> recentInterrupts;
+  final Map<InterruptTag, int> interruptCounts; // ranked pattern, last 30d
   final int? goldenHour; // start hour of the highest-energy 3h bucket
   final bool reviewDue;
 
@@ -188,11 +211,17 @@ class StatsData {
     required this.lastNights,
     required this.focusMinutesLast7,
     required this.recentInterrupts,
+    required this.interruptCounts,
     required this.goldenHour,
     required this.reviewDue,
   });
 
   int get focusMinutesWeek => focusMinutesLast7.fold(0, (sum, m) => sum + m);
+
+  /// Optimism hints are only meaningful with enough closed nights; below this
+  /// a single unlucky day would scream "you're 90 points optimistic".
+  static const optimismMinNights = 5;
+  bool get optimismReliable => closedCount >= optimismMinNights;
 }
 
 /// Serialized into shared_preferences while a focus session is running,

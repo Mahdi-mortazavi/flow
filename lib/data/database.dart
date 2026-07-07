@@ -16,7 +16,7 @@ class AppDatabase {
     final dir = await getDatabasesPath();
     final database = await openDatabase(
       p.join(dir, fileName),
-      version: 2,
+      version: 3,
       onConfigure: (d) => d.execute('PRAGMA foreign_keys = ON'),
       onCreate: _createAll,
       onUpgrade: _upgrade,
@@ -74,10 +74,27 @@ class AppDatabase {
         ended_at INTEGER,
         completed INTEGER NOT NULL DEFAULT 0,
         interrupt_note TEXT,
+        interrupt_tag TEXT,
         kind TEXT NOT NULL DEFAULT 'task'
       )
     ''');
     await _createV2(d);
+    await _createV3(d);
+  }
+
+  /// One-tap interrupt taxonomy lives in [interrupt_tag]; free text stays in
+  /// [interrupt_note]. Indexes keep the mirror's day/tag scans fast as history
+  /// grows.
+  Future<void> _createV3(Database d) async {
+    await d.execute(
+      'CREATE INDEX IF NOT EXISTS idx_focus_day ON focus_sessions(day_key)',
+    );
+    await d.execute(
+      'CREATE INDEX IF NOT EXISTS idx_logs_day ON habit_logs(day_key)',
+    );
+    await d.execute(
+      'CREATE INDEX IF NOT EXISTS idx_energy_day ON energy_checks(day_key)',
+    );
   }
 
   Future<void> _createV2(Database d) async {
@@ -124,6 +141,12 @@ class AppDatabase {
         "ALTER TABLE focus_sessions ADD COLUMN kind TEXT NOT NULL DEFAULT 'task'",
       );
       await _createV2(d);
+    }
+    if (from < 3) {
+      await d.execute(
+        'ALTER TABLE focus_sessions ADD COLUMN interrupt_tag TEXT',
+      );
+      await _createV3(d);
     }
   }
 }
