@@ -44,7 +44,18 @@ class FocusController extends Notifier<FocusView?> {
     final focus = ActiveFocus.fromJson(prefs.getString(_prefsKey));
     if (focus == null) return false;
     _publish(focus);
-    if (!(state?.finished ?? false)) _startTicker();
+    if (state?.finished ?? false) {
+      // Expired while the app was away: close the session row at its real end
+      // time so the deep-work stats stay honest even if the user never acts
+      // on the time-up sheet. A later end() just refines the outcome.
+      await _repo.endFocusSession(
+        sessionId: focus.sessionId,
+        completed: true,
+        endedAtMs: focus.endAtMs,
+      );
+    } else {
+      _startTicker();
+    }
     return true;
   }
 

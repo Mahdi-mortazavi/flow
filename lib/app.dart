@@ -23,6 +23,17 @@ class TakNoghteApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      // Respect the system font size up to 1.3× — beyond that the dense
+      // glass cards would overflow instead of helping anyone.
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        return MediaQuery(
+          data: mq.copyWith(
+            textScaler: mq.textScaler.clamp(maxScaleFactor: 1.3),
+          ),
+          child: child!,
+        );
+      },
       home: const _Gate(),
     );
   }

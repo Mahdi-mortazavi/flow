@@ -54,6 +54,7 @@ class TodayController extends AsyncNotifier<DayPlan> {
       prediction: prediction,
     );
     await _reload();
+    await syncDailyReminders(_repo, _dayKey);
   }
 
   Future<void> setTaskDone(String taskId, bool done) async {
@@ -67,6 +68,7 @@ class TodayController extends AsyncNotifier<DayPlan> {
   }) async {
     await _repo.closeDay(dayKey: _dayKey, whys: whys, note: note);
     await _reload();
+    await syncDailyReminders(_repo, _dayKey);
   }
 
   Future<void> reload() => _reload();
@@ -102,6 +104,12 @@ class ThoughtsController extends AsyncNotifier<List<Thought>> {
 
   Future<void> remove(String id) async {
     await _repo.deleteThought(id);
+    await _reload();
+  }
+
+  /// Undo for a delete: puts the thought back exactly as it was.
+  Future<void> restore(Thought t) async {
+    await _repo.restoreThought(t);
     await _reload();
   }
 
@@ -213,3 +221,24 @@ final statsProvider = FutureProvider<StatsData>((ref) {
     ..watch(habitsProvider);
   return ref.read(repoProvider).stats();
 });
+
+/// Re-plans the OS-level morning/evening/weekly nudges around today's state.
+/// Call after planning, closing the day, changing reminder times, or on day
+/// rollover.
+Future<void> syncDailyReminders(Repo repo, String dayKey) async {
+  final plan = await repo.dayPlan(dayKey);
+  final morning = await repo.reminderMinutes(
+    'rem_morning',
+    Repo.defaultMorningMin,
+  );
+  final evening = await repo.reminderMinutes(
+    'rem_evening',
+    Repo.defaultEveningMin,
+  );
+  await Notifications.instance.syncDailyReminders(
+    plannedToday: plan.planned,
+    closedToday: plan.closed,
+    morningMinutes: morning,
+    eveningMinutes: evening,
+  );
+}

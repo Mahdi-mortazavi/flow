@@ -25,7 +25,8 @@ class StatsScreen extends ConsumerWidget {
             constraints: const BoxConstraints(maxWidth: 480),
             child: statsAsync.when(
               loading: () => const SizedBox.shrink(),
-              error: (e, _) => Center(child: Text('$e')),
+              error: (e, _) =>
+                  ErrorCard(onRetry: () => ref.invalidate(statsProvider)),
               data: (s) => _StatsBody(stats: s),
             ),
           ),

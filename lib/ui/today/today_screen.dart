@@ -13,6 +13,7 @@ import '../evening/evening_sheet.dart';
 import '../focus/focus_screen.dart';
 import '../habits/friction_sheet.dart';
 import '../habits/habit_editor.dart';
+import '../settings/settings_sheet.dart';
 import '../stats/review_sheet.dart';
 import '../stats/stats_screen.dart';
 import '../vault/vault_sheet.dart';
@@ -29,24 +30,40 @@ class TodayScreen extends ConsumerStatefulWidget {
 class _TodayScreenState extends ConsumerState<TodayScreen>
     with WidgetsBindingObserver {
   var _bootstrapped = false;
+  Timer? _dayWatch;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+    // Midnight rollover while the app stays open: cheap 30s check.
+    _dayWatch = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _onPossibleDayChange(),
+    );
   }
 
   @override
   void dispose() {
+    _dayWatch?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      ref.read(dayKeyProvider.notifier).refresh();
+    if (state == AppLifecycleState.resumed) _onPossibleDayChange();
+  }
+
+  Future<void> _onPossibleDayChange() async {
+    if (!ref.read(dayKeyProvider.notifier).refresh()) return;
+    await syncDailyReminders(ref.read(repoProvider), ref.read(dayKeyProvider));
+    // Fresh day: open the wizard unless a focus session is running.
+    final plan = await ref.read(todayProvider.future);
+    if (!mounted) return;
+    if (!plan.planned && ref.read(focusProvider) == null) {
+      unawaited(openMorningWizard(context, ref));
     }
   }
 
@@ -63,6 +80,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
     final habits = await ref.read(habitsProvider.future);
     if (!mounted) return;
     await Notifications.instance.syncHabitReminders(habits);
+    if (!mounted) return;
+    await syncDailyReminders(ref.read(repoProvider), ref.read(dayKeyProvider));
     if (!mounted) return;
     final restored = await ref.read(focusProvider.notifier).restore();
     if (!mounted) return;
@@ -91,12 +110,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
                 constraints: const BoxConstraints(maxWidth: 480),
                 child: planAsync.when(
                   loading: () => const SizedBox.shrink(),
-                  error: (e, _) => Center(
-                    child: Text(
-                      '$e',
-                      style: TextStyle(color: Tone.ink3, fontSize: 12),
-                    ),
-                  ),
+                  error: (e, _) =>
+                      ErrorCard(onRetry: () => ref.invalidate(todayProvider)),
                   data: (plan) => _TodayBody(plan: plan),
                 ),
               ),
@@ -240,6 +255,11 @@ class _Header extends ConsumerWidget {
               ],
             ),
           ),
+          _IconBtn(
+            icon: Icons.tune_rounded,
+            onTap: () => openSettingsSheet(context),
+          ),
+          const SizedBox(width: 8),
           _IconBtn(
             icon: Icons.bar_chart_rounded,
             onTap: () => Navigator.of(context).push(StatsScreen.route()),
@@ -433,31 +453,40 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
                 ],
               ),
               const SizedBox(height: 17),
-              Row(
-                children: [
-                  if (!b.done) ...[
-                    Expanded(
-                      child: Pill(
-                        'شروع تمرکز',
-                        style: PillStyle.ember,
-                        icon: Icons.play_arrow_rounded,
-                        onTap: () => startFocusFlow(
-                          context,
-                          ref,
-                          taskId: b.taskId,
-                          title: b.title,
+              // Absorb stray taps around the buttons so a near-miss never
+              // triggers the card's start-focus action by accident.
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {},
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Row(
+                    children: [
+                      if (!b.done) ...[
+                        Expanded(
+                          child: Pill(
+                            'شروع تمرکز',
+                            style: PillStyle.ember,
+                            icon: Icons.play_arrow_rounded,
+                            onTap: () => startFocusFlow(
+                              context,
+                              ref,
+                              taskId: b.taskId,
+                              title: b.title,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                      ],
+                      Expanded(
+                        child: Pill(
+                          b.done ? 'برگردان' : 'علامتِ انجام',
+                          onTap: () => _toggleBoulder(context, ref, plan, b),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                  ],
-                  Expanded(
-                    child: Pill(
-                      b.done ? 'برگردان' : 'علامتِ انجام',
-                      onTap: () => _toggleBoulder(context, ref, plan, b),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ],
           ),

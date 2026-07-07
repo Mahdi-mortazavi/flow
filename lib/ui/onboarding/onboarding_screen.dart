@@ -2,22 +2,26 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/fa.dart';
 import '../../core/theme.dart';
+import '../../data/repo.dart';
+import '../../state/providers.dart';
 import '../today/today_screen.dart';
 import '../widgets/glass.dart';
 
 const onboardedKey = 'onboarded_v1';
 
 /// Apple-style onboarding: one idea per screen, oversized type, generous
-/// whitespace, a single warm accent. Swipe through, or skip — the app
-/// itself is the real tutorial.
-class OnboardingScreen extends StatefulWidget {
+/// whitespace, a single warm accent. The last screen does real work — it
+/// sets the two reminder times that keep the daily loop alive.
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
 class _Slide {
@@ -27,9 +31,11 @@ class _Slide {
   const _Slide({required this.visual, required this.title, required this.body});
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = PageController();
   var _page = 0;
+  var _morning = Repo.defaultMorningMin;
+  var _evening = Repo.defaultEveningMin;
 
   static final _slides = [
     const _Slide(
@@ -51,10 +57,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           'اینجا زنجیرِ تنبیهی نداریم.\nقهرمانِ عادت کسی است که فردایِ شکست برمی‌گردد.\nما همان روز را می‌شماریم.',
     ),
     _Slide(
-      visual: _icon(Icons.lock_rounded),
-      title: 'فقط روی گوشیِ تو',
+      visual: _icon(Icons.notifications_active_rounded),
+      title: 'دو قرارِ کوچک با خودت',
       body:
-          'بدون اکانت، بدون سرور، بدون ردیابی.\nهمه‌چیز همین‌جا می‌ماند.\nآماده‌ای؟ روزت را بچین.',
+          'صبح، یک یادآوریِ چیدن.\nشب، یک یادآوریِ بستن.\nهمه‌چیز فقط روی گوشیِ خودت می‌ماند — بدون اکانت، بدون ردیابی.',
     ),
   ];
 
@@ -82,6 +88,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _finish() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(onboardedKey, true);
+    // Persist the two daily nudges and put them on the OS scheduler.
+    final repo = ref.read(repoProvider);
+    await repo.setReminderMinutes('rem_morning', _morning);
+    await repo.setReminderMinutes('rem_evening', _evening);
+    await syncDailyReminders(repo, ref.read(dayKeyProvider));
     if (!mounted) return;
     unawaited(
       Navigator.of(context).pushReplacement(
@@ -91,6 +102,44 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               FadeTransition(opacity: anim, child: child),
           transitionDuration: const Duration(milliseconds: 450),
         ),
+      ),
+    );
+  }
+
+  Widget _reminderRow(String label, int value, ValueChanged<int> onChanged) {
+    return GlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      onTap: () async {
+        final v = await showWheelTimePicker(
+          context,
+          initialMinutes: value,
+          title: label,
+        );
+        if (v != null) onChanged(v);
+      },
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Text(
+            faNum(
+              '${(value ~/ 60).toString().padLeft(2, '0')}:${(value % 60).toString().padLeft(2, '0')}',
+            ),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Tone.ember,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -129,6 +178,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
                 itemBuilder: (_, i) {
                   final s = _slides[i];
+                  final isLast = i == _slides.length - 1;
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 36),
                     child: Column(
@@ -155,6 +205,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             height: 2.1,
                           ),
                         ),
+                        if (isLast) ...[
+                          const SizedBox(height: 26),
+                          _reminderRow(
+                            'یادآور صبح',
+                            _morning,
+                            (v) => setState(() => _morning = v),
+                          ),
+                          const SizedBox(height: 8),
+                          _reminderRow(
+                            'یادآور شب',
+                            _evening,
+                            (v) => setState(() => _evening = v),
+                          ),
+                        ],
                         const SizedBox(height: 60),
                       ],
                     ),

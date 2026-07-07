@@ -31,7 +31,9 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
   List<_ReviewItem>? _items;
   var _index = 0;
   var _kept = 0;
-  var _cut = 0;
+  // Deletions are collected here and only committed at the end, so
+  // abandoning the sheet halfway loses nothing.
+  final _toCut = <_ReviewItem>[];
 
   @override
   void initState() {
@@ -56,20 +58,21 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
   Future<void> _answer(bool keep) async {
     final items = _items;
     if (items == null || _index >= items.length) return;
-    final item = items[_index];
     if (keep) {
       _kept++;
     } else {
-      _cut++;
-      if (item.isHabit) {
-        await ref.read(habitsProvider.notifier).remove(item.id);
-      } else {
-        await ref.read(repoProvider).deleteBacklog(item.id);
-      }
+      _toCut.add(items[_index]);
     }
-    if (!mounted) return;
     setState(() => _index++);
     if (_index >= items.length) {
+      // Commit everything at once, only now.
+      for (final item in _toCut) {
+        if (item.isHabit) {
+          await ref.read(habitsProvider.notifier).remove(item.id);
+        } else {
+          await ref.read(repoProvider).deleteBacklog(item.id);
+        }
+      }
       await ref.read(repoProvider).markReviewDone();
       ref.invalidate(statsProvider);
     }
@@ -213,7 +216,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
               ),
               const SizedBox(height: 9),
               Text(
-                '${faNum(_kept)} ماند · ${faNum(_cut)} حذف شد',
+                '${faNum(_kept)} ماند · ${faNum(_toCut.length)} حذف شد',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w300,

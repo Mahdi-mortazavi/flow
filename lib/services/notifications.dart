@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show Color;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
@@ -9,12 +10,19 @@ import '../data/repo.dart';
 /// Local notifications: the end-of-focus alarm must fire even if the app is
 /// killed, so it is scheduled on the OS at session start. Habit reminders
 /// repeat daily at the anchor time and carry a one-tap «انجام شد» action.
+/// The retention loop (morning plan / evening review / weekly mirror) also
+/// lives on the OS scheduler so it works without the app running.
 class Notifications {
   Notifications._();
   static final Notifications instance = Notifications._();
 
   static const _focusEndId = 1001;
+  static const _morningId = 3001;
+  static const _eveningId = 3002;
+  static const _weeklyId = 3003;
   static const _habitDoneAction = 'habit_done';
+  static const _habitCategory = 'habit_cue';
+  static const _ember = Color(0xFFEFA55C);
 
   final _plugin = FlutterLocalNotificationsPlugin();
   var _ready = false;
@@ -26,14 +34,26 @@ class Notifications {
   Future<void> init() async {
     if (_ready) return;
     tzdata.initializeTimeZones();
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const ios = DarwinInitializationSettings(
+    const android = AndroidInitializationSettings('ic_stat_dot');
+    final ios = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
+      notificationCategories: [
+        DarwinNotificationCategory(
+          _habitCategory,
+          actions: [
+            DarwinNotificationAction.plain(
+              _habitDoneAction,
+              'انجام شد ✓',
+              options: {DarwinNotificationActionOption.foreground},
+            ),
+          ],
+        ),
+      ],
     );
     await _plugin.initialize(
-      settings: const InitializationSettings(android: android, iOS: ios),
+      settings: InitializationSettings(android: android, iOS: ios),
       onDidReceiveNotificationResponse: _onResponse,
     );
     _ready = true;
@@ -61,16 +81,40 @@ class Notifications {
 
   Future<void> requestPermissions() async {
     await init();
-    await _plugin
+    final android = _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.requestNotificationsPermission();
+        >();
+    await android?.requestNotificationsPermission();
+    // Android 12+: exact alarms need a user grant; the focus-end bell is the
+    // whole point of the timer, so ask once up front.
+    try {
+      if (!(await android?.canScheduleExactNotifications() ?? true)) {
+        await android?.requestExactAlarmsPermission();
+      }
+    } catch (_) {
+      // Older plugin/OS combinations — inexact fallback covers us.
+    }
     await _plugin
         .resolvePlatformSpecificImplementation<
           IOSFlutterLocalNotificationsPlugin
         >()
         ?.requestPermissions(alert: true, badge: true, sound: true);
+  }
+
+  /// Whether the focus-end alarm will ring on time (exact) or may drift.
+  Future<bool> exactAlarmsAllowed() async {
+    await init();
+    try {
+      return await _plugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >()
+              ?.canScheduleExactNotifications() ??
+          true;
+    } catch (_) {
+      return true;
+    }
   }
 
   // ---------- focus end alarm ----------
@@ -86,6 +130,7 @@ class Notifications {
         importance: Importance.max,
         priority: Priority.high,
         category: AndroidNotificationCategory.alarm,
+        color: _ember,
       ),
       iOS: DarwinNotificationDetails(
         presentAlert: true,
@@ -104,8 +149,7 @@ class Notifications {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
     } catch (_) {
-      // Exact alarms may be denied on Android 12+; an inexact alarm is
-      // acceptable for a focus timer.
+      // Exact alarms denied — an inexact alarm is an acceptable fallback.
       await _plugin.zonedSchedule(
         id: _focusEndId,
         title: 'زمان تمام شد',
@@ -125,13 +169,13 @@ class Notifications {
   // ---------- habit reminders ----------
 
   /// Stable notification id per habit (FNV-1a, kept positive and clear of
-  /// the reserved focus id).
+  /// the reserved ids).
   static int habitNotifId(String habitId) {
     var hash = 0x811c9dc5;
     for (final c in habitId.codeUnits) {
       hash = ((hash ^ c) * 0x01000193) & 0x7fffffff;
     }
-    return 2000 + (hash % 100000000);
+    return 10000 + (hash % 100000000);
   }
 
   /// (Re)schedules the daily reminder at the habit's anchor time.
@@ -143,17 +187,6 @@ class Notifications {
       await _plugin.cancel(id: id);
       return;
     }
-    final now = tz.TZDateTime.now(tz.local);
-    var when = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      minutes ~/ 60,
-      minutes % 60,
-    );
-    if (!when.isAfter(now)) when = when.add(const Duration(days: 1));
-
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
         'habit_cue',
@@ -162,6 +195,7 @@ class Notifications {
         importance: Importance.high,
         priority: Priority.high,
         category: AndroidNotificationCategory.reminder,
+        color: _ember,
         actions: [
           AndroidNotificationAction(
             _habitDoneAction,
@@ -170,7 +204,10 @@ class Notifications {
           ),
         ],
       ),
-      iOS: DarwinNotificationDetails(presentAlert: true),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        categoryIdentifier: _habitCategory,
+      ),
     );
     await _plugin.zonedSchedule(
       id: id,
@@ -178,7 +215,7 @@ class Notifications {
       body: habit.isBad
           ? 'مراقب باش — به‌جایش: ${habit.replacement.isEmpty ? 'دو دقیقه قدم بزن' : habit.replacement}'
           : '${habit.title} — نسخهٔ ۲ دقیقه‌ای هم قبول است.',
-      scheduledDate: when,
+      scheduledDate: _nextOccurrence(minutes),
       notificationDetails: details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
@@ -196,5 +233,86 @@ class Notifications {
     for (final h in habits) {
       await scheduleHabitReminder(h);
     }
+  }
+
+  // ---------- retention loop: morning / evening / weekly ----------
+
+  tz.TZDateTime _nextOccurrence(int minutesOfDay, {bool skipToday = false}) {
+    final now = tz.TZDateTime.now(tz.local);
+    var when = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      minutesOfDay ~/ 60,
+      minutesOfDay % 60,
+    );
+    if (skipToday || !when.isAfter(now)) {
+      when = when.add(const Duration(days: 1));
+    }
+    return when;
+  }
+
+  static const _quietDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      'daily_ritual',
+      'یادآور روزانه',
+      channelDescription: 'یادآور چیدن صبح و مرور شب',
+      color: _ember,
+    ),
+    iOS: DarwinNotificationDetails(presentAlert: true),
+  );
+
+  /// Re-plans the morning/evening nudges around today's actual state:
+  /// planned already → today's morning nudge is skipped; day closed →
+  /// tonight's nudge is skipped. Repeats daily after the first fire.
+  Future<void> syncDailyReminders({
+    required bool plannedToday,
+    required bool closedToday,
+    required int? morningMinutes,
+    required int? eveningMinutes,
+  }) async {
+    await init();
+    await _plugin.cancel(id: _morningId);
+    await _plugin.cancel(id: _eveningId);
+
+    if (morningMinutes != null) {
+      await _plugin.zonedSchedule(
+        id: _morningId,
+        title: 'روزت هنوز چیده نشده',
+        body: 'سه کار، یک تخته‌سنگ، یک پیش‌بینی — کمتر از یک دقیقه.',
+        scheduledDate: _nextOccurrence(morningMinutes, skipToday: plannedToday),
+        notificationDetails: _quietDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    }
+    if (eveningMinutes != null) {
+      await _plugin.zonedSchedule(
+        id: _eveningId,
+        title: 'مرور شب',
+        body: '۶۰ ثانیه: چک، چرا، یک خط — و روز بسته می‌شود.',
+        scheduledDate: _nextOccurrence(eveningMinutes, skipToday: closedToday),
+        notificationDetails: _quietDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    }
+
+    // Weekly mirror nudge — Friday 20:30, repeats weekly.
+    final now = tz.TZDateTime.now(tz.local);
+    var weekly = tz.TZDateTime(tz.local, now.year, now.month, now.day, 20, 30);
+    while (weekly.weekday != DateTime.friday || !weekly.isAfter(now)) {
+      weekly = weekly.add(const Duration(days: 1));
+    }
+    await _plugin.zonedSchedule(
+      id: _weeklyId,
+      title: 'هفته تمام شد',
+      body: 'یک نگاه به آینه بینداز — اعداد، قضاوت نیستند.',
+      scheduledDate: weekly,
+      notificationDetails: _quietDetails,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+    );
   }
 }

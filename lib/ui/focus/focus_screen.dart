@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/fa.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
+import '../../services/notifications.dart';
 import '../../state/focus_controller.dart';
 import '../../state/providers.dart';
 import '../widgets/glass.dart';
@@ -78,6 +79,15 @@ class FocusScreen extends ConsumerStatefulWidget {
 
 class _FocusScreenState extends ConsumerState<FocusScreen> {
   var _timeUpShown = false;
+  var _exactAlarms = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Notifications.instance.exactAlarmsAllowed().then((ok) {
+      if (mounted && !ok) setState(() => _exactAlarms = false);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,6 +189,14 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                   ),
                 ],
               ),
+              if (!_exactAlarms) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'اجازهٔ زنگ دقیق داده نشده — زنگ پایان ممکن است کمی دیر برسد.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 10.5, color: Tone.ink3),
+                ),
+              ],
               const Spacer(flex: 3),
               Pressable(
                 onTap: () => _attemptEarlyEnd(view),
@@ -343,7 +361,9 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
         _timeUpShown = false;
         await n.extend(10);
       case _:
-        await n.end(completed: true);
+        // «هنوز نه»: the session ran its course but the outcome wasn't
+        // confirmed — keep the stats honest.
+        await n.end(completed: false);
     }
   }
 }

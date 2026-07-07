@@ -11,6 +11,7 @@ void main() {
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
+    AppDatabase.fileName = 'test_habits_stats.db';
   });
 
   setUp(() async {

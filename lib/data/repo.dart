@@ -250,14 +250,25 @@ class Repo {
   }
 
   /// Promote a thought: becomes a backlog item, and lands directly on today's
-  /// list when there is room. Returns true if it made it onto today.
+  /// list when there is room — never on a closed day. Returns true if it made
+  /// it onto today.
   Future<bool> promoteThought(Thought t, String dayKey) async {
     final plan = await dayPlan(dayKey);
     final item = await addBacklog(t.text);
     await deleteThought(t.id);
-    final hasRoom = plan.planned && plan.tasks.length < 3;
+    final hasRoom = plan.planned && !plan.closed && plan.tasks.length < 3;
     if (hasRoom) await addTaskToDay(dayKey, item);
     return hasRoom;
+  }
+
+  /// Puts a deleted thought back exactly as it was (undo).
+  Future<void> restoreThought(Thought t) async {
+    await (await _db).insert('thoughts', {
+      'id': t.id,
+      'text': t.text,
+      'category': t.category.db,
+      'created_at': t.createdAt.millisecondsSinceEpoch,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   // ---------- focus sessions ----------
@@ -283,17 +294,20 @@ class Repo {
     return id;
   }
 
+  /// [endedAtMs] lets a session that expired while the app was dead be closed
+  /// at its real end time instead of "now".
   Future<void> endFocusSession({
     required String sessionId,
     required bool completed,
     String? interruptNote,
+    int? endedAtMs,
   }) async {
     await (await _db).update(
       'focus_sessions',
       {
-        'ended_at': DateTime.now().millisecondsSinceEpoch,
+        'ended_at': endedAtMs ?? DateTime.now().millisecondsSinceEpoch,
         'completed': completed ? 1 : 0,
-        'interrupt_note': interruptNote,
+        if (interruptNote != null) 'interrupt_note': interruptNote,
       },
       where: 'id = ?',
       whereArgs: [sessionId],
@@ -452,6 +466,86 @@ class Repo {
   // ---------- zero-based review ----------
 
   Future<void> markReviewDone() => setSetting('last_review', todayKey());
+
+  // ---------- daily reminders (retention loop) ----------
+
+  static const defaultMorningMin = 8 * 60 + 30;
+  static const defaultEveningMin = 21 * 60 + 30;
+
+  /// Reminder minute-of-day, or null when the user turned it off.
+  Future<int?> reminderMinutes(String key, int fallback) async {
+    final raw = await getSetting(key);
+    if (raw == null) return fallback;
+    if (raw == 'off') return null;
+    return int.tryParse(raw) ?? fallback;
+  }
+
+  Future<void> setReminderMinutes(String key, int? minutes) =>
+      setSetting(key, minutes == null ? 'off' : '$minutes');
+
+  // ---------- backup / restore ----------
+
+  static const _exportTables = [
+    'backlog',
+    'days',
+    'day_tasks',
+    'thoughts',
+    'focus_sessions',
+    'habits',
+    'habit_logs',
+    'energy_checks',
+    'settings',
+  ];
+
+  /// Full snapshot of every table as portable JSON.
+  Future<String> exportJson() async {
+    final d = await _db;
+    final tables = <String, List<Map<String, Object?>>>{};
+    for (final t in _exportTables) {
+      tables[t] = await d.query(t);
+    }
+    return jsonEncode({
+      'app': 'taknoghte',
+      'version': 1,
+      'exportedAt': DateTime.now().toIso8601String(),
+      'tables': tables,
+    });
+  }
+
+  /// Replaces ALL local data with the backup. Caller must confirm first.
+  /// Throws [FormatException] on anything that is not a valid backup.
+  Future<void> importJson(String raw) async {
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } catch (_) {
+      throw const FormatException('not json');
+    }
+    if (decoded is! Map<String, dynamic> ||
+        decoded['app'] != 'taknoghte' ||
+        decoded['version'] != 1 ||
+        decoded['tables'] is! Map<String, dynamic>) {
+      throw const FormatException('not a taknoghte backup');
+    }
+    final tables = decoded['tables'] as Map<String, dynamic>;
+    final d = await _db;
+    await d.transaction((tx) async {
+      for (final t in _exportTables) {
+        await tx.delete(t);
+        final rows = tables[t];
+        if (rows is! List) continue;
+        for (final row in rows) {
+          if (row is Map) {
+            await tx.insert(
+              t,
+              row.cast<String, Object?>(),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+        }
+      }
+    });
+  }
 
   // ---------- stats (the mirror) ----------
 

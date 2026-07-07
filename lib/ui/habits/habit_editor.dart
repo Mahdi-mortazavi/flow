@@ -1,10 +1,3 @@
-import 'package:flutter/cupertino.dart'
-    show
-        CupertinoDatePicker,
-        CupertinoDatePickerMode,
-        CupertinoTextThemeData,
-        CupertinoTheme,
-        CupertinoThemeData;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -47,63 +40,15 @@ class _HabitEditorState extends ConsumerState<_HabitEditor> {
     super.dispose();
   }
 
-  /// iOS-style wheel picker inside a glass sheet.
   Future<void> _pickTime() async {
-    final initial = _reminderMinutes ?? 8 * 60;
-    var selected = initial;
-    final ok = await showGlassSheet<bool>(
+    final picked = await showWheelTimePicker(
       context,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.only(bottom: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SheetHeader(
-              'ساعتِ یادآور',
-              sub: 'همان لحظه‌ای که لنگر اتفاق می‌افتد.',
-            ),
-            SizedBox(
-              height: 190,
-              child: CupertinoTheme(
-                data: const CupertinoThemeData(
-                  brightness: Brightness.dark,
-                  textTheme: CupertinoTextThemeData(
-                    dateTimePickerTextStyle: TextStyle(
-                      fontFamily: 'Vazirmatn',
-                      fontSize: 21,
-                      color: Tone.ink,
-                    ),
-                  ),
-                ),
-                child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.time,
-                  use24hFormat: true,
-                  initialDateTime: DateTime(
-                    2026,
-                    1,
-                    1,
-                    initial ~/ 60,
-                    initial % 60,
-                  ),
-                  onDateTimeChanged: (d) => selected = d.hour * 60 + d.minute,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-              child: Pill(
-                'تنظیم',
-                style: PillStyle.ember,
-                onTap: () => Navigator.pop(ctx, true),
-              ),
-            ),
-          ],
-        ),
-      ),
+      initialMinutes: _reminderMinutes ?? 8 * 60,
+      title: 'ساعتِ یادآور',
+      sub: 'همان لحظه‌ای که لنگر اتفاق می‌افتد.',
     );
-    if (ok == true && mounted) {
-      setState(() => _reminderMinutes = selected);
+    if (picked != null && mounted) {
+      setState(() => _reminderMinutes = picked);
     }
   }
 

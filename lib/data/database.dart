@@ -5,6 +5,9 @@ class AppDatabase {
   AppDatabase._();
   static final AppDatabase instance = AppDatabase._();
 
+  /// Overridable so parallel test isolates don't share one file.
+  static String fileName = 'taknoghte.db';
+
   Database? _db;
 
   Future<Database> get db async {
@@ -12,7 +15,7 @@ class AppDatabase {
     if (existing != null) return existing;
     final dir = await getDatabasesPath();
     final database = await openDatabase(
-      p.join(dir, 'taknoghte.db'),
+      p.join(dir, fileName),
       version: 2,
       onConfigure: (d) => d.execute('PRAGMA foreign_keys = ON'),
       onCreate: _createAll,

@@ -198,8 +198,16 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
                 }),
                 const SizedBox(width: 4),
                 _tinyBtn(Icons.close_rounded, () async {
-                  await ref.read(thoughtsProvider.notifier).remove(t.id);
-                  if (mounted) showToast(context, 'حذف شد');
+                  final n = ref.read(thoughtsProvider.notifier);
+                  await n.remove(t.id);
+                  if (!mounted) return;
+                  // Nothing is ever lost: 5 seconds to change your mind.
+                  showToast(
+                    context,
+                    'حذف شد',
+                    actionLabel: 'برگردان',
+                    onAction: () => n.restore(t),
+                  );
                 }),
               ],
             ),
@@ -254,12 +262,17 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
     );
   }
 
-  Widget _tinyBtn(IconData icon, VoidCallback onTap) => Pressable(
-    onTap: onTap,
-    child: SizedBox(
-      width: 30,
-      height: 30,
-      child: Icon(icon, size: 14, color: Tone.ink3),
+  // 44px hit target around a small glyph (a11y minimum).
+  Widget _tinyBtn(IconData icon, VoidCallback onTap) => Semantics(
+    button: true,
+    label: icon == Icons.close_rounded ? 'حذف' : 'ویرایش',
+    child: Pressable(
+      onTap: onTap,
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: Icon(icon, size: 14, color: Tone.ink3),
+      ),
     ),
   );
 }

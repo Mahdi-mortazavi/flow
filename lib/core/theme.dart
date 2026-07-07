@@ -7,7 +7,8 @@ abstract final class Tone {
   static const bg = Color(0xFF060608);
   static const ink = Color(0xFFF5F5F7);
   static Color get ink2 => ink.withValues(alpha: .55);
-  static Color get ink3 => ink.withValues(alpha: .30);
+  // a11y: informational text kept at ≥38% white for contrast on the dark bg.
+  static Color get ink3 => ink.withValues(alpha: .38);
 
   static const ember = Color(0xFFEFA55C);
   static const emberInk = Color(0xFF1C1207);
