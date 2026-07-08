@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart' show Color;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
@@ -52,10 +53,18 @@ class Notifications {
         ),
       ],
     );
-    await _plugin.initialize(
-      settings: InitializationSettings(android: android, iOS: ios),
-      onDidReceiveNotificationResponse: _onResponse,
-    );
+    // Never let a plugin/resource failure escape: a missing notification icon
+    // or an OEM quirk must degrade notifications gracefully, not crash the
+    // whole app (this runs during startup). Marked ready either way so we
+    // don't spin retrying a permanent failure.
+    try {
+      await _plugin.initialize(
+        settings: InitializationSettings(android: android, iOS: ios),
+        onDidReceiveNotificationResponse: _onResponse,
+      );
+    } catch (e, st) {
+      debugPrint('Notifications.init failed (non-fatal): $e\n$st');
+    }
     _ready = true;
   }
 

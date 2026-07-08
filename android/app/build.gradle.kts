@@ -36,6 +36,13 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // Keep code AND resources intact. The notification icon
+            // (ic_stat_dot) is referenced only by a runtime Dart string, so the
+            // resource shrinker treated it as unused and dropped it from
+            // release — which crashed startup with invalid_icon on some
+            // devices. No obfuscation is needed for an offline, open app.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
