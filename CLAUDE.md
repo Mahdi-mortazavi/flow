@@ -45,6 +45,18 @@ boulder (تخته‌سنگ) and primary CTAs. Font: Vazirmatn (bundled, weights 
 - Phase 4: home widget, live activity, identity/values layer, DND.
 
 ## Known quirks
+- RELEASE-ONLY crash class (fixed v0.5.1): resources referenced only from a
+  Dart runtime string (e.g. the `ic_stat_dot` notification icon) get dropped
+  by the release resource shrinker → `flutter_local_notifications` throws
+  `invalid_icon`. Because `main()` awaited `Notifications.init()` before
+  `runApp()`, that threw before first frame → blank-screen on launch (seen on
+  Galaxy A30s / Mali / Android 11; debug builds are unaffected since they
+  don't shrink). Fixes: (1) `ic_stat_dot` is now PNG in every drawable-*dpi +
+  `res/raw/keep.xml` + `isShrinkResources/isMinifyEnabled = false` in the
+  release buildType; (2) notification init is fully guarded and never blocks
+  `runApp()`. Rule: never do failable async work before `runApp()`; verify
+  release (not just debug) on a Mali device. `aapt2 dump resources <apk>` to
+  check a resource survived the release build.
 - The v0.4.0 GitHub release/tag was cut from a stale commit (commit failed
   because the -m here-string contained double quotes → tag landed on the
   old HEAD). v0.4.1 is the correct release. Write commit messages to a temp

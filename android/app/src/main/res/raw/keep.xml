@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ic_stat_dot is referenced only from Dart at runtime, so the resource
+     shrinker would drop it in release builds. Pin it explicitly. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_dot"
+    tools:shrinkMode="safe" />
