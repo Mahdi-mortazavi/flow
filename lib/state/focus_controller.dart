@@ -163,6 +163,10 @@ class FocusController extends Notifier<FocusView?> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefsKey);
     state = null;
+    // The mirror reads focus_sessions (deep-work minutes + interrupt tags),
+    // which nothing else invalidates — refresh it so a just-ended session is
+    // reflected immediately instead of on the next app restart.
+    ref.invalidate(statsProvider);
   }
 
   void _publish(ActiveFocus focus) {

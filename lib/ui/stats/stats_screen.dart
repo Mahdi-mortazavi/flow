@@ -119,7 +119,7 @@ class _StatsBody extends ConsumerWidget {
           ),
         const SizedBox(height: 24),
         _eyebrow('کارِ عمیق — ۷ روز اخیر'),
-        _FocusChart(minutes: s.focusMinutesLast7),
+        FocusChart(minutes: s.focusMinutesLast7),
         Padding(
           padding: const EdgeInsets.fromLTRB(6, 8, 6, 0),
           child: Text(
@@ -276,17 +276,19 @@ class _StatsBody extends ConsumerWidget {
 }
 
 /// Seven slim bars, today at the end (start side in RTL is right).
-class _FocusChart extends StatelessWidget {
+class FocusChart extends StatelessWidget {
   final List<int> minutes;
-  const _FocusChart({required this.minutes});
+  const FocusChart({super.key, required this.minutes});
 
   @override
   Widget build(BuildContext context) {
     final maxM = minutes.fold(0, (a, b) => a > b ? a : b);
     return GlassCard(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
+      // Tall enough that the top value label + bar + «امروز» label fit even at
+      // the 1.3× text scale the app allows — otherwise the column overflows.
       child: SizedBox(
-        height: 96,
+        height: 118,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -304,7 +306,7 @@ class _FocusChart extends StatelessWidget {
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 500),
                       curve: Tone.easeOut,
-                      height: maxM == 0 ? 3 : 3 + 60 * (minutes[i] / maxM),
+                      height: maxM == 0 ? 3 : 3 + 52 * (minutes[i] / maxM),
                       decoration: BoxDecoration(
                         color: i == 6
                             ? Tone.ember

@@ -47,3 +47,7 @@ app.*.map.json
 # Gradle root-project build output
 /android/build/
 /android/.gradle/
+
+# Working device captures (may contain real personal data — curate before
+# committing any preview images)
+/docs/screenshots/raw/
