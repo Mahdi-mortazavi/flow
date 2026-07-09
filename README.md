@@ -30,6 +30,24 @@
 
 ---
 
+## 📱 پیش‌نمایش
+
+<div align="center">
+<table>
+<tr>
+<td align="center" width="25%"><img src="docs/screenshots/today.png" alt="صفحه‌ی امروز — تخته‌سنگ" width="200"/><br/><sub><b>امروز</b><br/>تخته‌سنگ + پیش‌بینی</sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/focus.png" alt="تایمر تمرکز" width="200"/><br/><sub><b>تمرکز</b><br/>رینگ ضدضربه</sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/interrupt.png" alt="چیپ‌های قطع تمرکز" width="200"/><br/><sub><b>قطع تمرکز</b><br/>ثبتِ یک‌لمسی</sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/mirror.png" alt="آینه — آمار" width="200"/><br/><sub><b>آینه</b><br/>آمارِ بدونِ قضاوت</sub></td>
+</tr>
+</table>
+
+<sub>روی دستگاه واقعی (اندروید، RTL فارسی، فونت وزیرمتن) — <a href="docs/screenshots/settings.png">یادآورها و پشتیبان‌گیری</a></sub>
+
+</div>
+
+---
+
 ## 🧠 مسئله
 
 هر ابزارِ بهره‌وری‌ای که تا امروز نصب کرده‌ای، یک فرضِ غلط دارد: **«اگر لیستِ بهتری داشته باشی، بهتر عمل می‌کنی.»** اما داده‌ی رفتاری خلافش را می‌گوید. مشکلِ واقعی جای دیگری است:
