@@ -40,8 +40,11 @@ boulder (تخته‌سنگ) and primary CTAs. Font: Vazirmatn (bundled, weights 
   fun soft-lock until boulder falls (temptation bundling), optimism hint
   gated to ≥5 closed nights (StatsData.optimismReliable), quick_actions app
   shortcut «ثبت فکر». DB v3 adds focus_sessions.interrupt_tag + day/tag
-  indexes. Screenshots (README preview) still pending a real device — see
-  docs/screenshots/README.md.
+  indexes.
+- Distribution sprint (done, v0.5.2): fixed "problem parsing the package" —
+  releases now ship a universal APK alongside the per-ABI splits, are signed
+  with a real release key, and every artifact is verified in CI before it can
+  be published. README has a real-device screenshot gallery.
 - Phase 4: home widget, live activity, identity/values layer, DND.
 
 ## Known quirks
@@ -65,10 +68,22 @@ boulder (تخته‌سنگ) and primary CTAs. Font: Vazirmatn (bundled, weights 
   isolates must not share one sqlite file.
 
 ## Releases
-- Pushing a `v*` tag builds and publishes a GitHub Release with the
-  arm64-v8a APK + sha256 (softprops/action-gh-release, needs
-  `permissions: contents: write`). Release body comes from RELEASE_NOTES.md —
-  update it BEFORE tagging. Version lives in pubspec (`version: x.y.z+n`).
+- Pushing a `v*` tag publishes a GitHub Release with FOUR APKs + a `.sha256`
+  each: `universal` (all ABIs — the one to hand users) plus `arm64-v8a`,
+  `armeabi-v7a`, `x86_64`. Release body comes from RELEASE_NOTES.md — update
+  it BEFORE tagging. Version lives in pubspec (`version: x.y.z+n`).
+- Release signing (v0.5.2+) uses a real keystore, NOT the debug key. The
+  keystore lives OUTSIDE the repo at `E:\flow-signing\` (with backups +
+  KEYSTORE-README.txt); CI reads it from the `ANDROID_KEYSTORE_BASE64` /
+  `_PASSWORD` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD` secrets. Losing
+  that keystore means no user can ever update in place again.
+- The workflow verifies every APK before publishing and aborts on failure:
+  zip integrity, `aapt dump badging` (minSdk 24), universal really carries all
+  three ABIs, `apksigner verify` with v2+v3, and it REFUSES to publish
+  anything signed with the Android debug certificate.
+- SDK levels are pinned explicitly in `app/build.gradle.kts` (minSdk 24 /
+  target 36 / compile 36), not inherited from `flutter.*`, so an SDK bump
+  can't silently change which devices can install.
 
 ## Architecture
 - `lib/core/` — `theme.dart` (class `Tone`: design tokens; NOT `Ink` — clashes
