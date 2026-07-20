@@ -51,3 +51,8 @@ app.*.map.json
 # Working device captures (may contain real personal data — curate before
 # committing any preview images)
 /docs/screenshots/raw/
+
+# Android release signing (never commit)
+/android/key.properties
+*.jks
+*.keystore

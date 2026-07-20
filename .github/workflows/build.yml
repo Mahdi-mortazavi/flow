@@ -1,4 +1,4 @@
-name: Build APK (arm64-v8a)
+name: Build & Release APKs
 
 on:
   push:
@@ -9,9 +9,18 @@ on:
 permissions:
   contents: write
 
+env:
+  # Every ABI a Flutter Android build can emit. The universal APK must contain
+  # all of them; that is the copy we tell users to install.
+  EXPECTED_ABIS: 'arm64-v8a armeabi-v7a x86_64'
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # The `secrets` context is not available in step `if:`, so surface it as
+      # a plain env flag here.
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -38,23 +47,124 @@ jobs:
       - name: Run tests
         run: flutter test
 
-      - name: Build release APK (arm64-v8a)
-        run: flutter build apk --release --target-platform android-arm64 --split-per-abi
+      # Decode the upload keystore. Without these secrets the build still runs
+      # (debug-signed) so PR/main CI keeps working, but the release gate below
+      # refuses to publish a debug-signed APK.
+      - name: Decode release keystore
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          # Passed through `env` rather than inlined into the script so a
+          # password containing shell metacharacters cannot break or leak.
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          {
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks"
+            echo "ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+            echo "ANDROID_KEY_ALIAS=$KEY_ALIAS"
+            echo "ANDROID_KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
 
-      - name: Upload APK artifact
+      # Two separate builds: the split build does not emit a universal APK, and
+      # the universal build does not emit per-ABI APKs. Each output is copied
+      # to dist/ immediately so the next build cannot clobber it.
+      - name: Build universal APK
+        run: |
+          flutter build apk --release
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk \
+             "dist/taknoghte-${GITHUB_REF_NAME}-universal.apk"
+
+      - name: Build split APKs
+        run: |
+          flutter build apk --release --split-per-abi
+          for abi in $EXPECTED_ABIS; do
+            cp "build/app/outputs/flutter-apk/app-${abi}-release.apk" \
+               "dist/taknoghte-${GITHUB_REF_NAME}-${abi}.apk"
+          done
+
+      - name: Verify APK integrity, manifest and signatures
+        run: |
+          set -euo pipefail
+          BT="$(ls -d "$ANDROID_SDK_ROOT"/build-tools/* | sort -V | tail -1)"
+          echo "Using build-tools: $BT"
+          IS_TAG="${{ startsWith(github.ref, 'refs/tags/') }}"
+          fail=0
+
+          for apk in dist/*.apk; do
+            echo "::group::$apk"
+
+            # 1. Structural integrity — a truncated or corrupted zip is the
+            #    classic "problem parsing the package".
+            unzip -t "$apk" > /dev/null || { echo "CORRUPT ZIP: $apk"; fail=1; }
+
+            # 2. Manifest must be readable and report the values we expect.
+            badging="$("$BT/aapt" dump badging "$apk")"
+            echo "$badging" | grep -E "^package:|^sdkVersion:|^targetSdkVersion:|^native-code:|^application-label:"
+
+            echo "$badging" | grep -q "sdkVersion:'24'" \
+              || { echo "UNEXPECTED minSdk in $apk"; fail=1; }
+
+            # 3. The universal APK must really carry every ABI, otherwise our
+            #    "always installable" promise is false.
+            case "$apk" in
+              *universal*)
+                for abi in $EXPECTED_ABIS; do
+                  echo "$badging" | grep -q "$abi" \
+                    || { echo "UNIVERSAL APK MISSING ABI $abi"; fail=1; }
+                done
+                ;;
+            esac
+
+            # 4. The signature must verify, whichever key signed it.
+            "$BT/apksigner" verify --verbose --print-certs "$apk" > sig.txt || {
+              echo "SIGNATURE VERIFICATION FAILED: $apk"; fail=1; }
+            grep -E "Verified using v(1|2|3) scheme|Signer #1 certificate DN" sig.txt
+
+            if grep -q "CN=Android Debug" sig.txt; then
+              # 5. A published release must never carry the Android debug cert:
+              #    the CI debug keystore is regenerated on every run, so each
+              #    release would be signed with a different key and updating
+              #    over a previous install would fail with a signature
+              #    mismatch. Debug-signed builds are fine for branch CI only.
+              if [ "$IS_TAG" = "true" ]; then
+                echo "REFUSING TO RELEASE A DEBUG-SIGNED APK: $apk"
+                echo "Set the ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /"
+                echo "ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD repository secrets."
+                fail=1
+              else
+                echo "note: debug-signed branch build; scheme check skipped."
+              fi
+            else
+              # Release-signed: require v2 + v3. v1 (JAR signing) only matters
+              # below API 24, which minSdk 24 excludes, and AGP omits it there.
+              for scheme in "v2 scheme" "v3 scheme"; do
+                grep -q "Verified using $scheme.*: true" sig.txt \
+                  || { echo "MISSING SIGNATURE SCHEME: $scheme in $apk"; fail=1; }
+              done
+            fi
+
+            echo "::endgroup::"
+          done
+
+          [ "$fail" -eq 0 ] || { echo "APK verification failed."; exit 1; }
+          echo "All APKs verified."
+
+      - name: Generate SHA256 checksums
+        run: |
+          cd dist
+          for apk in *.apk; do sha256sum "$apk" > "$apk.sha256"; done
+          cat *.sha256
+
+      - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: taknoghte-arm64-v8a-release
-          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          name: taknoghte-apks
+          path: dist/*
           if-no-files-found: error
-
-      - name: Prepare release assets
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
-             "taknoghte-${{ github.ref_name }}-arm64-v8a.apk"
-          sha256sum "taknoghte-${{ github.ref_name }}-arm64-v8a.apk" \
-             > "taknoghte-${{ github.ref_name }}-arm64-v8a.apk.sha256"
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -62,6 +172,4 @@ jobs:
         with:
           name: 'تک‌نقطه ${{ github.ref_name }}'
           body_path: RELEASE_NOTES.md
-          files: |
-            taknoghte-${{ github.ref_name }}-arm64-v8a.apk
-            taknoghte-${{ github.ref_name }}-arm64-v8a.apk.sha256
+          files: dist/*
