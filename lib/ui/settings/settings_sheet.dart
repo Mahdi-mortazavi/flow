@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/fa.dart';
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../data/repo.dart';
 import '../../state/providers.dart';
@@ -70,7 +71,7 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
     );
   }
 
-  Future<void> _import() async {
+  Future<void> _import(AppLanguage lang) async {
     final picked = await FilePicker.pickFiles(withData: true);
     final bytes = picked?.files.single.bytes;
     final path = picked?.files.single.path;
@@ -78,10 +79,9 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
     if (!mounted) return;
     final (yes, _) = await showConfirmSheet(
       context,
-      title: 'بازیابی از پشتیبان؟',
-      sub:
-          'همهٔ داده‌های فعلی با محتوای فایل جایگزین می‌شود. این عمل قابل برگشت نیست.',
-      yesLabel: 'جایگزین کن',
+      title: L10n.confirmRestoreTitle(lang),
+      sub: L10n.confirmRestoreSub(lang),
+      yesLabel: L10n.replaceAction(lang),
       emberYes: false,
     );
     if (!yes || !mounted) return;
@@ -100,9 +100,9 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
         ref.read(repoProvider),
         ref.read(dayKeyProvider),
       );
-      if (mounted) showToast(context, 'بازیابی انجام شد');
+      if (mounted) showToast(context, L10n.restoreSuccess(lang));
     } on FormatException {
-      if (mounted) showToast(context, 'این فایل، پشتیبانِ تک‌نقطه نیست');
+      if (mounted) showToast(context, L10n.invalidBackupFile(lang));
     }
   }
 
@@ -114,22 +114,24 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
     await intent.launch();
   }
 
-  String _fmt(int? m) => m == null
-      ? 'خاموش'
-      : faNum(
+  String _fmt(int? m, AppLanguage lang) => m == null
+      ? L10n.off(lang)
+      : L10n.fmtNum(
           '${(m ~/ 60).toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}',
+          lang,
         );
 
   @override
   Widget build(BuildContext context) {
     if (!_loaded) return const SizedBox(height: 220);
+    final appLang = ref.watch(appLanguageProvider);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SheetHeader(
-          'یادآورها و پشتیبان',
-          sub: 'چرخهٔ روزانه بدون یادآور می‌میرد؛ داده بدون پشتیبان.',
+        SheetHeader(
+          L10n.settingsHeader(appLang),
+          sub: L10n.settingsSub(appLang),
         ),
         Flexible(
           child: ListView(
@@ -138,14 +140,15 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
             children: [
               _timeRow(
                 icon: Icons.wb_twilight_rounded,
-                title: 'یادآور صبح',
-                sub: 'اگر روز هنوز چیده نشده باشد',
+                title: L10n.morningReminder(appLang),
+                sub: L10n.morningReminderSub(appLang),
                 value: _morning,
+                lang: appLang,
                 onPick: () async {
                   final v = await showWheelTimePicker(
                     context,
                     initialMinutes: _morning ?? Repo.defaultMorningMin,
-                    title: 'ساعتِ یادآور صبح',
+                    title: L10n.morningReminder(appLang),
                   );
                   if (v == null) return;
                   setState(() => _morning = v);
@@ -160,14 +163,15 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
               const SizedBox(height: 9),
               _timeRow(
                 icon: Icons.nightlight_round,
-                title: 'یادآور شب',
-                sub: 'اگر روز هنوز بسته نشده باشد',
+                title: L10n.eveningReminder(appLang),
+                sub: L10n.eveningReminderSub(appLang),
                 value: _evening,
+                lang: appLang,
                 onPick: () async {
                   final v = await showWheelTimePicker(
                     context,
                     initialMinutes: _evening ?? Repo.defaultEveningMin,
-                    title: 'ساعتِ یادآور شب',
+                    title: L10n.eveningReminder(appLang),
                   );
                   if (v == null) return;
                   setState(() => _evening = v);
@@ -182,24 +186,32 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
               const SizedBox(height: 22),
               _actionRow(
                 icon: Icons.ios_share_rounded,
-                title: 'پشتیبان‌گیری (خروجی JSON)',
-                sub: 'همهٔ داده‌ها در یک فایل — هر جا خواستی نگهش دار',
+                title: L10n.exportBackup(appLang),
+                sub: L10n.exportBackupSub(appLang),
                 onTap: _export,
               ),
               const SizedBox(height: 9),
               _actionRow(
                 icon: Icons.settings_backup_restore_rounded,
-                title: 'بازیابی از فایل پشتیبان',
-                sub: 'جایگزینی کامل داده‌های فعلی',
-                onTap: _import,
+                title: L10n.restoreBackup(appLang),
+                sub: L10n.restoreBackupSub(appLang),
+                onTap: () => _import(appLang),
+              ),
+              const SizedBox(height: 9),
+              _actionRow(
+                icon: Icons.language_rounded,
+                title: L10n.appLanguage(appLang),
+                sub: appLang == AppLanguage.fa ? 'فارسی' : 'English',
+                onTap: () async {
+                  await ref.read(appLanguageProvider.notifier).toggleLanguage();
+                },
               ),
               if (Platform.isAndroid) ...[
                 const SizedBox(height: 22),
                 _actionRow(
                   icon: Icons.battery_alert_rounded,
-                  title: 'یادآورها نمی‌آیند؟',
-                  sub:
-                      'در برخی گوشی‌ها (شیائومی، هواوی…) باید اپ را از بهینه‌سازی باتری مستثنا کنی',
+                  title: L10n.batterySettings(appLang),
+                  sub: L10n.batterySettingsSub(appLang),
                   onTap: _openBatterySettings,
                 ),
               ],
@@ -215,6 +227,7 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
     required String title,
     required String sub,
     required int? value,
+    required AppLanguage lang,
     required VoidCallback onPick,
     required VoidCallback onToggle,
   }) {
@@ -241,7 +254,7 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
             ),
           ),
           Text(
-            _fmt(value),
+            _fmt(value, lang),
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -251,7 +264,7 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
           ),
           Semantics(
             button: true,
-            label: value == null ? 'روشن کردن' : 'خاموش کردن',
+            label: value == null ? L10n.turnOn(lang) : L10n.turnOff(lang),
             child: Pressable(
               onTap: onToggle,
               child: SizedBox(
@@ -303,7 +316,13 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
               ],
             ),
           ),
-          Icon(Icons.chevron_left_rounded, size: 18, color: Tone.ink3),
+          Icon(
+            Directionality.of(context) == TextDirection.rtl
+                ? Icons.chevron_left_rounded
+                : Icons.chevron_right_rounded,
+            size: 18,
+            color: Tone.ink3,
+          ),
         ],
       ),
     );

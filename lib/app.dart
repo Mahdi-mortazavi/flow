@@ -1,23 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/l10n.dart';
 import 'core/theme.dart';
+import 'state/providers.dart';
 import 'ui/onboarding/onboarding_screen.dart';
 import 'ui/today/today_screen.dart';
 
-class TakNoghteApp extends StatelessWidget {
+class TakNoghteApp extends ConsumerWidget {
   const TakNoghteApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appLanguage = ref.watch(appLanguageProvider);
     return MaterialApp(
-      title: 'تک‌نقطه',
+      title: L10n.appTitle(appLanguage),
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       scrollBehavior: const AppScrollBehavior(),
-      locale: const Locale('fa'),
-      supportedLocales: const [Locale('fa')],
+      locale: Locale(appLanguage.code),
+      supportedLocales: const [
+        Locale('fa'),
+        Locale('en'),
+      ],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

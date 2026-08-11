@@ -1,12 +1,52 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/fa.dart';
+import '../core/l10n.dart';
 import '../data/models.dart';
 import '../data/repo.dart';
 import '../services/notifications.dart';
 import 'focus_controller.dart';
 
 final repoProvider = Provider<Repo>((ref) => Repo());
+
+/// Persistent app language preference (fa or en).
+class AppLanguageController extends Notifier<AppLanguage> {
+  static const prefKey = 'app_language';
+
+  @override
+  AppLanguage build() {
+    _load();
+    return AppLanguage.fa;
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString(prefKey);
+    if (code != null) {
+      final lang = AppLanguage.fromCode(code);
+      if (state != lang) {
+        state = lang;
+      }
+    }
+  }
+
+  Future<void> setLanguage(AppLanguage lang) async {
+    state = lang;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(prefKey, lang.code);
+  }
+
+  Future<void> toggleLanguage() async {
+    final next = state == AppLanguage.fa ? AppLanguage.en : AppLanguage.fa;
+    await setLanguage(next);
+  }
+}
+
+final appLanguageProvider =
+    NotifierProvider<AppLanguageController, AppLanguage>(
+  AppLanguageController.new,
+);
 
 /// Current day key; bumped on app resume so a new day rebuilds everything.
 class DayKeyController extends Notifier<String> {
