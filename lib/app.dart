@@ -21,10 +21,7 @@ class TakNoghteApp extends ConsumerWidget {
       theme: buildTheme(),
       scrollBehavior: const AppScrollBehavior(),
       locale: Locale(appLanguage.code),
-      supportedLocales: const [
-        Locale('fa'),
-        Locale('en'),
-      ],
+      supportedLocales: const [Locale('fa'), Locale('en')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

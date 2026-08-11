@@ -151,18 +151,16 @@ abstract final class L10n {
   static String morningReminder(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'یادآور صبح' : 'Morning Reminder';
 
-  static String morningReminderSub(AppLanguage lang) =>
-      lang == AppLanguage.fa
-          ? 'اگر روز هنوز چیده نشده باشد'
-          : 'If the day is not planned yet';
+  static String morningReminderSub(AppLanguage lang) => lang == AppLanguage.fa
+      ? 'اگر روز هنوز چیده نشده باشد'
+      : 'If the day is not planned yet';
 
   static String eveningReminder(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'یادآور شب' : 'Evening Reminder';
 
-  static String eveningReminderSub(AppLanguage lang) =>
-      lang == AppLanguage.fa
-          ? 'اگر روز هنوز بسته نشده باشد'
-          : 'If the day is not closed yet';
+  static String eveningReminderSub(AppLanguage lang) => lang == AppLanguage.fa
+      ? 'اگر روز هنوز بسته نشده باشد'
+      : 'If the day is not closed yet';
 
   static String exportBackup(AppLanguage lang) => lang == AppLanguage.fa
       ? 'پشتیبان‌گیری (خروجی JSON)'
@@ -180,11 +178,13 @@ abstract final class L10n {
       ? 'جایگزینی کامل داده‌های فعلی'
       : 'Complete replacement of current data';
 
-  static String appLanguage(AppLanguage lang) =>
-      lang == AppLanguage.fa ? 'زبان برنامه / App Language' : 'App Language / زبان برنامه';
+  static String appLanguage(AppLanguage lang) => lang == AppLanguage.fa
+      ? 'زبان برنامه / App Language'
+      : 'App Language / زبان برنامه';
 
-  static String appLanguageSub(AppLanguage lang) =>
-      lang == AppLanguage.fa ? 'تغییر زبان به فارسی یا انگلیسی' : 'Switch between Persian and English';
+  static String appLanguageSub(AppLanguage lang) => lang == AppLanguage.fa
+      ? 'تغییر زبان به فارسی یا انگلیسی'
+      : 'Switch between Persian and English';
 
   static String batterySettings(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'یادآورها نمی‌آیند؟' : 'Reminders not arriving?';
@@ -202,9 +202,8 @@ abstract final class L10n {
   static String turnOff(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'خاموش کردن' : 'Turn Off';
 
-  static String confirmRestoreTitle(AppLanguage lang) => lang == AppLanguage.fa
-      ? 'بازیابی از پشتیبان؟'
-      : 'Restore from backup?';
+  static String confirmRestoreTitle(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'بازیابی از پشتیبان؟' : 'Restore from backup?';
 
   static String confirmRestoreSub(AppLanguage lang) => lang == AppLanguage.fa
       ? 'همهٔ داده‌های فعلی با محتوای فایل جایگزین می‌شود. این عمل قابل برگشت نیست.'

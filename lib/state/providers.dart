@@ -45,8 +45,8 @@ class AppLanguageController extends Notifier<AppLanguage> {
 
 final appLanguageProvider =
     NotifierProvider<AppLanguageController, AppLanguage>(
-  AppLanguageController.new,
-);
+      AppLanguageController.new,
+    );
 
 /// Current day key; bumped on app resume so a new day rebuilds everything.
 class DayKeyController extends Notifier<String> {
