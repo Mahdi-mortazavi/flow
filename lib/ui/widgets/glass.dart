@@ -9,8 +9,11 @@ import 'package:flutter/cupertino.dart'
         CupertinoThemeData;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
+import '../../state/providers.dart';
 
 /// The liquid-glass surface every card in the app sits on.
 class GlassCard extends StatelessWidget {
@@ -602,12 +605,13 @@ Future<int?> showWheelTimePicker(
 }
 
 /// Human-readable failure state instead of a raw exception dump.
-class ErrorCard extends StatelessWidget {
+class ErrorCard extends ConsumerWidget {
   final VoidCallback onRetry;
   const ErrorCard({super.key, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
@@ -616,19 +620,19 @@ class ErrorCard extends StatelessWidget {
           children: [
             Icon(Icons.cloud_off_rounded, size: 34, color: Tone.ink3),
             const SizedBox(height: 14),
-            const Text(
-              'مشکلی پیش آمد',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            Text(
+              L10n.errorTitle(lang),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
-              'داده‌هایت سر جایش است — فقط خواندنش خطا خورد.',
+              L10n.errorSub(lang),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12.5, color: Tone.ink3, height: 1.9),
             ),
             const SizedBox(height: 18),
             Pill(
-              'تلاش دوباره',
+              L10n.retry(lang),
               style: PillStyle.ember,
               expanded: false,
               onTap: onRetry,

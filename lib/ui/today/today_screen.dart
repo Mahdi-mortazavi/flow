@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quick_actions/quick_actions.dart';
 
 import '../../core/fa.dart';
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../services/notifications.dart';
@@ -103,14 +104,17 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
   /// Long-press the launcher icon → «ثبت فکر»: capture a thought without the
   /// full trip through the home screen. Fires on cold start too.
   void _setupQuickActions() {
+    final lang = ref.read(appLanguageProvider);
     const QuickActions()
       ..initialize((type) {
         if (type == 'new_thought' && mounted) openVaultSheet(context);
       })
-      ..setShortcutItems(const [
+      ..setShortcutItems([
         ShortcutItem(
           type: 'new_thought',
-          localizedTitle: 'ثبت فکر',
+          localizedTitle: lang == AppLanguage.fa
+              ? 'ثبت فکر'
+              : 'Capture Thought',
           icon: 'ic_stat_dot',
         ),
       ]);
@@ -188,6 +192,7 @@ class _TodayBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
       children: [
@@ -199,7 +204,7 @@ class _TodayBody extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _Eyebrow('تخته‌سنگِ امروز'),
+              _Eyebrow(L10n.boulderOfToday(lang)),
               BoulderCard(plan: plan),
             ],
           ),
@@ -211,7 +216,7 @@ class _TodayBody extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 22),
-                const _Eyebrow('دو کارِ دیگر'),
+                _Eyebrow(L10n.otherTwoTasks(lang)),
                 for (final t in plan.others) _OtherTaskRow(plan: plan, task: t),
               ],
             ),
@@ -219,11 +224,14 @@ class _TodayBody extends ConsumerWidget {
         const SizedBox(height: 22),
         const Reveal(order: 3, child: _HabitsSection()),
         const SizedBox(height: 22),
-        const Reveal(
+        Reveal(
           order: 4,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [_Eyebrow('وقتِ آزادِ بی‌گناه'), _FunCard()],
+            children: [
+              _Eyebrow(L10n.guiltFreePlayBlock(lang)),
+              const _FunCard(),
+            ],
           ),
         ),
         const SizedBox(height: 16),
@@ -249,6 +257,7 @@ class _Header extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 6, 4, 20),
       child: Row(
@@ -259,7 +268,7 @@ class _Header extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  faTodayLabel(),
+                  L10n.fmtTodayLabel(lang),
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
@@ -267,9 +276,12 @@ class _Header extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 3),
-                const Text(
-                  'تک‌نقطه',
-                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800),
+                Text(
+                  L10n.appTitle(lang),
+                  style: const TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ],
             ),
@@ -288,7 +300,12 @@ class _Header extends ConsumerWidget {
             icon: Icons.edit_rounded,
             onTap: () {
               if (plan.closed) {
-                showToast(context, 'امروز بسته شده — فردا از نو');
+                showToast(
+                  context,
+                  lang == AppLanguage.fa
+                      ? 'امروز بسته شده — فردا از نو'
+                      : 'Today is closed — start fresh tomorrow',
+                );
                 return;
               }
               openMorningWizard(context, ref);
@@ -383,6 +400,7 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final plan = widget.plan;
     _syncBreath();
     if (!plan.planned) {
@@ -393,10 +411,10 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _EmberTag('یک نقطهٔ داغ'),
+            _EmberTag(lang == AppLanguage.fa ? 'یک نقطهٔ داغ' : 'One Hot Spot'),
             const SizedBox(height: 13),
             Text(
-              'امروز هنوز چیده نشده. سه کار، یک تخته‌سنگ، یک پیش‌بینی — کمتر از یک دقیقه.',
+              L10n.todayNotPlannedYet(lang),
               style: TextStyle(
                 fontSize: 15.5,
                 color: Tone.ink2,
@@ -406,7 +424,7 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
             ),
             const SizedBox(height: 17),
             Pill(
-              'چیدنِ امروز',
+              L10n.planToday(lang),
               style: PillStyle.ember,
               onTap: () => openMorningWizard(context, ref),
             ),
@@ -450,7 +468,7 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _EmberTag('تخته‌سنگ'),
+                _EmberTag(L10n.boulderTitle(lang)),
                 const SizedBox(height: 13),
                 Text(
                   b.title,
@@ -467,14 +485,16 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
                 Row(
                   children: [
                     Text(
-                      'پیش‌بینی صبح: ${faNum(plan.prediction ?? 0)}٪',
+                      lang == AppLanguage.fa
+                          ? 'پیش‌بینی صبح: ${L10n.fmtNum(plan.prediction ?? 0, lang)}٪'
+                          : 'Morning prediction: ${L10n.fmtNum(plan.prediction ?? 0, lang)}%',
                       style: TextStyle(fontSize: 12.5, color: Tone.ink2),
                     ),
                     if (b.done) ...[
                       const SizedBox(width: 6),
-                      const Text(
-                        '— انجام شد',
-                        style: TextStyle(
+                      Text(
+                        lang == AppLanguage.fa ? '— انجام شد' : '— Done',
+                        style: const TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
                           color: Tone.ember,
@@ -496,7 +516,7 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
                         if (!b.done) ...[
                           Expanded(
                             child: Pill(
-                              'شروع تمرکز',
+                              L10n.startFocus(lang),
                               style: PillStyle.ember,
                               icon: Icons.play_arrow_rounded,
                               onTap: () => startFocusFlow(
@@ -511,8 +531,13 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
                         ],
                         Expanded(
                           child: Pill(
-                            b.done ? 'برگردان' : 'علامتِ انجام',
-                            onTap: () => _toggleBoulder(context, ref, plan, b),
+                            b.done
+                                ? L10n.undo(lang)
+                                : (lang == AppLanguage.fa
+                                      ? 'علامتِ انجام'
+                                      : 'Mark Done'),
+                            onTap: () =>
+                                _toggleBoulder(context, ref, plan, b, lang),
                           ),
                         ),
                       ],
@@ -560,12 +585,18 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
     WidgetRef ref,
     DayPlan plan,
     DayTask b,
+    AppLanguage lang,
   ) {
     final newDone = !b.done;
     ref.read(todayProvider.notifier).setTaskDone(b.taskId, newDone);
     if (newDone) {
       HapticFeedback.heavyImpact();
-      showToast(context, 'تخته‌سنگ افتاد. بقیهٔ روز، پایین‌سرازیری است.');
+      showToast(
+        context,
+        lang == AppLanguage.fa
+            ? 'تخته‌سنگ افتاد. بقیهٔ روز، پایین‌سرازیری است.'
+            : 'The Boulder has fallen! The rest of the day is downhill momentum.',
+      );
     }
   }
 }
@@ -613,6 +644,7 @@ class _OtherTaskRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     final locked = !plan.boulderDone && !task.done;
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
@@ -659,7 +691,7 @@ class _OtherTaskRow extends ConsumerWidget {
                       ),
                       if (locked)
                         Text(
-                          'پشتِ تخته‌سنگ در صف',
+                          L10n.queuedBehindBoulder(lang),
                           style: TextStyle(fontSize: 11.5, color: Tone.ink3),
                         ),
                     ],
@@ -667,7 +699,7 @@ class _OtherTaskRow extends ConsumerWidget {
                 ),
                 if (!task.done)
                   Pressable(
-                    onTap: () => _play(context, ref),
+                    onTap: () => _play(context, ref, lang),
                     child: Container(
                       width: 38,
                       height: 38,
@@ -691,15 +723,23 @@ class _OtherTaskRow extends ConsumerWidget {
     );
   }
 
-  Future<void> _play(BuildContext context, WidgetRef ref) async {
+  Future<void> _play(
+    BuildContext context,
+    WidgetRef ref,
+    AppLanguage lang,
+  ) async {
     if (!plan.boulderDone) {
       final b = plan.boulder;
       final (goBoulder, _) = await showConfirmSheet(
         context,
-        title: 'تخته‌سنگ هنوز مانده',
-        sub: 'قانونِ خانه: اول سنگِ بزرگ. مطمئنی می‌خواهی از رویش بپری؟',
-        yesLabel: 'اول تخته‌سنگ',
-        noLabel: 'به‌هرحال شروع کن',
+        title: lang == AppLanguage.fa
+            ? 'تخته‌سنگ هنوز مانده'
+            : 'The Boulder remains',
+        sub: lang == AppLanguage.fa
+            ? 'قانونِ خانه: اول سنگِ بزرگ. مطمئنی می‌خواهی از رویش بپری؟'
+            : 'Rule of the house: The Boulder comes first. Are you sure you want to skip it?',
+        yesLabel: lang == AppLanguage.fa ? 'اول تخته‌سنگ' : 'Boulder First',
+        noLabel: lang == AppLanguage.fa ? 'به‌هرحال شروع کن' : 'Start Anyway',
       );
       if (!context.mounted) return;
       if (goBoulder && b != null) {
@@ -725,6 +765,7 @@ class _EveningCta extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     if (plan.closed) {
       return Opacity(
         opacity: .7,
@@ -739,15 +780,17 @@ class _EveningCta extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'روز بسته شد',
-                      style: TextStyle(
+                    Text(
+                      lang == AppLanguage.fa ? 'روز بسته شد' : 'Day Closed',
+                      style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
-                      'فردا، دوباره از تخته‌سنگ.',
+                      lang == AppLanguage.fa
+                          ? 'فردا، دوباره از تخته‌سنگ.'
+                          : 'Tomorrow, start fresh with the Boulder.',
                       style: TextStyle(fontSize: 11.5, color: Tone.ink3),
                     ),
                   ],
@@ -770,18 +813,27 @@ class _EveningCta extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'مرور شب',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                Text(
+                  L10n.eveningReviewTitle(lang),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 Text(
-                  '۶۰ ثانیه — چک، چرا، یک خط',
+                  L10n.eveningReviewSub(lang),
                   style: TextStyle(fontSize: 11.5, color: Tone.ink3),
                 ),
               ],
             ),
           ),
-          Icon(Icons.chevron_left_rounded, size: 20, color: Tone.ink3),
+          Icon(
+            Directionality.of(context) == TextDirection.rtl
+                ? Icons.chevron_left_rounded
+                : Icons.chevron_right_rounded,
+            size: 20,
+            color: Tone.ink3,
+          ),
         ],
       ),
     );
@@ -805,6 +857,7 @@ class _ReviewBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     final due = ref.watch(statsProvider).value?.reviewDue ?? false;
     if (!due) return const SizedBox.shrink();
     return Padding(
@@ -825,21 +878,31 @@ class _ReviewBanner extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'وقتِ بازبینی مبنا-صفر است',
-                    style: TextStyle(
+                  Text(
+                    lang == AppLanguage.fa
+                        ? 'وقتِ بازبینی مبنا-صفر است'
+                        : 'Time for zero-based review',
+                    style: const TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
-                    'لیستِ کوتاه، نصفِ تمرکز است — ۵ دقیقه',
+                    lang == AppLanguage.fa
+                        ? 'لیستِ کوتاه، نصفِ تمرکز است — ۵ دقیقه'
+                        : 'A concise list is half the focus — 5 minutes',
                     style: TextStyle(fontSize: 11, color: Tone.ink3),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_left_rounded, size: 18, color: Tone.ink3),
+            Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? Icons.chevron_left_rounded
+                  : Icons.chevron_right_rounded,
+              size: 18,
+              color: Tone.ink3,
+            ),
           ],
         ),
       ),
@@ -854,6 +917,7 @@ class _HabitsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     final habitsAsync = ref.watch(habitsProvider);
     final habits = habitsAsync.value ?? const <Habit>[];
     return Column(
@@ -865,7 +929,7 @@ class _HabitsSection extends ConsumerWidget {
             children: [
               Expanded(
                 child: Text(
-                  'عادت‌ها',
+                  L10n.habitsTitle(lang),
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
@@ -877,7 +941,7 @@ class _HabitsSection extends ConsumerWidget {
               Pressable(
                 onTap: () => openHabitEditor(context),
                 child: Text(
-                  '+ عادت',
+                  '+ ${L10n.habitTitle(lang)}',
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
@@ -892,7 +956,9 @@ class _HabitsSection extends ConsumerWidget {
           GlassCard(
             padding: const EdgeInsets.all(20),
             child: Text(
-              'عادت یعنی: بعد از یک رویدادِ همیشگی، یک رفتارِ کوچک.\nبا «+ عادت» اولین لنگر را بگذار.',
+              lang == AppLanguage.fa
+                  ? 'عادت یعنی: بعد از یک رویدادِ همیشگی، یک رفتارِ کوچک.\nبا «+ عادت» اولین لنگر را بگذار.'
+                  : 'A habit is: after a routine event, a tiny behavior.\nTap "+ Habit" to set your first anchor.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12.5, color: Tone.ink3, height: 2),
             ),
@@ -910,26 +976,37 @@ class _GoodHabitRow extends ConsumerWidget {
   const _GoodHabitRow({required this.habit});
 
   /// Recovery-first messaging instead of a punishing streak.
-  (String, Color)? _note(String today) {
+  (String, Color)? _note(String today, AppLanguage lang) {
     if (habit.doneOn(today)) return null;
     final y = shiftDayKey(today, -1);
     final y2 = shiftDayKey(today, -2);
     final missedY = habit.created.compareTo(y) <= 0 && !habit.doneOn(y);
     final missedY2 = habit.created.compareTo(y2) <= 0 && !habit.doneOn(y2);
     if (missedY && missedY2) {
-      return ('دو روز شد — فقط نسخهٔ ۲ دقیقه‌ای را بزن', Tone.warn);
+      return (
+        lang == AppLanguage.fa
+            ? 'دو روز شد — فقط نسخهٔ ۲ دقیقه‌ای را بزن'
+            : 'Two days missed — just do the 2-minute version',
+        Tone.warn,
+      );
     }
     if (missedY) {
-      return ('دیروز جا ماند — امروز برگرد، زنجیره سالم می‌ماند', Tone.ember);
+      return (
+        lang == AppLanguage.fa
+            ? 'دیروز جا ماند — امروز برگرد، زنجیره سالم می‌ماند'
+            : 'Missed yesterday — return today, the chain stays healthy',
+        Tone.ember,
+      );
     }
     return null;
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     final today = ref.watch(dayKeyProvider);
     final done = habit.doneOn(today);
-    final note = _note(today);
+    final note = _note(today, lang);
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
       child: GlassCard(
@@ -958,7 +1035,9 @@ class _GoodHabitRow extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    'بعد از ${habit.cue}',
+                    lang == AppLanguage.fa
+                        ? 'بعد از ${habit.cue}'
+                        : 'after ${habit.cue}',
                     style: TextStyle(fontSize: 11.5, color: Tone.ink3),
                   ),
                   if (note != null)
@@ -995,6 +1074,7 @@ class _BadHabitRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     final today = ref.watch(dayKeyProvider);
     final status = habit.statusOn(today);
     return Padding(
@@ -1031,15 +1111,19 @@ class _BadHabitRow extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    'بعد از ${habit.cue}',
+                    lang == AppLanguage.fa
+                        ? 'بعد از ${habit.cue}'
+                        : 'after ${habit.cue}',
                     style: TextStyle(fontSize: 11.5, color: Tone.ink3),
                   ),
                   if (status == 'resisted')
-                    const Padding(
-                      padding: EdgeInsets.only(top: 2),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        'امروز مقاومت کردی ✓',
-                        style: TextStyle(
+                        lang == AppLanguage.fa
+                            ? 'امروز مقاومت کردی ✓'
+                            : 'Resisted today ✓',
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: Tone.ember,
@@ -1050,7 +1134,9 @@ class _BadHabitRow extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        'لغزش ثبت شد — فردا روزِ جدید است',
+                        lang == AppLanguage.fa
+                            ? 'لغزش ثبت شد — فردا روزِ جدید است'
+                            : 'Slip logged — tomorrow is a fresh day',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -1075,7 +1161,7 @@ class _BadHabitRow extends ConsumerWidget {
                     border: Border.all(color: Tone.warn.withValues(alpha: .2)),
                   ),
                   child: Text(
-                    'وسوسه شدم',
+                    lang == AppLanguage.fa ? 'وسوسه شدم' : 'Tempted',
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w700,
@@ -1101,6 +1187,7 @@ class _FunCard extends ConsumerWidget {
     WidgetRef ref,
     FunConfig? fun,
   ) async {
+    final lang = ref.read(appLanguageProvider);
     final title = TextEditingController(text: fun?.title ?? '');
     final minutes = TextEditingController(text: '${fun?.minutes ?? 45}');
     final saved = await showGlassSheet<bool>(
@@ -1111,10 +1198,11 @@ class _FunCard extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SheetHeader(
-              'وقتِ آزاد',
-              sub:
-                  'تفریح، باقی‌ماندهٔ روز نیست؛ بخشِ رسمی برنامه است. زمان‌دار و بی‌گناه.',
+            SheetHeader(
+              lang == AppLanguage.fa ? 'وقتِ آزاد' : 'Free Time',
+              sub: lang == AppLanguage.fa
+                  ? 'تفریح، باقی‌ماندهٔ روز نیست؛ بخشِ رسمی برنامه است. زمان‌دار و بی‌گناه.'
+                  : 'Play is not leftovers; it is an official part of the plan. Timed and guilt-free.',
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
@@ -1122,19 +1210,25 @@ class _FunCard extends ConsumerWidget {
                 children: [
                   GlassField(
                     controller: title,
-                    label: 'چه کاری؟',
-                    hint: 'مثلاً: گیم، سریال، موسیقی',
+                    label: lang == AppLanguage.fa
+                        ? 'چه کاری؟'
+                        : 'What activity?',
+                    hint: lang == AppLanguage.fa
+                        ? 'مثلاً: گیم، سریال، موسیقی'
+                        : 'e.g., Gaming, Shows, Music',
                   ),
                   const SizedBox(height: 12),
                   GlassField(
                     controller: minutes,
-                    label: 'چند دقیقه؟',
+                    label: lang == AppLanguage.fa
+                        ? 'چند دقیقه؟'
+                        : 'How many minutes?',
                     hint: '45',
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 16),
                   Pill(
-                    'ذخیره',
+                    L10n.save(lang),
                     style: PillStyle.ember,
                     onTap: () => Navigator.pop(ctx, true),
                   ),
@@ -1151,7 +1245,14 @@ class _FunCard extends ConsumerWidget {
     minutes.dispose();
     if (saved != true) return;
     if (t.isEmpty) {
-      if (context.mounted) showToast(context, 'اسمِ تفریح را بنویس');
+      if (context.mounted) {
+        showToast(
+          context,
+          lang == AppLanguage.fa
+              ? 'اسمِ تفریح را بنویس'
+              : 'Enter the activity name',
+        );
+      }
       return;
     }
     await ref.read(funProvider.notifier).save(FunConfig(title: t, minutes: m));
@@ -1165,14 +1266,16 @@ class _FunCard extends ConsumerWidget {
     FunConfig fun,
     bool locked,
   ) async {
+    final lang = ref.read(appLanguageProvider);
     if (locked) {
       final (goBoulder, _) = await showConfirmSheet(
         context,
-        title: 'اول تخته‌سنگ؟',
-        sub:
-            'تفریح بعد از افتادنِ تخته‌سنگ، واقعاً بی‌گناه می‌شود. الان مطمئنی؟',
-        yesLabel: 'صبر می‌کنم',
-        noLabel: 'به‌هرحال شروع کن',
+        title: lang == AppLanguage.fa ? 'اول تخته‌سنگ؟' : 'Boulder first?',
+        sub: lang == AppLanguage.fa
+            ? 'تفریح بعد از افتادنِ تخته‌سنگ، واقعاً بی‌گناه می‌شود. الان مطمئنی؟'
+            : 'Play after the Boulder is truly guilt-free. Are you sure right now?',
+        yesLabel: lang == AppLanguage.fa ? 'صبر می‌کنم' : 'I\'ll wait',
+        noLabel: lang == AppLanguage.fa ? 'به‌هرحال شروع کن' : 'Start anyway',
       );
       if (!context.mounted || goBoulder) return;
     }
@@ -1190,6 +1293,7 @@ class _FunCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     final fun = ref.watch(funProvider).value;
     final plan = ref.watch(todayProvider).value;
     final locked = (plan?.planned ?? false) && !(plan?.boulderDone ?? false);
@@ -1203,7 +1307,9 @@ class _FunCard extends ConsumerWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'یک تفریحِ زمان‌دار تعریف کن — بدون آن، فان به وسطِ کار نشت می‌کند',
+                lang == AppLanguage.fa
+                    ? 'یک تفریحِ زمان‌دار تعریف کن — بدون آن، فان به وسطِ کار نشت می‌کند'
+                    : 'Define a timed play block — without it, play leaks into work.',
                 style: TextStyle(fontSize: 13, color: Tone.ink3, height: 1.7),
               ),
             ),
@@ -1229,8 +1335,12 @@ class _FunCard extends ConsumerWidget {
                 ),
                 Text(
                   locked
-                      ? 'تخته‌سنگ بیفتد، بی‌گناه‌تر می‌شود'
-                      : 'بی‌گناه. بخشِ رسمی برنامه.',
+                      ? (lang == AppLanguage.fa
+                            ? 'تخته‌سنگ بیفتد، بی‌گناه‌تر می‌شود'
+                            : 'Even better once the Boulder falls')
+                      : (lang == AppLanguage.fa
+                            ? 'بی‌گناه. بخشِ رسمی برنامه.'
+                            : 'Guilt-free. Official part of the plan.'),
                   style: TextStyle(
                     fontSize: 11.5,
                     color: locked
@@ -1249,7 +1359,9 @@ class _FunCard extends ConsumerWidget {
               border: Border.all(color: Tone.line),
             ),
             child: Text(
-              '${faNum(fun.minutes)} دقیقه',
+              lang == AppLanguage.fa
+                  ? '${L10n.fmtNum(fun.minutes, lang)} دقیقه'
+                  : '${L10n.fmtNum(fun.minutes, lang)} min',
               style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
@@ -1288,13 +1400,19 @@ class _EnergyCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     Widget chip(String label, int level) => Pressable(
       onTap: () async {
         await ref.read(repoProvider).addEnergyCheck(level);
         ref.invalidate(statsProvider);
         if (context.mounted) {
           unawaited(HapticFeedback.selectionClick());
-          showToast(context, 'ثبت شد — ساعتِ طلایی‌ات کم‌کم پیدا می‌شود');
+          showToast(
+            context,
+            lang == AppLanguage.fa
+                ? 'ثبت شد — ساعتِ طلایی‌ات کم‌کم پیدا می‌شود'
+                : 'Logged — your Golden Hour pattern will emerge',
+          );
         }
       },
       child: Container(
@@ -1324,7 +1442,7 @@ class _EnergyCard extends ConsumerWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'انرژی الان؟',
+              lang == AppLanguage.fa ? 'انرژی الان؟' : 'Energy right now?',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -1332,23 +1450,24 @@ class _EnergyCard extends ConsumerWidget {
               ),
             ),
           ),
-          chip('کم', 1),
+          chip(lang == AppLanguage.fa ? 'کم' : 'Low', 1),
           const SizedBox(width: 6),
-          chip('متوسط', 2),
+          chip(lang == AppLanguage.fa ? 'متوسط' : 'Med', 2),
           const SizedBox(width: 6),
-          chip('زیاد', 3),
+          chip(lang == AppLanguage.fa ? 'زیاد' : 'High', 3),
         ],
       ),
     );
   }
 }
 
-class _VaultFab extends StatelessWidget {
+class _VaultFab extends ConsumerWidget {
   final VoidCallback onTap;
   const _VaultFab({required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     return Pressable(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -1378,7 +1497,7 @@ class _VaultFab extends StatelessWidget {
             Icon(Icons.psychology_outlined, size: 18, color: Tone.ink2),
             const SizedBox(width: 8),
             Text(
-              'تخلیهٔ ذهن',
+              L10n.brainVaultTitle(lang),
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,

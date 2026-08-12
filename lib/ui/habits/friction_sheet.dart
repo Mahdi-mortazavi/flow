@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/fa.dart';
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
@@ -55,23 +55,34 @@ class _FrictionSheetState extends ConsumerState<_FrictionSheet>
   int get _secondsLeft =>
       (_waitSeconds * (1 - _countdown.value)).ceil().clamp(0, _waitSeconds);
 
-  Future<void> _log(String status) async {
+  Future<void> _log(String status, AppLanguage lang) async {
     await ref.read(habitsProvider.notifier).log(widget.habit.id, status);
     if (!mounted) return;
     Navigator.pop(context);
     if (status == 'resisted') {
       unawaited(HapticFeedback.mediumImpact());
-      showToast(context, 'همین است. همان محرک، پاسخِ جدید.');
+      showToast(
+        context,
+        lang == AppLanguage.fa
+            ? 'همین است. همان محرک، پاسخِ جدید.'
+            : 'That\'s it. Same cue, new response.',
+      );
     } else {
-      showToast(context, 'ثبت شد. بدونِ سرزنش — فردا مقاومت آسان‌تر است.');
+      showToast(
+        context,
+        lang == AppLanguage.fa
+            ? 'ثبت شد. بدونِ سرزنش — فردا مقاومت آسان‌تر است.'
+            : 'Logged. No blame — resistance gets easier tomorrow.',
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final h = widget.habit;
     final replacement = h.replacement.isEmpty
-        ? 'دو دقیقه قدم بزن'
+        ? (lang == AppLanguage.fa ? 'دو دقیقه قدم بزن' : 'Walk for two minutes')
         : h.replacement;
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
@@ -79,9 +90,11 @@ class _FrictionSheetState extends ConsumerState<_FrictionSheet>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SheetHeader(
-            'صبر کن',
-            sub: 'ده ثانیه. فقط ده ثانیه بین تو و انتخابِ آگاهانه.',
+          SheetHeader(
+            lang == AppLanguage.fa ? 'صبر کن' : 'Pause',
+            sub: lang == AppLanguage.fa
+                ? 'ده ثانیه. فقط ده ثانیه بین تو و انتخابِ آگاهانه.'
+                : 'Ten seconds. Just 10 seconds between you and a conscious choice.',
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -98,13 +111,17 @@ class _FrictionSheetState extends ConsumerState<_FrictionSheet>
                   child: Column(
                     children: [
                       Text(
-                        'هزینهٔ بلندمدتِ «${h.title}»',
+                        lang == AppLanguage.fa
+                            ? 'هزینهٔ بلندمدتِ «${h.title}»'
+                            : 'Long-term cost of "${h.title}"',
                         style: TextStyle(fontSize: 11, color: Tone.ink3),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         h.badCost.isEmpty
-                            ? 'به اهداف بلندمدتت فکر کن.'
+                            ? (lang == AppLanguage.fa
+                                  ? 'به اهداف بلندمدتت فکر کن.'
+                                  : 'Think about your long-term goals.')
                             : h.badCost,
                         textAlign: TextAlign.center,
                         style: TextStyle(
@@ -133,7 +150,7 @@ class _FrictionSheetState extends ConsumerState<_FrictionSheet>
                         ),
                       ),
                       Text(
-                        _unlocked ? '—' : faNum(_secondsLeft),
+                        _unlocked ? '—' : L10n.fmtNum(_secondsLeft, lang),
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w300,
@@ -150,16 +167,20 @@ class _FrictionSheetState extends ConsumerState<_FrictionSheet>
                   child: Column(
                     children: [
                       Pill(
-                        'به‌جایش: $replacement',
+                        lang == AppLanguage.fa
+                            ? 'به‌جایش: $replacement'
+                            : 'Instead: $replacement',
                         style: PillStyle.ember,
                         icon: Icons.swap_horiz_rounded,
-                        onTap: _unlocked ? () => _log('resisted') : null,
+                        onTap: _unlocked ? () => _log('resisted', lang) : null,
                       ),
                       const SizedBox(height: 10),
                       Pill(
-                        'انجامش دادم (ثبتِ لغزش)',
+                        lang == AppLanguage.fa
+                            ? 'انجامش دادم (ثبتِ لغزش)'
+                            : 'Did it (Log slip)',
                         style: PillStyle.quiet,
-                        onTap: _unlocked ? () => _log('slip') : null,
+                        onTap: _unlocked ? () => _log('slip', lang) : null,
                       ),
                     ],
                   ),

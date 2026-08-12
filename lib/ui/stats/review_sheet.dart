@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/fa.dart';
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../state/providers.dart';
 import '../widgets/glass.dart';
@@ -13,7 +13,7 @@ Future<void> openReviewSheet(BuildContext context) {
 }
 
 class _ReviewItem {
-  final String kind; // کار | عادت
+  final String kind;
   final String title;
   final bool isHabit;
   final String id;
@@ -42,15 +42,24 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
   }
 
   Future<void> _load() async {
+    final lang = ref.read(appLanguageProvider);
     final repo = ref.read(repoProvider);
     final backlog = await repo.backlog();
     final habits = await repo.habits();
     if (!mounted) return;
+    final taskKind = lang == AppLanguage.fa ? 'کار' : 'Task';
+    final habitKind = lang == AppLanguage.fa ? 'عادت' : 'Habit';
+    final afterText = lang == AppLanguage.fa ? 'بعد از' : 'after';
     setState(() {
       _items = [
-        for (final b in backlog) _ReviewItem('کار', b.title, false, b.id),
+        for (final b in backlog) _ReviewItem(taskKind, b.title, false, b.id),
         for (final h in habits)
-          _ReviewItem('عادت', '${h.title} — بعد از ${h.cue}', true, h.id),
+          _ReviewItem(
+            habitKind,
+            '${h.title} — $afterText ${h.cue}',
+            true,
+            h.id,
+          ),
       ];
     });
   }
@@ -80,21 +89,26 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final items = _items;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SheetHeader('بازبینیِ مبنا-صفر'),
+        SheetHeader(L10n.weeklyReviewTitle(lang)),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
           child: Text.rich(
-            const TextSpan(
-              text: 'برای هر مورد فقط یک سؤال:\n',
+            TextSpan(
+              text: lang == AppLanguage.fa
+                  ? 'برای هر مورد فقط یک سؤال:\n'
+                  : 'Just one question for each item:\n',
               children: [
                 TextSpan(
-                  text: '«اگر امروز در لیست نبود، دوباره اضافه‌اش می‌کردی؟»',
-                  style: TextStyle(
+                  text: lang == AppLanguage.fa
+                      ? '«اگر امروز در لیست نبود، دوباره اضافه‌اش می‌کردی؟»'
+                      : '"If it wasn\'t on the list today, would you add it again?"',
+                  style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     color: Tone.ink,
                   ),
@@ -112,20 +126,22 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
             [] => Padding(
               padding: const EdgeInsets.all(20),
               child: Text(
-                'چیزی برای بازبینی نیست.',
+                lang == AppLanguage.fa
+                    ? 'چیزی برای بازبینی نیست.'
+                    : 'Nothing to review.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: Tone.ink3),
               ),
             ),
-            _ when _index >= items.length => _summary(),
-            _ => _card(items),
+            _ when _index >= items.length => _summary(lang),
+            _ => _card(items, lang),
           },
         ),
       ],
     );
   }
 
-  Widget _card(List<_ReviewItem> items) {
+  Widget _card(List<_ReviewItem> items, AppLanguage lang) {
     final item = items[_index];
     return Column(
       children: [
@@ -179,7 +195,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
           children: [
             Expanded(
               child: Pill(
-                'نه — حذف',
+                lang == AppLanguage.fa ? 'نه — حذف' : 'No — Remove',
                 style: PillStyle.quiet,
                 onTap: () => _answer(false),
               ),
@@ -187,7 +203,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
             const SizedBox(width: 10),
             Expanded(
               child: Pill(
-                'بله — می‌ماند',
+                lang == AppLanguage.fa ? 'بله — می‌ماند' : 'Yes — Keep',
                 style: PillStyle.ember,
                 onTap: () => _answer(true),
               ),
@@ -198,7 +214,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
     );
   }
 
-  Widget _summary() {
+  Widget _summary(AppLanguage lang) {
     return Column(
       children: [
         GlassCard(
@@ -207,7 +223,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
           child: Column(
             children: [
               Text(
-                'تمام',
+                lang == AppLanguage.fa ? 'تمام' : 'Complete',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -216,7 +232,9 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
               ),
               const SizedBox(height: 9),
               Text(
-                '${faNum(_kept)} ماند · ${faNum(_toCut.length)} حذف شد',
+                lang == AppLanguage.fa
+                    ? '${L10n.fmtNum(_kept, lang)} ماند · ${L10n.fmtNum(_toCut.length, lang)} حذف شد'
+                    : '${L10n.fmtNum(_kept, lang)} kept · ${L10n.fmtNum(_toCut.length, lang)} removed',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w300,
@@ -224,7 +242,9 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
               ),
               const SizedBox(height: 10),
               Text(
-                'هر چیزی که ماند، حالا آگاهانه مانده.',
+                lang == AppLanguage.fa
+                    ? 'هر چیزی که ماند، حالا آگاهانه مانده.'
+                    : 'Everything that remains is now kept consciously.',
                 style: TextStyle(fontSize: 11.5, color: Tone.ink3),
               ),
             ],
@@ -232,7 +252,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
         ),
         const SizedBox(height: 16),
         Pill(
-          'بستن',
+          L10n.close(lang),
           style: PillStyle.ember,
           onTap: () => Navigator.pop(context),
         ),

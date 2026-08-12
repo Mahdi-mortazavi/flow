@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/l10n.dart';
 import '../../state/providers.dart';
 import '../widgets/glass.dart';
 
@@ -44,9 +45,13 @@ class _TaskEditSheetState extends ConsumerState<_TaskEditSheet> {
   }
 
   Future<void> _save() async {
+    final lang = ref.read(appLanguageProvider);
     final title = _controller.text.trim();
     if (title.isEmpty) {
-      showToast(context, 'عنوان خالی نمی‌شود');
+      showToast(
+        context,
+        lang == AppLanguage.fa ? 'عنوان خالی نمی‌شود' : 'Title cannot be empty',
+      );
       return;
     }
     if (title != widget.title) {
@@ -56,36 +61,49 @@ class _TaskEditSheetState extends ConsumerState<_TaskEditSheet> {
   }
 
   Future<void> _delete() async {
+    final lang = ref.read(appLanguageProvider);
     final (yes, _) = await showConfirmSheet(
       context,
-      title: widget.isBoulder ? 'تخته‌سنگ حذف شود؟' : 'این کار حذف شود؟',
+      title: widget.isBoulder
+          ? (lang == AppLanguage.fa
+                ? 'تخته‌سنگ حذف شود؟'
+                : 'Delete The Boulder?')
+          : (lang == AppLanguage.fa ? 'این کار حذف شود؟' : 'Delete this task?'),
       sub: widget.isBoulder
-          ? 'کارِ بعدی، تخته‌سنگِ امروز می‌شود.'
-          : 'از برنامهٔ امروز برداشته می‌شود.',
-      yesLabel: 'حذف',
+          ? (lang == AppLanguage.fa
+                ? 'کارِ بعدی، تخته‌سنگِ امروز می‌شود.'
+                : 'The next task will become today\'s Boulder.')
+          : (lang == AppLanguage.fa
+                ? 'از برنامهٔ امروز برداشته می‌شود.'
+                : 'Will be removed from today\'s plan.'),
+      yesLabel: L10n.delete(lang),
+      noLabel: L10n.cancel(lang),
       emberYes: false,
     );
     if (!yes || !mounted) return;
     await ref.read(todayProvider.notifier).removeTask(widget.taskId);
     if (!mounted) return;
     Navigator.pop(context);
-    showToast(context, 'حذف شد');
+    showToast(context, lang == AppLanguage.fa ? 'حذف شد' : 'Deleted');
   }
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SheetHeader(widget.isBoulder ? 'تخته‌سنگ' : 'ویرایش کار'),
+          SheetHeader(
+            widget.isBoulder ? L10n.theBoulder(lang) : L10n.editTaskTitle(lang),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
             child: GlassField(
               controller: _controller,
-              hint: 'عنوان کار…',
+              hint: lang == AppLanguage.fa ? 'عنوان کار…' : 'Task title...',
               autofocus: true,
               onSubmitted: (_) => _save(),
             ),
@@ -95,12 +113,20 @@ class _TaskEditSheetState extends ConsumerState<_TaskEditSheet> {
             child: Row(
               children: [
                 Expanded(
-                  child: Pill('حذف', style: PillStyle.quiet, onTap: _delete),
+                  child: Pill(
+                    L10n.delete(lang),
+                    style: PillStyle.quiet,
+                    onTap: _delete,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   flex: 2,
-                  child: Pill('ذخیره', style: PillStyle.ember, onTap: _save),
+                  child: Pill(
+                    L10n.save(lang),
+                    style: PillStyle.ember,
+                    onTap: _save,
+                  ),
                 ),
               ],
             ),

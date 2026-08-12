@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/fa.dart';
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../services/notifications.dart';
@@ -23,6 +23,7 @@ Future<void> startFocusFlow(
   String kind = 'task',
   int? fixedMinutes,
 }) async {
+  final lang = ref.read(appLanguageProvider);
   final minutes =
       fixedMinutes ??
       await showGlassSheet<int>(
@@ -33,7 +34,11 @@ Future<void> startFocusFlow(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SheetHeader('چند دقیقه تمرکز؟'),
+              SheetHeader(
+                lang == AppLanguage.fa
+                    ? 'چند دقیقه تمرکز؟'
+                    : 'How many minutes of focus?',
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                 child: Row(
@@ -41,7 +46,7 @@ Future<void> startFocusFlow(
                     for (final m in const [25, 50, 90]) ...[
                       Expanded(
                         child: Pill(
-                          faNum(m),
+                          L10n.fmtNum(m, lang),
                           onTap: () => Navigator.pop(ctx, m),
                         ),
                       ),
@@ -91,6 +96,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(appLanguageProvider);
     final view = ref.watch(focusProvider);
 
     // Session cleared (ended elsewhere) → leave the arena.
@@ -105,13 +111,15 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
 
     if (view.finished && !_timeUpShown) {
       _timeUpShown = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _onTimeUp(view));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _onTimeUp(view, lang),
+      );
     }
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _attemptEarlyEnd(view);
+        if (!didPop) _attemptEarlyEnd(view, lang);
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -120,7 +128,9 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
             children: [
               const Spacer(flex: 2),
               Text(
-                view.focus.isFun ? 'وقتِ آزاد' : 'تمرکز',
+                view.focus.isFun
+                    ? (lang == AppLanguage.fa ? 'وقتِ آزاد' : 'Free Time')
+                    : (lang == AppLanguage.fa ? 'تمرکز' : 'Focus'),
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
@@ -185,25 +195,27 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                   const SizedBox(width: 12),
                   _RoundBtn(
                     icon: Icons.psychology_outlined,
-                    onTap: _quickThought,
+                    onTap: () => _quickThought(lang),
                   ),
                 ],
               ),
               if (!_exactAlarms) ...[
                 const SizedBox(height: 16),
                 Text(
-                  'اجازهٔ زنگ دقیق داده نشده — زنگ پایان ممکن است کمی دیر برسد.',
+                  lang == AppLanguage.fa
+                      ? 'اجازهٔ زنگ دقیق داده نشده — زنگ پایان ممکن است کمی دیر برسد.'
+                      : 'Exact alarms not granted — end alarm may arrive slightly late.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 10.5, color: Tone.ink3),
                 ),
               ],
               const Spacer(flex: 3),
               Pressable(
-                onTap: () => _attemptEarlyEnd(view),
+                onTap: () => _attemptEarlyEnd(view, lang),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Text(
-                    'پایان زودهنگام',
+                    lang == AppLanguage.fa ? 'پایان زودهنگام' : 'End Early',
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
@@ -221,7 +233,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
   }
 
   /// Zeigarnik valve: capture an intruding thought without leaving focus.
-  Future<void> _quickThought() async {
+  Future<void> _quickThought(AppLanguage lang) async {
     final controller = TextEditingController();
     final saved = await showGlassSheet<bool>(
       context,
@@ -231,15 +243,21 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SheetHeader(
-              'فکر مزاحم؟ رهایش کن اینجا',
-              sub: 'ثبت می‌شود و هیچ‌جا نمی‌رود. تو برگرد به تمرکز.',
+            SheetHeader(
+              lang == AppLanguage.fa
+                  ? 'فکر مزاحم؟ رهایش کن اینجا'
+                  : 'Intruding thought? Drop it here',
+              sub: lang == AppLanguage.fa
+                  ? 'ثبت می‌شود و هیچ‌جا نمی‌رود. تو برگرد به تمرکز.'
+                  : 'Saved securely. Now return to focus.',
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
               child: GlassField(
                 controller: controller,
-                hint: 'بنویس و رها کن…',
+                hint: lang == AppLanguage.fa
+                    ? 'بنویس و رها کن…'
+                    : 'Type and release...',
                 autofocus: true,
                 onSubmitted: (_) => Navigator.pop(ctx, true),
               ),
@@ -247,7 +265,9 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Pill(
-                'ثبت و بازگشت به تمرکز',
+                lang == AppLanguage.fa
+                    ? 'ثبت و بازگشت به تمرکز'
+                    : 'Save & Return to Focus',
                 style: PillStyle.ember,
                 onTap: () => Navigator.pop(ctx, true),
               ),
@@ -260,16 +280,23 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     controller.dispose();
     if (saved == true && text.isNotEmpty) {
       await ref.read(thoughtsProvider.notifier).add(text, ThoughtCategory.idea);
-      if (mounted) showToast(context, 'ثبت شد. ذهنت آزاد است.');
+      if (mounted) {
+        showToast(
+          context,
+          lang == AppLanguage.fa
+              ? 'ثبت شد. ذهنت آزاد است.'
+              : 'Saved. Your mind is clear.',
+        );
+      }
     }
   }
 
-  Future<void> _attemptEarlyEnd(FocusView view) async {
+  Future<void> _attemptEarlyEnd(FocusView view, AppLanguage lang) async {
     final n = ref.read(focusProvider.notifier);
     final wasPaused = view.focus.paused;
     if (!wasPaused) await n.pause();
     if (!mounted) return;
-    final result = await _showInterruptSheet();
+    final result = await _showInterruptSheet(lang);
     if (!mounted) return;
     if (result == null) {
       // Cancelled → back to focus.
@@ -285,7 +312,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
 
   /// One-tap interrupt taxonomy — the friction of typing was why the pattern
   /// stayed empty. A tag is enough; the note is optional.
-  Future<(InterruptTag, String?)?> _showInterruptSheet() {
+  Future<(InterruptTag, String?)?> _showInterruptSheet(AppLanguage lang) {
     return showGlassSheet<(InterruptTag, String?)>(
       context,
       builder: (ctx) {
@@ -296,9 +323,13 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SheetHeader(
-                'چه چیزی قطعش کرد؟',
-                sub: 'یک ضربه کافی است — الگویش هفتگی خودش را نشان می‌دهد.',
+              SheetHeader(
+                lang == AppLanguage.fa
+                    ? 'چه چیزی قطعش کرد؟'
+                    : 'What interrupted it?',
+                sub: lang == AppLanguage.fa
+                    ? 'یک ضربه کافی است — الگویش هفتگی خودش را نشان می‌دهد.'
+                    : 'One tap is enough — weekly patterns will reveal themselves.',
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
@@ -325,7 +356,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                             border: Border.all(color: Tone.line),
                           ),
                           child: Text(
-                            '${tag.emoji}  ${tag.label}',
+                            '${tag.emoji}  ${_localizedTagLabel(tag, lang)}',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -340,13 +371,15 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                 child: GlassField(
                   controller: noteController,
-                  hint: 'یک خط، اگر خواستی (اختیاری)…',
+                  hint: lang == AppLanguage.fa
+                      ? 'یک خط، اگر خواستی (اختیاری)…'
+                      : 'One line, if you wish (optional)...',
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                 child: Pill(
-                  'برگرد به تمرکز',
+                  lang == AppLanguage.fa ? 'برگرد به تمرکز' : 'Return to Focus',
                   style: PillStyle.quiet,
                   onTap: () => Navigator.pop(ctx),
                 ),
@@ -358,13 +391,29 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     );
   }
 
-  Future<void> _onTimeUp(FocusView view) async {
+  String _localizedTagLabel(InterruptTag tag, AppLanguage lang) {
+    if (lang == AppLanguage.fa) return tag.label;
+    return switch (tag) {
+      InterruptTag.phone => 'Phone / Call',
+      InterruptTag.people => 'People / Interruption',
+      InterruptTag.tired => 'Fatigue / Low Energy',
+      InterruptTag.thought => 'Intruding Thought',
+      InterruptTag.other => 'Other',
+    };
+  }
+
+  Future<void> _onTimeUp(FocusView view, AppLanguage lang) async {
     unawaited(HapticFeedback.heavyImpact());
     final focus = view.focus;
     if (focus.isFun) {
       await ref.read(focusProvider.notifier).end(completed: true);
       if (mounted) {
-        showToast(context, 'وقتِ آزاد تمام شد — بدونِ گناه، برگرد.');
+        showToast(
+          context,
+          lang == AppLanguage.fa
+              ? 'وقتِ آزاد تمام شد — بدونِ گناه، برگرد.'
+              : 'Free time is up — guilt-free, return now.',
+        );
       }
       return;
     }
@@ -377,16 +426,18 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SheetHeader(
-              'وقت تمام شد',
-              sub: 'کمال‌گرایی را رها کن. هر چه ساختی را همین حالا ثبت کن.',
+            SheetHeader(
+              lang == AppLanguage.fa ? 'وقت تمام شد' : 'Time is up',
+              sub: lang == AppLanguage.fa
+                  ? 'کمال‌گرایی را رها کن. هر چه ساختی را همین حالا ثبت کن.'
+                  : 'Let go of perfectionism. Save what you made right now.',
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
               child: Column(
                 children: [
                   Pill(
-                    'انجام شد',
+                    lang == AppLanguage.fa ? 'انجام شد' : 'Done',
                     style: PillStyle.ember,
                     icon: Icons.check_rounded,
                     onTap: () => Navigator.pop(ctx, 'done'),
@@ -396,14 +447,14 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                     children: [
                       Expanded(
                         child: Pill(
-                          '+۱۰ دقیقه',
+                          lang == AppLanguage.fa ? '+۱۰ دقیقه' : '+10 Minutes',
                           onTap: () => Navigator.pop(ctx, 'extend'),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Pill(
-                          'هنوز نه',
+                          lang == AppLanguage.fa ? 'هنوز نه' : 'Not Yet',
                           style: PillStyle.quiet,
                           onTap: () => Navigator.pop(ctx, 'not_yet'),
                         ),
@@ -426,7 +477,14 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           await ref.read(todayProvider.notifier).setTaskDone(taskId, true);
         }
         await n.end(completed: true);
-        if (mounted) showToast(context, 'ثبت شد. کار بعدی منتظر است.');
+        if (mounted) {
+          showToast(
+            context,
+            lang == AppLanguage.fa
+                ? 'ثبت شد. کار بعدی منتظر است.'
+                : 'Recorded. The next task awaits.',
+          );
+        }
       case 'extend':
         _timeUpShown = false;
         await n.extend(10);
