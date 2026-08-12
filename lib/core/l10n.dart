@@ -828,6 +828,6 @@ abstract final class L10n {
 
   static String boulderProbabilityQuestion(AppLanguage lang) =>
       lang == AppLanguage.fa
-          ? 'چند درصد احتمال می‌دهی تخته‌سنگ را امروز تمام کنی؟ صادق باش — شب چک می‌شود.'
-          : 'What probability percentage do you give to finish The Boulder today? Be honest — reviewed tonight.';
+      ? 'چند درصد احتمال می‌دهی تخته‌سنگ را امروز تمام کنی؟ صادق باش — شب چک می‌شود.'
+      : 'What probability percentage do you give to finish The Boulder today? Be honest — reviewed tonight.';
 }
