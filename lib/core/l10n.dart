@@ -830,4 +830,44 @@ abstract final class L10n {
       lang == AppLanguage.fa
       ? 'چند درصد احتمال می‌دهی تخته‌سنگ را امروز تمام کنی؟ صادق باش — شب چک می‌شود.'
       : 'What probability percentage do you give to finish The Boulder today? Be honest — reviewed tonight.';
+
+  // --- Active Days Task Capacity Progression ---
+  static String pebbleTag(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'سنگریزه' : 'Pebble';
+
+  static String pebbleHelperText(AppLanguage lang) => lang == AppLanguage.fa
+      ? 'کار سریع و کم‌انرژی (زیر ۱۵ دقیقه)'
+      : 'Quick win (<15 min low-energy task)';
+
+  static String activeDaysProgressHint(
+    int activeDays,
+    int maxTasks,
+    AppLanguage lang,
+  ) {
+    if (activeDays < 15) {
+      return lang == AppLanguage.fa
+          ? '${fmtNum(activeDays, lang)}/۱۵ روز فعال برای باز کردن ظرفیت ۴ام'
+          : '${fmtNum(activeDays, lang)}/15 active days to unlock 4th task slot';
+    } else if (activeDays < 30) {
+      return lang == AppLanguage.fa
+          ? '${fmtNum(activeDays, lang)}/۳۰ روز فعال برای باز کردن ظرفیت ۵ام'
+          : '${fmtNum(activeDays, lang)}/30 active days to unlock 5th task slot';
+    } else {
+      return lang == AppLanguage.fa
+          ? 'ظرفیت حداکثری باز شد (۵ کار)'
+          : 'Max capacity unlocked (5 tasks)';
+    }
+  }
+
+  static String maxTasksReachedToast(int maxTasks, AppLanguage lang) =>
+      lang == AppLanguage.fa
+      ? 'حداکثر ${fmtNum(maxTasks, lang)} کار بر اساس روزهای فعال'
+      : 'Max ${fmtNum(maxTasks, lang)} tasks based on active days';
+
+  static String otherTasksHeader(int count, AppLanguage lang) {
+    if (lang == AppLanguage.fa) {
+      return count == 2 ? 'دو کارِ دیگر' : 'سایر کارها و سنگریزه‌ها';
+    }
+    return count == 2 ? 'Other Two Tasks' : 'Secondary Tasks & Pebbles';
+  }
 }

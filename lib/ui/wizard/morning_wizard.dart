@@ -62,19 +62,14 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
     });
   }
 
-  void _toggle(String id, AppLanguage lang) {
+  void _toggle(String id, AppLanguage lang, int maxTasks) {
     setState(() {
       if (_selected.contains(id)) {
         _selected.remove(id);
         if (_boulderId == id) _boulderId = null;
       } else {
-        if (_selected.length >= 3) {
-          showToast(
-            context,
-            lang == AppLanguage.fa
-                ? 'حداکثر ۳ کار — این خودِ روش است'
-                : 'Max 3 tasks — this is the essence of the system',
-          );
+        if (_selected.length >= maxTasks) {
+          showToast(context, L10n.maxTasksReachedToast(maxTasks, lang));
           return;
         }
         _selected.add(id);
@@ -83,13 +78,13 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
     });
   }
 
-  Future<void> _addNew(String value) async {
+  Future<void> _addNew(String value, int maxTasks) async {
     final title = value.trim();
     if (title.isEmpty) return;
     final item = await ref.read(repoProvider).addBacklog(title);
     setState(() {
       _backlog = [item, ...?_backlog];
-      if (_selected.length < 3) {
+      if (_selected.length < maxTasks) {
         _selected.add(item.id);
         _boulderId ??= item.id;
       }
@@ -120,6 +115,8 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(appLanguageProvider);
+    final activeDays = ref.watch(activeDaysProvider).value ?? 0;
+    final maxTasks = maxTasksForActiveDays(activeDays);
     final backlog = _backlog;
     final ready = _selected.isNotEmpty && _boulderId != null;
     return Column(
@@ -135,6 +132,53 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
             shrinkWrap: true,
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
             children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .04),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Tone.line.withValues(alpha: .4)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Tone.emberSoft,
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Text(
+                          '${L10n.fmtNum(_selected.length, lang)}/${L10n.fmtNum(maxTasks, lang)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Tone.ember,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          L10n.activeDaysProgressHint(
+                            activeDays,
+                            maxTasks,
+                            lang,
+                          ),
+                          style: TextStyle(fontSize: 11.5, color: Tone.ink2),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               if (backlog == null)
                 const SizedBox(height: 60)
               else if (backlog.isEmpty)
@@ -149,12 +193,12 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
                   ),
                 )
               else
-                for (final b in backlog) _row(b, lang),
+                for (final b in backlog) _row(b, lang, maxTasks),
               const SizedBox(height: 14),
               GlassField(
                 controller: _newTask,
                 hint: L10n.newTaskHint(lang),
-                onSubmitted: _addNew,
+                onSubmitted: (val) => _addNew(val, maxTasks),
               ),
               if (_boulderId != null) _predictionBlock(lang),
               const SizedBox(height: 8),
@@ -173,13 +217,15 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
     );
   }
 
-  Widget _row(BacklogItem b, AppLanguage lang) {
+  Widget _row(BacklogItem b, AppLanguage lang, int maxTasks) {
     final on = _selected.contains(b.id);
+    final selectedIndex = _selected.indexOf(b.id);
     final star = _boulderId == b.id;
+    final isPebble = on && selectedIndex >= 3;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Pressable(
-        onTap: () => _toggle(b.id, lang),
+        onTap: () => _toggle(b.id, lang, maxTasks),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Tone.easeOut,
@@ -226,12 +272,53 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  b.title,
-                  style: const TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      b.title,
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (isPebble) ...[
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Tone.emberSoft,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              L10n.pebbleTag(lang),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Tone.ember,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              L10n.pebbleHelperText(lang),
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                color: Tone.ink3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (on)

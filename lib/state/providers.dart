@@ -272,6 +272,18 @@ final statsProvider = FutureProvider<StatsData>((ref) {
   return ref.read(repoProvider).stats();
 });
 
+/// Total count of closed/completed days (Non-Punitive Active Days).
+final activeDaysProvider = FutureProvider<int>((ref) async {
+  ref.watch(todayProvider);
+  return ref.read(repoProvider).activeDaysCount();
+});
+
+/// Maximum allowed tasks for today based on active days progression.
+final taskCapacityProvider = FutureProvider<int>((ref) async {
+  final active = await ref.watch(activeDaysProvider.future);
+  return maxTasksForActiveDays(active);
+});
+
 /// Re-plans the OS-level morning/evening/weekly nudges around today's state.
 /// Call after planning, closing the day, changing reminder times, or on day
 /// rollover.

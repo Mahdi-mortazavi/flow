@@ -7,6 +7,16 @@ class BacklogItem {
   const BacklogItem({required this.id, required this.title});
 }
 
+/// Returns maximum tasks allowed based on non-punitive active (closed) days progression:
+/// 0..14 active days -> 3 tasks (1 Boulder + 2 secondary)
+/// 15..29 active days -> 4 tasks (1 Boulder + 2 secondary + 1 Pebble)
+/// 30+ active days -> 5 tasks (1 Boulder + 2 secondary + 2 Pebbles) [HARD CAP]
+int maxTasksForActiveDays(int activeDays) {
+  if (activeDays >= 30) return 5;
+  if (activeDays >= 15) return 4;
+  return 3;
+}
+
 /// One of today's (max 3) chosen tasks.
 class DayTask {
   final String taskId;

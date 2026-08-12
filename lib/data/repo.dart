@@ -312,6 +312,15 @@ class Repo {
     await (await _db).delete('thoughts', where: 'id = ?', whereArgs: [id]);
   }
 
+  /// Returns total count of closed/completed days (Non-Punitive Active Days).
+  Future<int> activeDaysCount() async {
+    final d = await _db;
+    final res = await d.rawQuery(
+      'SELECT COUNT(*) FROM days WHERE closed_at IS NOT NULL',
+    );
+    return Sqflite.firstIntValue(res) ?? 0;
+  }
+
   /// Promote a thought: becomes a backlog item, and lands directly on today's
   /// list when there is room — never on a closed day. Returns true if it made
   /// it onto today.
@@ -319,7 +328,10 @@ class Repo {
     final plan = await dayPlan(dayKey);
     final item = await addBacklog(t.text);
     await deleteThought(t.id);
-    final hasRoom = plan.planned && !plan.closed && plan.tasks.length < 3;
+    final active = await activeDaysCount();
+    final maxTasks = maxTasksForActiveDays(active);
+    final hasRoom =
+        plan.planned && !plan.closed && plan.tasks.length < maxTasks;
     if (hasRoom) await addTaskToDay(dayKey, item);
     return hasRoom;
   }

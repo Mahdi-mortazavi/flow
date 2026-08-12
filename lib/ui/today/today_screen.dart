@@ -216,7 +216,7 @@ class _TodayBody extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 22),
-                _Eyebrow(L10n.otherTwoTasks(lang)),
+                _Eyebrow(L10n.otherTasksHeader(plan.others.length, lang)),
                 for (final t in plan.others) _OtherTaskRow(plan: plan, task: t),
               ],
             ),
@@ -646,6 +646,8 @@ class _OtherTaskRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(appLanguageProvider);
     final locked = !plan.boulderDone && !task.done;
+    final taskIndex = plan.tasks.indexOf(task);
+    final isPebble = taskIndex >= 3;
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
       child: Opacity(
@@ -689,6 +691,43 @@ class _OtherTaskRow extends ConsumerWidget {
                               : null,
                         ),
                       ),
+                      if (isPebble) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Tone.emberSoft,
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(4),
+                                ),
+                              ),
+                              child: Text(
+                                L10n.pebbleTag(lang),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Tone.ember,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                L10n.pebbleHelperText(lang),
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  color: Tone.ink3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       if (locked)
                         Text(
                           L10n.queuedBehindBoulder(lang),
