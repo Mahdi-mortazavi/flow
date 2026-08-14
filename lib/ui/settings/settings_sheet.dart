@@ -54,7 +54,11 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
   Future<void> _saveReminder(String key, int? minutes) async {
     final repo = ref.read(repoProvider);
     await repo.setReminderMinutes(key, minutes);
-    await syncDailyReminders(repo, ref.read(dayKeyProvider));
+    await syncDailyReminders(
+      repo,
+      ref.read(dayKeyProvider),
+      ref.read(appLanguageProvider),
+    );
   }
 
   Future<void> _export() async {
@@ -99,6 +103,7 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
       await syncDailyReminders(
         ref.read(repoProvider),
         ref.read(dayKeyProvider),
+        ref.read(appLanguageProvider),
       );
       if (mounted) showToast(context, L10n.restoreSuccess(lang));
     } on FormatException {

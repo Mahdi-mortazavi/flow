@@ -61,7 +61,11 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
 
   Future<void> _onPossibleDayChange() async {
     if (!ref.read(dayKeyProvider.notifier).refresh()) return;
-    await syncDailyReminders(ref.read(repoProvider), ref.read(dayKeyProvider));
+    await syncDailyReminders(
+      ref.read(repoProvider),
+      ref.read(dayKeyProvider),
+      ref.read(appLanguageProvider),
+    );
     // Fresh day: open the wizard unless a focus session is running.
     final plan = await ref.read(todayProvider.future);
     if (!mounted) return;
@@ -82,9 +86,14 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
     // Idempotent re-sync of daily habit reminders.
     final habits = await ref.read(habitsProvider.future);
     if (!mounted) return;
-    await Notifications.instance.syncHabitReminders(habits);
+    final lang = ref.read(appLanguageProvider);
+    await Notifications.instance.syncHabitReminders(habits, lang: lang);
     if (!mounted) return;
-    await syncDailyReminders(ref.read(repoProvider), ref.read(dayKeyProvider));
+    await syncDailyReminders(
+      ref.read(repoProvider),
+      ref.read(dayKeyProvider),
+      lang,
+    );
     if (!mounted) return;
     final restored = await ref.read(focusProvider.notifier).restore();
     if (!mounted) return;

@@ -98,7 +98,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final repo = ref.read(repoProvider);
     await repo.setReminderMinutes('rem_morning', _morning);
     await repo.setReminderMinutes('rem_evening', _evening);
-    await syncDailyReminders(repo, ref.read(dayKeyProvider));
+    await syncDailyReminders(
+      repo,
+      ref.read(dayKeyProvider),
+      ref.read(appLanguageProvider),
+    );
     if (!mounted) return;
     unawaited(
       Navigator.of(context).pushReplacement(

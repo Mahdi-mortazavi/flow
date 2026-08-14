@@ -89,6 +89,7 @@ class FocusController extends Notifier<FocusView?> {
     await Notifications.instance.scheduleFocusEnd(
       DateTime.fromMillisecondsSinceEpoch(focus.endAtMs),
       title,
+      lang: ref.read(appLanguageProvider),
     );
     _publish(focus);
     _startTicker();
@@ -116,6 +117,7 @@ class FocusController extends Notifier<FocusView?> {
     await Notifications.instance.scheduleFocusEnd(
       DateTime.fromMillisecondsSinceEpoch(updated.endAtMs),
       updated.title,
+      lang: ref.read(appLanguageProvider),
     );
     _publish(updated);
     _startTicker();
@@ -137,6 +139,7 @@ class FocusController extends Notifier<FocusView?> {
     await Notifications.instance.scheduleFocusEnd(
       DateTime.fromMillisecondsSinceEpoch(updated.endAtMs),
       updated.title,
+      lang: ref.read(appLanguageProvider),
     );
     _publish(updated);
     _startTicker();

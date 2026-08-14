@@ -35,6 +35,11 @@ class AppLanguageController extends Notifier<AppLanguage> {
     state = lang;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(prefKey, lang.code);
+    final repo = ref.read(repoProvider);
+    final dayKey = ref.read(dayKeyProvider);
+    await syncDailyReminders(repo, dayKey, lang);
+    final habits = await repo.habits();
+    await Notifications.instance.syncHabitReminders(habits, lang: lang);
   }
 
   Future<void> toggleLanguage() async {
@@ -94,7 +99,7 @@ class TodayController extends AsyncNotifier<DayPlan> {
       prediction: prediction,
     );
     await _reload();
-    await syncDailyReminders(_repo, _dayKey);
+    await syncDailyReminders(_repo, _dayKey, ref.read(appLanguageProvider));
   }
 
   Future<void> setTaskDone(String taskId, bool done) async {
@@ -118,7 +123,7 @@ class TodayController extends AsyncNotifier<DayPlan> {
   }) async {
     await _repo.closeDay(dayKey: _dayKey, whys: whys, note: note);
     await _reload();
-    await syncDailyReminders(_repo, _dayKey);
+    await syncDailyReminders(_repo, _dayKey, ref.read(appLanguageProvider));
   }
 
   Future<void> reload() => _reload();
@@ -214,7 +219,10 @@ class HabitsController extends AsyncNotifier<List<Habit>> {
         replacement: replacement,
         reminderMinutes: reminderMinutes,
       );
-      await Notifications.instance.scheduleHabitReminder(habit);
+      await Notifications.instance.scheduleHabitReminder(
+        habit,
+        lang: ref.read(appLanguageProvider),
+      );
     } else {
       await _repo.updateHabit(
         id: id,
@@ -226,7 +234,10 @@ class HabitsController extends AsyncNotifier<List<Habit>> {
         reminderMinutes: reminderMinutes,
       );
       final habit = (await _repo.habits()).firstWhere((h) => h.id == id);
-      await Notifications.instance.scheduleHabitReminder(habit);
+      await Notifications.instance.scheduleHabitReminder(
+        habit,
+        lang: ref.read(appLanguageProvider),
+      );
     }
     await _reload();
   }
@@ -287,7 +298,11 @@ final taskCapacityProvider = FutureProvider<int>((ref) async {
 /// Re-plans the OS-level morning/evening/weekly nudges around today's state.
 /// Call after planning, closing the day, changing reminder times, or on day
 /// rollover.
-Future<void> syncDailyReminders(Repo repo, String dayKey) async {
+Future<void> syncDailyReminders(
+  Repo repo,
+  String dayKey, [
+  AppLanguage lang = AppLanguage.fa,
+]) async {
   final plan = await repo.dayPlan(dayKey);
   final morning = await repo.reminderMinutes(
     'rem_morning',
@@ -302,5 +317,6 @@ Future<void> syncDailyReminders(Repo repo, String dayKey) async {
     closedToday: plan.closed,
     morningMinutes: morning,
     eveningMinutes: evening,
+    lang: lang,
   );
 }

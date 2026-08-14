@@ -870,4 +870,70 @@ abstract final class L10n {
     }
     return count == 2 ? 'Other Two Tasks' : 'Secondary Tasks & Pebbles';
   }
+
+  // --- Notifications Localizations ---
+  static String focusEndChannelName(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'پایان تمرکز' : 'Focus Session Ended';
+
+  static String focusEndTimeUpTitle(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'زمان تمام شد' : 'Time is up';
+
+  static String focusEndTimeUpBody(String taskTitle, AppLanguage lang) =>
+      lang == AppLanguage.fa
+          ? 'کمال‌گرایی را رها کن — «$taskTitle» را همین حالا ثبت کن.'
+          : 'Let go of perfectionism — record "$taskTitle" right now.';
+
+  static String habitNotificationChannelName(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'یادآور عادت' : 'Habit Reminder';
+
+  static String habitNotificationActionDone(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'انجام شد ✓' : 'Mark Done ✓';
+
+  static String habitNotificationCueTitle(String cue, AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'بعد از $cue' : 'After $cue';
+
+  static String habitNotificationBody({
+    required bool isBad,
+    required String title,
+    required String replacement,
+    required AppLanguage lang,
+  }) {
+    if (lang == AppLanguage.fa) {
+      return isBad
+          ? 'مراقب باش — به‌جایش: ${replacement.isEmpty ? 'دو دقیقه قدم بزن' : replacement}'
+          : '$title — نسخهٔ ۲ دقیقه‌ای هم قبول است.';
+    }
+    return isBad
+        ? 'Watch out — instead: ${replacement.isEmpty ? 'take a 2-minute walk' : replacement}'
+        : '$title — the 2-minute version counts too.';
+  }
+
+  static String dailyRitualChannelName(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'یادآور روزانه' : 'Daily Ritual Nudge';
+
+  static String morningNotificationTitle(AppLanguage lang) =>
+      lang == AppLanguage.fa
+          ? 'روزت هنوز چیده نشده'
+          : 'Your day is not planned yet';
+
+  static String morningNotificationBody(AppLanguage lang) =>
+      lang == AppLanguage.fa
+          ? 'سه کار، یک تخته‌سنگ، یک پیش‌بینی — کمتر از یک دقیقه.'
+          : 'Three tasks, one Boulder, one prediction — under one minute.';
+
+  static String eveningNotificationTitle(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'مرور شب' : 'Evening Review';
+
+  static String eveningNotificationBody(AppLanguage lang) =>
+      lang == AppLanguage.fa
+          ? '۶۰ ثانیه: چک، چرا، یک خط — و روز بسته می‌شود.'
+          : '60 seconds: check, why, one line — and the day is closed.';
+
+  static String weeklyNotificationTitle(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'هفته تمام شد' : 'Week completed';
+
+  static String weeklyNotificationBody(AppLanguage lang) =>
+      lang == AppLanguage.fa
+          ? 'یک نگاه به آینه بینداز — اعداد، قضاوت نیستند.'
+          : 'Take a look in the mirror — metrics are not judgment.';
 }
