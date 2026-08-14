@@ -606,8 +606,8 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
       showToast(
         context,
         lang == AppLanguage.fa
-            ? 'تخته‌سنگ افتاد. بقیهٔ روز، پایین‌سرازیری است.'
-            : 'The Boulder has fallen! The rest of the day is downhill momentum.',
+            ? 'تخته‌سنگ افتاد! 🏔️'
+            : 'The Boulder has fallen! 🏔️',
       );
     }
   }
@@ -1006,12 +1006,15 @@ class _HabitsSection extends ConsumerWidget {
         if (habits.isEmpty)
           GlassCard(
             padding: const EdgeInsets.all(20),
-            child: Text(
-              lang == AppLanguage.fa
-                  ? 'عادت یعنی: بعد از یک رویدادِ همیشگی، یک رفتارِ کوچک.\nبا «+ عادت» اولین لنگر را بگذار.'
-                  : 'A habit is: after a routine event, a tiny behavior.\nTap "+ Habit" to set your first anchor.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12.5, color: Tone.ink3, height: 2),
+            child: SizedBox(
+              width: double.infinity,
+              child: Text(
+                lang == AppLanguage.fa
+                    ? 'عادت یعنی: بعد از یک رویدادِ همیشگی، یک رفتارِ کوچک.\nبا «+ عادت» اولین لنگر را بگذار.'
+                    : 'A habit is: after a routine event, a tiny behavior.\nTap "+ Habit" to set your first anchor.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12.5, color: Tone.ink3, height: 2),
+              ),
             ),
           )
         else
