@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,6 +10,14 @@ import '../services/notifications.dart';
 import 'focus_controller.dart';
 
 final repoProvider = Provider<Repo>((ref) => Repo());
+
+const _localeChannel = MethodChannel('com.taknoghte.taknoghte/locale');
+
+Future<void> _syncNativeLocale(AppLanguage lang) async {
+  try {
+    await _localeChannel.invokeMethod('setAppLocale', {'lang': lang.code});
+  } catch (_) {}
+}
 
 /// Persistent app language preference (fa or en).
 class AppLanguageController extends Notifier<AppLanguage> {
@@ -29,12 +38,14 @@ class AppLanguageController extends Notifier<AppLanguage> {
         state = lang;
       }
     }
+    await _syncNativeLocale(state);
   }
 
   Future<void> setLanguage(AppLanguage lang) async {
     state = lang;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(prefKey, lang.code);
+    await _syncNativeLocale(lang);
     final repo = ref.read(repoProvider);
     final dayKey = ref.read(dayKeyProvider);
     await syncDailyReminders(repo, dayKey, lang);
