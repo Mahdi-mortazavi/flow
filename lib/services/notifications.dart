@@ -291,10 +291,7 @@ class Notifications {
         id: _morningId,
         title: L10n.morningNotificationTitle(lang),
         body: L10n.morningNotificationBody(lang),
-        scheduledDate: _nextOccurrence(
-          morningMinutes,
-          skipToday: plannedToday,
-        ),
+        scheduledDate: _nextOccurrence(morningMinutes, skipToday: plannedToday),
         notificationDetails: quietDetails,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,

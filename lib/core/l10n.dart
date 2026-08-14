@@ -880,8 +880,8 @@ abstract final class L10n {
 
   static String focusEndTimeUpBody(String taskTitle, AppLanguage lang) =>
       lang == AppLanguage.fa
-          ? 'کمال‌گرایی را رها کن — «$taskTitle» را همین حالا ثبت کن.'
-          : 'Let go of perfectionism — record "$taskTitle" right now.';
+      ? 'کمال‌گرایی را رها کن — «$taskTitle» را همین حالا ثبت کن.'
+      : 'Let go of perfectionism — record "$taskTitle" right now.';
 
   static String habitNotificationChannelName(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'یادآور عادت' : 'Habit Reminder';
@@ -913,27 +913,27 @@ abstract final class L10n {
 
   static String morningNotificationTitle(AppLanguage lang) =>
       lang == AppLanguage.fa
-          ? 'روزت هنوز چیده نشده'
-          : 'Your day is not planned yet';
+      ? 'روزت هنوز چیده نشده'
+      : 'Your day is not planned yet';
 
   static String morningNotificationBody(AppLanguage lang) =>
       lang == AppLanguage.fa
-          ? 'سه کار، یک تخته‌سنگ، یک پیش‌بینی — کمتر از یک دقیقه.'
-          : 'Three tasks, one Boulder, one prediction — under one minute.';
+      ? 'سه کار، یک تخته‌سنگ، یک پیش‌بینی — کمتر از یک دقیقه.'
+      : 'Three tasks, one Boulder, one prediction — under one minute.';
 
   static String eveningNotificationTitle(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'مرور شب' : 'Evening Review';
 
   static String eveningNotificationBody(AppLanguage lang) =>
       lang == AppLanguage.fa
-          ? '۶۰ ثانیه: چک، چرا، یک خط — و روز بسته می‌شود.'
-          : '60 seconds: check, why, one line — and the day is closed.';
+      ? '۶۰ ثانیه: چک، چرا، یک خط — و روز بسته می‌شود.'
+      : '60 seconds: check, why, one line — and the day is closed.';
 
   static String weeklyNotificationTitle(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'هفته تمام شد' : 'Week completed';
 
   static String weeklyNotificationBody(AppLanguage lang) =>
       lang == AppLanguage.fa
-          ? 'یک نگاه به آینه بینداز — اعداد، قضاوت نیستند.'
-          : 'Take a look in the mirror — metrics are not judgment.';
+      ? 'یک نگاه به آینه بینداز — اعداد، قضاوت نیستند.'
+      : 'Take a look in the mirror — metrics are not judgment.';
 }
