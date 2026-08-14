@@ -114,6 +114,7 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
     final lang = ref.watch(appLanguageProvider);
     final activeDays = ref.watch(activeDaysProvider).value ?? 0;
     final maxTasks = maxTasksForActiveDays(activeDays);

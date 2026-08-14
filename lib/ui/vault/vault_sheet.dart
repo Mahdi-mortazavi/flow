@@ -57,6 +57,7 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
     final lang = ref.watch(appLanguageProvider);
     final thoughtsAsync = ref.watch(thoughtsProvider);
     return Column(

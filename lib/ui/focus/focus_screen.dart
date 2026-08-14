@@ -96,6 +96,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
     final lang = ref.watch(appLanguageProvider);
     final view = ref.watch(focusProvider);
 

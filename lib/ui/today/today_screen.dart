@@ -131,6 +131,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
     final planAsync = ref.watch(todayProvider);
     return Scaffold(
       body: Stack(
@@ -158,11 +159,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
 }
 
 /// The two soft radial glows behind everything.
-class _Ambient extends StatelessWidget {
+class _Ambient extends ConsumerWidget {
   const _Ambient();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(accentProvider);
     final size = MediaQuery.sizeOf(context);
     return IgnorePointer(
       child: Stack(
@@ -409,6 +411,7 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
     final lang = ref.watch(appLanguageProvider);
     final plan = widget.plan;
     _syncBreath();

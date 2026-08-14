@@ -162,6 +162,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
     final lang = ref.watch(appLanguageProvider);
     final last = _page == _slides.length - 1;
     return Scaffold(

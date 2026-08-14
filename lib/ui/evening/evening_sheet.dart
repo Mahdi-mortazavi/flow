@@ -69,6 +69,7 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
     final lang = ref.watch(appLanguageProvider);
     final planAsync = ref.watch(todayProvider);
     return planAsync.when(

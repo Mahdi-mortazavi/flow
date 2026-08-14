@@ -42,6 +42,7 @@ class _StatsBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(accentProvider);
     final lang = ref.watch(appLanguageProvider);
     final s = stats;
     return ListView(
