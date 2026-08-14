@@ -342,10 +342,10 @@ class _EmberDotState extends State<_EmberDot>
                 height: 26 + 4 * t,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Color(0xFFF6B26E), Color(0xFFE7994C)],
+                    colors: [Tone.accentLight, Tone.accentDark],
                   ),
                   boxShadow: [
                     BoxShadow(

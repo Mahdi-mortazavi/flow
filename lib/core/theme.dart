@@ -74,6 +74,10 @@ abstract final class Tone {
   /// Dynamically reflects the user's active accent color selection.
   static Color get ember => _accent;
   static Color get accent => _accent;
+  static Color get accentLight =>
+      Color.alphaBlend(Colors.white.withValues(alpha: .18), _accent);
+  static Color get accentDark =>
+      Color.alphaBlend(Colors.black.withValues(alpha: .12), _accent);
   static const emberInk = Color(0xFF1C1207);
   static Color get emberSoft => _accent.withValues(alpha: .13);
   static const warn = Color(0xFFFF7A6E);

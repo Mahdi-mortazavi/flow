@@ -176,10 +176,10 @@ class Pill extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(Tone.rPill),
           gradient: style == PillStyle.ember
-              ? const LinearGradient(
+              ? LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFFF6B26E), Color(0xFFE7994C)],
+                  colors: [Tone.accentLight, Tone.accentDark],
                 )
               : LinearGradient(
                   begin: Alignment.topCenter,
@@ -252,10 +252,10 @@ class CheckCircle extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: on
-            ? const LinearGradient(
+            ? LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFFF6B26E), Color(0xFFE7994C)],
+                colors: [Tone.accentLight, Tone.accentDark],
               )
             : null,
         border: on

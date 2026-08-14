@@ -30,6 +30,18 @@ This repository (**`re-flow`**) is an internationalized, upgraded, and feature-e
 - **Locale-Aware Local Notifications**: Morning planning nudges, evening review alarms, focus end timers, and habit reminders dynamically broadcast in the active language.
 - **Psychological Tone Localization**: Behavioral science concepts naturally translated into English (*The Boulder*, *Brain Vault*, *Stats Mirror*, *Optimism Gap*, *Pebble*).
 
+### 🎨 Liquid Glass Accent Color Palettes
+- **Dynamic Real-Time Theme Engine**: Instantly switch the entire app's accent color across primary buttons, Boulder highlights, timer progress rings, active state indicators, and glass glows without an app restart.
+- **6 Curated Liquid Glass Palettes**:
+  | Palette | Color Badge | Hex | Persian Name | English Name |
+  |---|---|---|---|---|
+  | **Ember** *(Default)* | ![](https://img.shields.io/badge/-%20-EFA55C) | `#EFA55C` | کهربایی | Ember |
+  | **Alpine Pine** | ![](https://img.shields.io/badge/-%20-4EAF7B) | `#4EAF7B` | سوزن کاج | Alpine Pine |
+  | **Abyssal Indigo** | ![](https://img.shields.io/badge/-%20-5486EB) | `#5486EB` | نیلی ژرف | Abyssal Indigo |
+  | **Smoked Mulberry** | ![](https://img.shields.io/badge/-%20-D65B6E) | `#D65B6E` | شاتوتی | Smoked Mulberry |
+  | **Mist Slate** | ![](https://img.shields.io/badge/-%20-A2ADC0) | `#A2ADC0` | گرانیت مه‌آلود | Mist Slate |
+  | **Night Iris** | ![](https://img.shields.io/badge/-%20-9F7AEA) | `#9F7AEA` | شفق شبانه | Night Iris |
+
 ### 📈 Non-Punitive "Active Days" Task Capacity Progression
 - **Self-Compassion Progression System**: Unlocks daily task slots based on total completed active days in local SQLite without streak-reset punishment:
   - **0–14 Active Days**: 3 tasks max (1 Boulder + 2 secondary tasks)

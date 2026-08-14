@@ -162,7 +162,10 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                     children: [
                       Positioned.fill(
                         child: CustomPaint(
-                          painter: _RingPainter(progress: view.progress),
+                          painter: _RingPainter(
+                            progress: view.progress,
+                            color: Tone.ember,
+                          ),
                         ),
                       ),
                       Text(
@@ -525,7 +528,8 @@ class _RoundBtn extends StatelessWidget {
 
 class _RingPainter extends CustomPainter {
   final double progress;
-  _RingPainter({required this.progress});
+  final Color color;
+  _RingPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -541,7 +545,7 @@ class _RingPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3
       ..strokeCap = StrokeCap.round
-      ..color = Tone.ember;
+      ..color = color;
     // Remaining portion of the ring, shrinking clockwise from 12 o'clock.
     final sweep = 2 * math.pi * (1 - progress);
     canvas.drawArc(
@@ -554,5 +558,6 @@ class _RingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_RingPainter old) => old.progress != progress;
+  bool shouldRepaint(_RingPainter old) =>
+      old.progress != progress || old.color != color;
 }
