@@ -211,6 +211,8 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
                   await ref.read(appLanguageProvider.notifier).toggleLanguage();
                 },
               ),
+              const SizedBox(height: 22),
+              _accentPicker(appLang),
               if (Platform.isAndroid) ...[
                 const SizedBox(height: 22),
                 _actionRow(
@@ -224,6 +226,113 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _accentPicker(AppLanguage appLang) {
+    final activeAccent = ref.watch(accentProvider);
+    return GlassCard(
+      padding: const EdgeInsets.all(15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.palette_outlined, size: 18, color: Tone.ink2),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      L10n.accentColorTitle(appLang),
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      L10n.accentColorSub(appLang),
+                      style: TextStyle(fontSize: 11, color: Tone.ink3),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: AppAccent.values.map((accent) {
+              final isSelected = accent == activeAccent;
+              return Pressable(
+                onTap: () {
+                  ref.read(accentProvider.notifier).setAccent(accent);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? accent.color.withValues(alpha: .18)
+                        : Colors.white.withValues(alpha: .04),
+                    borderRadius: BorderRadius.circular(Tone.rPill),
+                    border: Border.all(
+                      color: isSelected
+                          ? accent.color
+                          : Colors.white.withValues(alpha: .10),
+                      width: isSelected ? 1.5 : 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: accent.color,
+                          shape: BoxShape.circle,
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: accent.color.withValues(alpha: .5),
+                                    blurRadius: 6,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: isSelected
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 10,
+                                color: Colors.black87,
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        accent.label(appLang),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected ? Tone.ink : Tone.ink2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 

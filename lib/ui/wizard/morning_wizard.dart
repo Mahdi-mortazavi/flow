@@ -157,7 +157,7 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
                         ),
                         child: Text(
                           '${L10n.fmtNum(_selected.length, lang)}/${L10n.fmtNum(maxTasks, lang)}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: Tone.ember,
@@ -298,7 +298,7 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
                             ),
                             child: Text(
                               L10n.pebbleTag(lang),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 10,
                                 color: Tone.ember,
                                 fontWeight: FontWeight.w600,

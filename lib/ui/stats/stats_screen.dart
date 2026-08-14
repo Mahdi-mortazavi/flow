@@ -145,7 +145,7 @@ class _StatsBody extends ConsumerWidget {
           GlassCard(
             child: Row(
               children: [
-                const Icon(Icons.bolt_rounded, size: 20, color: Tone.ember),
+                Icon(Icons.bolt_rounded, size: 20, color: Tone.ember),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(

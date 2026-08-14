@@ -521,7 +521,7 @@ void showToast(
                         ),
                         child: Text(
                           actionLabel,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: Tone.ember,

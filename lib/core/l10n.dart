@@ -936,4 +936,11 @@ abstract final class L10n {
       lang == AppLanguage.fa
       ? 'یک نگاه به آینه بینداز — اعداد، قضاوت نیستند.'
       : 'Take a look in the mirror — metrics are not judgment.';
+
+  static String accentColorTitle(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'رنگ تم برنامه' : 'Accent Color';
+
+  static String accentColorSub(AppLanguage lang) => lang == AppLanguage.fa
+      ? 'رنگ اصلی پاداش و دکمه‌ها'
+      : 'Primary color for rewards & actions';
 }

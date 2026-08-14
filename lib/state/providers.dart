@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/fa.dart';
 import '../core/l10n.dart';
+import '../core/theme.dart';
 import '../data/models.dart';
 import '../data/repo.dart';
 import '../services/notifications.dart';
@@ -18,6 +19,40 @@ Future<void> _syncNativeLocale(AppLanguage lang) async {
     await _localeChannel.invokeMethod('setAppLocale', {'lang': lang.code});
   } catch (_) {}
 }
+
+/// Persistent accent color preference.
+class AppAccentController extends Notifier<AppAccent> {
+  static const prefKey = 'app_accent';
+
+  @override
+  AppAccent build() {
+    _load();
+    return AppAccent.ember;
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString(prefKey);
+    if (code != null) {
+      final accent = AppAccent.fromCode(code);
+      if (state != accent) {
+        state = accent;
+        Tone.setAccent(accent.color);
+      }
+    }
+  }
+
+  Future<void> setAccent(AppAccent accent) async {
+    state = accent;
+    Tone.setAccent(accent.color);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(prefKey, accent.code);
+  }
+}
+
+final accentProvider = NotifierProvider<AppAccentController, AppAccent>(
+  AppAccentController.new,
+);
 
 /// Persistent app language preference (fa or en).
 class AppLanguageController extends Notifier<AppLanguage> {

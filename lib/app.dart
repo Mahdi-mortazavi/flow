@@ -15,10 +15,12 @@ class TakNoghteApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appLanguage = ref.watch(appLanguageProvider);
+    final accent = ref.watch(accentProvider);
+    Tone.setAccent(accent.color);
     return MaterialApp(
       title: L10n.appTitle(appLanguage),
       debugShowCheckedModeBanner: false,
-      theme: buildTheme(),
+      theme: buildTheme(accent.color),
       scrollBehavior: const AppScrollBehavior(),
       locale: Locale(appLanguage.code),
       supportedLocales: const [Locale('fa'), Locale('en')],

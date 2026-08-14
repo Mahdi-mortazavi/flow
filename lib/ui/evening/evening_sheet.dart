@@ -133,7 +133,7 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
                                   if (t.taskId == plan.boulderId)
                                     TextSpan(
                                       text: '  ${L10n.theBoulder(lang)}',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
                                         color: Tone.ember,
@@ -180,11 +180,7 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
           lang == AppLanguage.fa
               ? 'تخته‌سنگ افتاد — پیش‌بینی‌ات ${L10n.fmtNum(prediction ?? 0, lang)}٪ بود. ثبت می‌شود.'
               : 'The Boulder fell — your prediction was ${L10n.fmtNum(prediction ?? 0, lang)}%. Recording.',
-          style: const TextStyle(
-            fontSize: 11.5,
-            color: Tone.ember,
-            height: 1.9,
-          ),
+          style: TextStyle(fontSize: 11.5, color: Tone.ember, height: 1.9),
         ),
       );
     }

@@ -503,7 +503,7 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
                       const SizedBox(width: 6),
                       Text(
                         lang == AppLanguage.fa ? '— انجام شد' : '— Done',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
                           color: Tone.ember,
@@ -626,7 +626,7 @@ class _EmberTag extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.local_fire_department_rounded,
             size: 12,
             color: Tone.ember,
@@ -634,7 +634,7 @@ class _EmberTag extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               color: Tone.ember,
@@ -717,7 +717,7 @@ class _OtherTaskRow extends ConsumerWidget {
                               ),
                               child: Text(
                                 L10n.pebbleTag(lang),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
                                   color: Tone.ember,
                                   fontWeight: FontWeight.w600,
@@ -916,7 +916,7 @@ class _ReviewBanner extends ConsumerWidget {
         onTap: () => openReviewSheet(context),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.local_fire_department_rounded,
               size: 18,
               color: Tone.ember,
@@ -1171,7 +1171,7 @@ class _BadHabitRow extends ConsumerWidget {
                         lang == AppLanguage.fa
                             ? 'امروز مقاومت کردی ✓'
                             : 'Resisted today ✓',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: Tone.ember,
@@ -1486,7 +1486,7 @@ class _EnergyCard extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
       child: Row(
         children: [
-          const Icon(Icons.bolt_rounded, size: 16, color: Tone.ember),
+          Icon(Icons.bolt_rounded, size: 16, color: Tone.ember),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
