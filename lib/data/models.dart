@@ -1,30 +1,155 @@
 import 'dart:convert';
 
-/// A task in the pool the morning wizard picks from.
+/// A unified domain model for all tasks (backlog, scheduled, and completed)
+/// equipped with synchronization metadata for multi-device replication.
+class Task {
+  final String id;
+  final String title;
+  final String notes;
+  final bool isBoulder;
+  final String status; // 'pending' | 'completed'
+  final String?
+  scheduledDate; // dayKey e.g. '2026-08-15', null = in backlog pool
+  final int? reminderTime; // minutes since midnight, null = no reminder
+  final int activeOrder;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+
+  const Task({
+    required this.id,
+    required this.title,
+    this.notes = '',
+    this.isBoulder = false,
+    this.status = 'pending',
+    this.scheduledDate,
+    this.reminderTime,
+    this.activeOrder = 0,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+
+  bool get isCompleted => status == 'completed';
+  bool get isDeleted => deletedAt != null;
+
+  Task copyWith({
+    String? title,
+    String? notes,
+    bool? isBoulder,
+    String? status,
+    String? scheduledDate,
+    int? reminderTime,
+    int? activeOrder,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+  }) => Task(
+    id: id,
+    title: title ?? this.title,
+    notes: notes ?? this.notes,
+    isBoulder: isBoulder ?? this.isBoulder,
+    status: status ?? this.status,
+    scheduledDate: scheduledDate ?? this.scheduledDate,
+    reminderTime: reminderTime ?? this.reminderTime,
+    activeOrder: activeOrder ?? this.activeOrder,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt ?? this.deletedAt,
+  );
+}
+
+/// A lightweight adapter representing a task in the pool the morning wizard picks from.
 class BacklogItem {
   final String id;
   final String title;
-  const BacklogItem({required this.id, required this.title});
+  final String notes;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final DateTime? deletedAt;
+
+  const BacklogItem({
+    required this.id,
+    required this.title,
+    this.notes = '',
+    this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
+  });
+
+  factory BacklogItem.fromTask(Task t) => BacklogItem(
+    id: t.id,
+    title: t.title,
+    notes: t.notes,
+    createdAt: t.createdAt,
+    updatedAt: t.updatedAt,
+    deletedAt: t.deletedAt,
+  );
 }
 
-/// One of today's (max 3) chosen tasks.
+/// Returns maximum tasks allowed based on non-punitive active (closed) days progression:
+/// 0..14 active days -> 3 tasks (1 Boulder + 2 secondary)
+/// 15..29 active days -> 4 tasks (1 Boulder + 2 secondary + 1 Pebble)
+/// 30+ active days -> 5 tasks (1 Boulder + 2 secondary + 2 Pebbles) [HARD CAP]
+int maxTasksForActiveDays(int activeDays) {
+  if (activeDays >= 30) return 5;
+  if (activeDays >= 15) return 4;
+  return 3;
+}
+
+/// One of today's chosen tasks.
 class DayTask {
   final String taskId;
   final String title;
   final bool done;
   final int sort;
+  final String notes;
+  final bool isBoulder;
+  final int? reminderTime;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
   const DayTask({
     required this.taskId,
     required this.title,
     required this.done,
     required this.sort,
+    this.notes = '',
+    this.isBoulder = false,
+    this.reminderTime,
+    this.createdAt,
+    this.updatedAt,
   });
 
-  DayTask copyWith({bool? done}) => DayTask(
+  factory DayTask.fromTask(Task t) => DayTask(
+    taskId: t.id,
+    title: t.title,
+    done: t.isCompleted,
+    sort: t.activeOrder,
+    notes: t.notes,
+    isBoulder: t.isBoulder,
+    reminderTime: t.reminderTime,
+    createdAt: t.createdAt,
+    updatedAt: t.updatedAt,
+  );
+
+  DayTask copyWith({
+    bool? done,
+    String? title,
+    int? sort,
+    String? notes,
+    bool? isBoulder,
+    int? reminderTime,
+  }) => DayTask(
     taskId: taskId,
-    title: title,
+    title: title ?? this.title,
     done: done ?? this.done,
-    sort: sort,
+    sort: sort ?? this.sort,
+    notes: notes ?? this.notes,
+    isBoulder: isBoulder ?? this.isBoulder,
+    reminderTime: reminderTime ?? this.reminderTime,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
   );
 }
 
@@ -39,6 +164,9 @@ class DayPlan {
   final bool? outcome;
   final List<String> whys;
   final String note;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final DateTime? deletedAt;
 
   const DayPlan({
     required this.dayKey,
@@ -50,6 +178,9 @@ class DayPlan {
     required this.outcome,
     required this.whys,
     required this.note,
+    this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
   });
 
   factory DayPlan.empty(String dayKey) => DayPlan(
@@ -95,44 +226,82 @@ class Thought {
   final String text;
   final ThoughtCategory category;
   final DateTime createdAt;
+  final DateTime? updatedAt;
+  final DateTime? deletedAt;
+
   const Thought({
     required this.id,
     required this.text,
     required this.category,
     required this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
   });
+
+  bool get isDeleted => deletedAt != null;
 }
 
-/// A habit anchored to an existing routine (implementation intention).
-/// Bad habits carry their long-term cost and a one-tap replacement behavior.
+/// A habit anchored to an existing routine with sync and recovery tracking.
 class Habit {
   final String id;
   final String title;
   final String cue;
   final String created; // dayKey
+  final String frequency; // 'daily'
+  final int recoveryCount;
   final bool isBad;
   final String badCost;
   final String replacement;
   final int? reminderMinutes; // minutes since midnight, null = no reminder
   final Map<String, String> logs; // dayKey -> done | slip | resisted
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final DateTime? deletedAt;
 
   const Habit({
     required this.id,
     required this.title,
     required this.cue,
     required this.created,
+    this.frequency = 'daily',
+    this.recoveryCount = 0,
     required this.isBad,
     required this.badCost,
     required this.replacement,
     required this.reminderMinutes,
     required this.logs,
+    this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
   });
 
   String? statusOn(String dayKey) => logs[dayKey];
   bool doneOn(String dayKey) => logs[dayKey] == 'done';
+  bool get isDeleted => deletedAt != null;
 }
 
-/// The official, guilt-free fun block.
+/// Domain model for Guilt-Free Play / leisure sessions.
+class Leisure {
+  final String id;
+  final String title;
+  final int durationMinutes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+
+  const Leisure({
+    required this.id,
+    required this.title,
+    required this.durationMinutes,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+
+  FunConfig toFunConfig() => FunConfig(title: title, minutes: durationMinutes);
+}
+
+/// The official, guilt-free fun block config adapter.
 class FunConfig {
   final String title;
   final int minutes;
@@ -174,6 +343,43 @@ enum InterruptTag {
     }
     return null;
   }
+}
+
+/// Domain model for a focus timer session with sync timestamps.
+class FocusSession {
+  final String id;
+  final String? taskId;
+  final int durationSeconds;
+  final DateTime? completedAt;
+  final String dayKey;
+  final String title;
+  final int plannedMin;
+  final DateTime startedAt;
+  final DateTime? endedAt;
+  final bool completed;
+  final String? interruptNote;
+  final InterruptTag? interruptTag;
+  final String kind; // task | fun
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const FocusSession({
+    required this.id,
+    this.taskId,
+    this.durationSeconds = 0,
+    this.completedAt,
+    required this.dayKey,
+    required this.title,
+    required this.plannedMin,
+    required this.startedAt,
+    this.endedAt,
+    this.completed = false,
+    this.interruptNote,
+    this.interruptTag,
+    this.kind = 'task',
+    required this.createdAt,
+    required this.updatedAt,
+  });
 }
 
 /// One closed night in the mirror.

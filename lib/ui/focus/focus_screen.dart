@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/fa.dart';
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../services/notifications.dart';
@@ -23,6 +23,7 @@ Future<void> startFocusFlow(
   String kind = 'task',
   int? fixedMinutes,
 }) async {
+  final lang = ref.read(appLanguageProvider);
   final minutes =
       fixedMinutes ??
       await showGlassSheet<int>(
@@ -33,7 +34,11 @@ Future<void> startFocusFlow(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SheetHeader('چند دقیقه تمرکز؟'),
+              SheetHeader(
+                lang == AppLanguage.fa
+                    ? 'چند دقیقه تمرکز؟'
+                    : 'How many minutes of focus?',
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                 child: Row(
@@ -41,7 +46,7 @@ Future<void> startFocusFlow(
                     for (final m in const [25, 50, 90]) ...[
                       Expanded(
                         child: Pill(
-                          faNum(m),
+                          L10n.fmtNum(m, lang),
                           onTap: () => Navigator.pop(ctx, m),
                         ),
                       ),
@@ -91,6 +96,8 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
+    final lang = ref.watch(appLanguageProvider);
     final view = ref.watch(focusProvider);
 
     // Session cleared (ended elsewhere) → leave the arena.
@@ -105,115 +112,165 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
 
     if (view.finished && !_timeUpShown) {
       _timeUpShown = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _onTimeUp(view));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _onTimeUp(view, lang),
+      );
     }
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _attemptEarlyEnd(view);
+        if (!didPop) _attemptEarlyEnd(view, lang);
       },
       child: Scaffold(
         backgroundColor: Colors.black,
         body: SafeArea(
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
-              Text(
-                view.focus.isFun ? 'وقتِ آزاد' : 'تمرکز',
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: .5,
-                  color: view.focus.isFun ? Tone.ember : Tone.ink3,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  view.focus.title,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w500,
-                    color: Tone.ink2,
-                    height: 1.8,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 38),
-              RepaintBoundary(
-                child: SizedBox(
-                  width: 272,
-                  height: 272,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Positioned.fill(
-                        child: CustomPaint(
-                          painter: _RingPainter(progress: view.progress),
-                        ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final h = constraints.maxHeight;
+              final ringSize = (h * 0.38).clamp(180.0, 284.0);
+              final clockFontSize = (ringSize * 0.185).clamp(34.0, 52.0);
+              final titleFontSize = (ringSize * 0.052).clamp(12.0, 14.5);
+              final pillSpacing = (h * 0.03).clamp(8.0, 36.0);
+              final btnSpacing = (h * 0.025).clamp(8.0, 30.0);
+
+              return Column(
+                children: [
+                  const Spacer(flex: 2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (view.focus.isFun ? Tone.accent : Tone.ink)
+                          .withValues(alpha: .08),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: Tone.line),
+                    ),
+                    child: Text(
+                      view.focus.isFun
+                          ? (lang == AppLanguage.fa ? 'وقتِ آزاد' : 'Free Time')
+                          : (lang == AppLanguage.fa
+                                ? 'جلسه تمرکز'
+                                : 'Focus Session'),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .5,
+                        color: view.focus.isFun ? Tone.accent : Tone.ink2,
                       ),
-                      Text(
-                        view.clock,
-                        textDirection: TextDirection.ltr,
-                        style: const TextStyle(
-                          fontSize: 62,
-                          fontWeight: FontWeight.w200,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
+                    ),
+                  ),
+                  SizedBox(height: pillSpacing),
+                  RepaintBoundary(
+                    child: SizedBox(
+                      width: ringSize,
+                      height: ringSize,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: _RingPainter(
+                                progress: view.progress,
+                                color: Tone.accent,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: (ringSize * 0.09).clamp(12.0, 26.0),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  L10n.fmtClock(view.remainingSec, lang),
+                                  textDirection: TextDirection.ltr,
+                                  style: TextStyle(
+                                    fontSize: clockFontSize,
+                                    fontWeight: FontWeight.w200,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: (ringSize * 0.028).clamp(2.0, 8.0),
+                                ),
+                                Text(
+                                  view.focus.title,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: titleFontSize,
+                                    fontWeight: FontWeight.w600,
+                                    color: Tone.ink2,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: btnSpacing),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _RoundBtn(
+                        icon: view.focus.paused
+                            ? Icons.play_arrow_rounded
+                            : Icons.pause_rounded,
+                        onTap: () {
+                          final n = ref.read(focusProvider.notifier);
+                          view.focus.paused ? n.resume() : n.pause();
+                          HapticFeedback.selectionClick();
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      _RoundBtn(
+                        icon: Icons.psychology_outlined,
+                        onTap: () => _quickThought(lang),
                       ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _RoundBtn(
-                    icon: view.focus.paused
-                        ? Icons.play_arrow_rounded
-                        : Icons.pause_rounded,
-                    onTap: () {
-                      final n = ref.read(focusProvider.notifier);
-                      view.focus.paused ? n.resume() : n.pause();
-                      HapticFeedback.selectionClick();
-                    },
-                  ),
-                  const SizedBox(width: 12),
-                  _RoundBtn(
-                    icon: Icons.psychology_outlined,
-                    onTap: _quickThought,
-                  ),
-                ],
-              ),
-              if (!_exactAlarms) ...[
-                const SizedBox(height: 16),
-                Text(
-                  'اجازهٔ زنگ دقیق داده نشده — زنگ پایان ممکن است کمی دیر برسد.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10.5, color: Tone.ink3),
-                ),
-              ],
-              const Spacer(flex: 3),
-              Pressable(
-                onTap: () => _attemptEarlyEnd(view),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    'پایان زودهنگام',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: Tone.ink3,
+                  if (!_exactAlarms) ...[
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        lang == AppLanguage.fa
+                            ? 'اجازهٔ زنگ دقیق داده نشده — زنگ پایان ممکن است کمی دیر برسد.'
+                            : 'Exact alarms not granted — end alarm may arrive slightly late.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 10.5, color: Tone.ink3),
+                      ),
+                    ),
+                  ],
+                  const Spacer(flex: 3),
+                  Pressable(
+                    onTap: () => _attemptEarlyEnd(view, lang),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        lang == AppLanguage.fa ? 'پایان زودهنگام' : 'End Early',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: Tone.ink3,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
+                  const SizedBox(height: 6),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -221,7 +278,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
   }
 
   /// Zeigarnik valve: capture an intruding thought without leaving focus.
-  Future<void> _quickThought() async {
+  Future<void> _quickThought(AppLanguage lang) async {
     final controller = TextEditingController();
     final saved = await showGlassSheet<bool>(
       context,
@@ -231,15 +288,21 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SheetHeader(
-              'فکر مزاحم؟ رهایش کن اینجا',
-              sub: 'ثبت می‌شود و هیچ‌جا نمی‌رود. تو برگرد به تمرکز.',
+            SheetHeader(
+              lang == AppLanguage.fa
+                  ? 'فکر مزاحم؟ رهایش کن اینجا'
+                  : 'Intruding thought? Drop it here',
+              sub: lang == AppLanguage.fa
+                  ? 'ثبت می‌شود و هیچ‌جا نمی‌رود. تو برگرد به تمرکز.'
+                  : 'Saved securely. Now return to focus.',
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
               child: GlassField(
                 controller: controller,
-                hint: 'بنویس و رها کن…',
+                hint: lang == AppLanguage.fa
+                    ? 'بنویس و رها کن…'
+                    : 'Type and release...',
                 autofocus: true,
                 onSubmitted: (_) => Navigator.pop(ctx, true),
               ),
@@ -247,7 +310,9 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Pill(
-                'ثبت و بازگشت به تمرکز',
+                lang == AppLanguage.fa
+                    ? 'ثبت و بازگشت به تمرکز'
+                    : 'Save & Return to Focus',
                 style: PillStyle.ember,
                 onTap: () => Navigator.pop(ctx, true),
               ),
@@ -260,45 +325,197 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     controller.dispose();
     if (saved == true && text.isNotEmpty) {
       await ref.read(thoughtsProvider.notifier).add(text, ThoughtCategory.idea);
-      if (mounted) showToast(context, 'ثبت شد. ذهنت آزاد است.');
+      if (mounted) {
+        showToast(
+          context,
+          lang == AppLanguage.fa
+              ? 'ثبت شد. ذهنت آزاد است.'
+              : 'Saved. Your mind is clear.',
+        );
+      }
     }
   }
 
-  Future<void> _attemptEarlyEnd(FocusView view) async {
+  Future<void> _attemptEarlyEnd(FocusView view, AppLanguage lang) async {
     final n = ref.read(focusProvider.notifier);
-    final wasPaused = view.focus.paused;
+    final focus = view.focus;
+    final wasPaused = focus.paused;
     if (!wasPaused) await n.pause();
     if (!mounted) return;
-    final result = await _showInterruptSheet();
-    if (!mounted) return;
-    if (result == null) {
-      // Cancelled → back to focus.
-      if (!wasPaused) await n.resume();
-      return;
-    }
-    await n.end(
-      completed: false,
-      interruptTag: result.$1.db,
-      interruptNote: result.$2,
-    );
-  }
 
-  /// One-tap interrupt taxonomy — the friction of typing was why the pattern
-  /// stayed empty. A tag is enough; the note is optional.
-  Future<(InterruptTag, String?)?> _showInterruptSheet() {
-    return showGlassSheet<(InterruptTag, String?)>(
-      context,
-      builder: (ctx) {
-        final noteController = TextEditingController();
-        return Padding(
+    if (focus.isFun) {
+      final end = await showGlassSheet<bool>(
+        context,
+        builder: (ctx) => Padding(
           padding: const EdgeInsets.only(bottom: 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SheetHeader(
-                'چه چیزی قطعش کرد؟',
-                sub: 'یک ضربه کافی است — الگویش هفتگی خودش را نشان می‌دهد.',
+              SheetHeader(
+                lang == AppLanguage.fa ? 'پایان وقت آزاد' : 'End Free Time',
+                sub: lang == AppLanguage.fa
+                    ? 'پایان زودهنگام تفریح و بازگشت به روال روز'
+                    : 'End leisure block early and return to your day',
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+                child: Column(
+                  children: [
+                    Pill(
+                      lang == AppLanguage.fa ? 'پایان و خروج' : 'End & Exit',
+                      style: PillStyle.ember,
+                      onTap: () => Navigator.pop(ctx, true),
+                    ),
+                    const SizedBox(height: 10),
+                    Pill(
+                      lang == AppLanguage.fa ? 'ادامه تفریح' : 'Resume Leisure',
+                      style: PillStyle.quiet,
+                      onTap: () => Navigator.pop(ctx, false),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (!mounted) return;
+      if (end == true) {
+        await n.end(completed: true);
+      } else {
+        if (!wasPaused) await n.resume();
+      }
+      return;
+    }
+
+    final action = await showGlassSheet<String>(
+      context,
+      builder: (ctx) => SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SheetHeader(
+              lang == AppLanguage.fa
+                  ? 'پایان زودهنگام تمرکز'
+                  : 'End Focus Early',
+              sub: lang == AppLanguage.fa
+                  ? 'کار زودتر تمام شد یا متوقف شد؟'
+                  : 'Did you finish early or get interrupted?',
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+              child: Column(
+                children: [
+                  Pill(
+                    L10n.markTaskCompleted(lang),
+                    style: PillStyle.ember,
+                    icon: Icons.check_circle_rounded,
+                    onTap: () => Navigator.pop(ctx, 'done'),
+                  ),
+                  const SizedBox(height: 10),
+                  Pill(
+                    lang == AppLanguage.fa
+                        ? 'ثبت وقفه و پایان'
+                        : 'Log Interruption & End',
+                    icon: Icons.pause_circle_outline_rounded,
+                    onTap: () => Navigator.pop(ctx, 'interrupt'),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Pill(
+                          L10n.logFocusKeepPending(lang),
+                          style: PillStyle.quiet,
+                          onTap: () => Navigator.pop(ctx, 'keep_pending'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Pill(
+                          lang == AppLanguage.fa
+                              ? 'ادامه تمرکز'
+                              : 'Resume Focus',
+                          style: PillStyle.quiet,
+                          onTap: () => Navigator.pop(ctx, 'resume'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    if (action == null || action == 'resume') {
+      if (!wasPaused) await n.resume();
+      return;
+    }
+
+    if (action == 'done') {
+      final taskId = focus.taskId;
+      if (taskId != null) {
+        await ref.read(todayProvider.notifier).setTaskDone(taskId, true);
+      }
+      await n.end(completed: true);
+      if (mounted) {
+        showToast(context, L10n.taskCompletedToast(lang));
+      }
+      return;
+    }
+
+    if (action == 'keep_pending') {
+      await n.end(completed: true);
+      if (mounted) {
+        showToast(context, L10n.focusLoggedKeepPendingToast(lang));
+      }
+      return;
+    }
+
+    if (action == 'interrupt') {
+      final result = await _showInterruptSheet(lang);
+      if (!mounted) return;
+      if (result == null) {
+        if (!wasPaused) await n.resume();
+        return;
+      }
+      await n.end(
+        completed: false,
+        interruptTag: result.$1.db,
+        interruptNote: result.$2,
+      );
+    }
+  }
+
+  /// One-tap interrupt taxonomy — the friction of typing was why the pattern
+  /// stayed empty. A tag is enough; the note is optional.
+  Future<(InterruptTag, String?)?> _showInterruptSheet(AppLanguage lang) {
+    return showGlassSheet<(InterruptTag, String?)>(
+      context,
+      builder: (ctx) {
+        final noteController = TextEditingController();
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SheetHeader(
+                lang == AppLanguage.fa
+                    ? 'چه چیزی قطعش کرد؟'
+                    : 'What interrupted it?',
+                sub: lang == AppLanguage.fa
+                    ? 'یک ضربه کافی است — الگویش هفتگی خودش را نشان می‌دهد.'
+                    : 'One tap is enough — weekly patterns will reveal themselves.',
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
@@ -325,7 +542,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                             border: Border.all(color: Tone.line),
                           ),
                           child: Text(
-                            '${tag.emoji}  ${tag.label}',
+                            '${tag.emoji}  ${_localizedTagLabel(tag, lang)}',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -340,13 +557,15 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                 child: GlassField(
                   controller: noteController,
-                  hint: 'یک خط، اگر خواستی (اختیاری)…',
+                  hint: lang == AppLanguage.fa
+                      ? 'یک خط، اگر خواستی (اختیاری)…'
+                      : 'One line, if you wish (optional)...',
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                 child: Pill(
-                  'برگرد به تمرکز',
+                  lang == AppLanguage.fa ? 'برگرد به تمرکز' : 'Return to Focus',
                   style: PillStyle.quiet,
                   onTap: () => Navigator.pop(ctx),
                 ),
@@ -358,57 +577,70 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     );
   }
 
-  Future<void> _onTimeUp(FocusView view) async {
+  String _localizedTagLabel(InterruptTag tag, AppLanguage lang) {
+    if (lang == AppLanguage.fa) return tag.label;
+    return switch (tag) {
+      InterruptTag.phone => 'Phone / Call',
+      InterruptTag.people => 'People / Interruption',
+      InterruptTag.tired => 'Fatigue / Low Energy',
+      InterruptTag.thought => 'Intruding Thought',
+      InterruptTag.other => 'Other',
+    };
+  }
+
+  Future<void> _onTimeUp(FocusView view, AppLanguage lang) async {
     unawaited(HapticFeedback.heavyImpact());
     final focus = view.focus;
     if (focus.isFun) {
       await ref.read(focusProvider.notifier).end(completed: true);
       if (mounted) {
-        showToast(context, 'وقتِ آزاد تمام شد — بدونِ گناه، برگرد.');
+        showToast(
+          context,
+          lang == AppLanguage.fa
+              ? 'وقتِ آزاد تمام شد — بدونِ گناه، برگرد.'
+              : 'Free time is up — guilt-free, return now.',
+        );
       }
       return;
     }
     final choice = await showGlassSheet<String>(
       context,
       isDismissible: false,
-      builder: (ctx) => Padding(
+      builder: (ctx) => SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SheetHeader(
-              'وقت تمام شد',
-              sub: 'کمال‌گرایی را رها کن. هر چه ساختی را همین حالا ثبت کن.',
+            SheetHeader(
+              L10n.focusSessionCompleteTitle(lang),
+              sub: L10n.focusSessionCompleteSub(focus.title, lang),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
               child: Column(
                 children: [
                   Pill(
-                    'انجام شد',
+                    L10n.markTaskCompleted(lang),
                     style: PillStyle.ember,
-                    icon: Icons.check_rounded,
+                    icon: Icons.check_circle_rounded,
                     onTap: () => Navigator.pop(ctx, 'done'),
                   ),
                   const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Pill(
-                          '+۱۰ دقیقه',
-                          onTap: () => Navigator.pop(ctx, 'extend'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Pill(
-                          'هنوز نه',
-                          style: PillStyle.quiet,
-                          onTap: () => Navigator.pop(ctx, 'not_yet'),
-                        ),
-                      ),
-                    ],
+                  Pill(
+                    L10n.logFocusKeepPending(lang),
+                    icon: Icons.timer_outlined,
+                    onTap: () => Navigator.pop(ctx, 'keep_pending'),
+                  ),
+                  const SizedBox(height: 10),
+                  Pill(
+                    lang == AppLanguage.fa
+                        ? '+۱۰ دقیقه ادامه'
+                        : '+10 Min Continue',
+                    style: PillStyle.quiet,
+                    icon: Icons.more_time_rounded,
+                    onTap: () => Navigator.pop(ctx, 'extend'),
                   ),
                 ],
               ),
@@ -426,14 +658,19 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           await ref.read(todayProvider.notifier).setTaskDone(taskId, true);
         }
         await n.end(completed: true);
-        if (mounted) showToast(context, 'ثبت شد. کار بعدی منتظر است.');
+        if (mounted) {
+          showToast(context, L10n.taskCompletedToast(lang));
+        }
+      case 'keep_pending':
+        await n.end(completed: true);
+        if (mounted) {
+          showToast(context, L10n.focusLoggedKeepPendingToast(lang));
+        }
       case 'extend':
         _timeUpShown = false;
         await n.extend(10);
       case _:
-        // «هنوز نه»: the session ran its course but the outcome wasn't
-        // confirmed — keep the stats honest.
-        await n.end(completed: false);
+        await n.end(completed: true);
     }
   }
 }
@@ -467,7 +704,8 @@ class _RoundBtn extends StatelessWidget {
 
 class _RingPainter extends CustomPainter {
   final double progress;
-  _RingPainter({required this.progress});
+  final Color color;
+  _RingPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -483,7 +721,7 @@ class _RingPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3
       ..strokeCap = StrokeCap.round
-      ..color = Tone.ember;
+      ..color = color;
     // Remaining portion of the ring, shrinking clockwise from 12 o'clock.
     final sweep = 2 * math.pi * (1 - progress);
     canvas.drawArc(
@@ -496,5 +734,6 @@ class _RingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_RingPainter old) => old.progress != progress;
+  bool shouldRepaint(_RingPainter old) =>
+      old.progress != progress || old.color != color;
 }

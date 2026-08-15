@@ -1,12 +1,103 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/fa.dart';
+import '../core/l10n.dart';
+import '../core/theme.dart';
 import '../data/models.dart';
 import '../data/repo.dart';
 import '../services/notifications.dart';
 import 'focus_controller.dart';
 
 final repoProvider = Provider<Repo>((ref) => Repo());
+
+const _localeChannel = MethodChannel('com.taknoghte.taknoghte/locale');
+
+Future<void> _syncNativeLocale(AppLanguage lang) async {
+  try {
+    await _localeChannel.invokeMethod('setAppLocale', {'lang': lang.code});
+  } catch (_) {}
+}
+
+/// Persistent accent color preference.
+class AppAccentController extends Notifier<AppAccent> {
+  static const prefKey = 'app_accent';
+
+  @override
+  AppAccent build() {
+    _load();
+    return AppAccent.ember;
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString(prefKey);
+    if (code != null) {
+      final accent = AppAccent.fromCode(code);
+      if (state != accent) {
+        state = accent;
+        Tone.setAccent(accent.color);
+      }
+    }
+  }
+
+  Future<void> setAccent(AppAccent accent) async {
+    state = accent;
+    Tone.setAccent(accent.color);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(prefKey, accent.code);
+  }
+}
+
+final accentProvider = NotifierProvider<AppAccentController, AppAccent>(
+  AppAccentController.new,
+);
+
+/// Persistent app language preference (fa or en).
+class AppLanguageController extends Notifier<AppLanguage> {
+  static const prefKey = 'app_language';
+
+  @override
+  AppLanguage build() {
+    _load();
+    return AppLanguage.fa;
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString(prefKey);
+    if (code != null) {
+      final lang = AppLanguage.fromCode(code);
+      if (state != lang) {
+        state = lang;
+      }
+    }
+    await _syncNativeLocale(state);
+  }
+
+  Future<void> setLanguage(AppLanguage lang) async {
+    state = lang;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(prefKey, lang.code);
+    await _syncNativeLocale(lang);
+    final repo = ref.read(repoProvider);
+    final dayKey = ref.read(dayKeyProvider);
+    await syncDailyReminders(repo, dayKey, lang);
+    final habits = await repo.habits();
+    await Notifications.instance.syncHabitReminders(habits, lang: lang);
+  }
+
+  Future<void> toggleLanguage() async {
+    final next = state == AppLanguage.fa ? AppLanguage.en : AppLanguage.fa;
+    await setLanguage(next);
+  }
+}
+
+final appLanguageProvider =
+    NotifierProvider<AppLanguageController, AppLanguage>(
+      AppLanguageController.new,
+    );
 
 /// Current day key; bumped on app resume so a new day rebuilds everything.
 class DayKeyController extends Notifier<String> {
@@ -54,20 +145,53 @@ class TodayController extends AsyncNotifier<DayPlan> {
       prediction: prediction,
     );
     await _reload();
-    await syncDailyReminders(_repo, _dayKey);
+    await syncDailyReminders(_repo, _dayKey, ref.read(appLanguageProvider));
   }
 
   Future<void> setTaskDone(String taskId, bool done) async {
     await _repo.setTaskDone(_dayKey, taskId, done);
+    if (done) {
+      await Notifications.instance.cancelTaskReminder(taskId);
+    }
     await _reload();
   }
 
   Future<void> renameTask(String taskId, String title) async {
     await _repo.renameTask(_dayKey, taskId, title);
+    final task = await _repo.getTask(taskId);
+    if (task != null && task.reminderTime != null) {
+      await Notifications.instance.scheduleTaskReminder(
+        taskId: taskId,
+        taskTitle: title,
+        minutesOfDay: task.reminderTime!,
+        dayKey: _dayKey,
+        lang: ref.read(appLanguageProvider),
+      );
+    }
+    await _reload();
+  }
+
+  Future<void> updateTaskReminder(String taskId, int? reminderMinutes) async {
+    await _repo.updateTaskReminder(taskId, reminderMinutes);
+    final task = await _repo.getTask(taskId);
+    if (task != null) {
+      if (reminderMinutes != null) {
+        await Notifications.instance.scheduleTaskReminder(
+          taskId: taskId,
+          taskTitle: task.title,
+          minutesOfDay: reminderMinutes,
+          dayKey: _dayKey,
+          lang: ref.read(appLanguageProvider),
+        );
+      } else {
+        await Notifications.instance.cancelTaskReminder(taskId);
+      }
+    }
     await _reload();
   }
 
   Future<void> removeTask(String taskId) async {
+    await Notifications.instance.cancelTaskReminder(taskId);
     await _repo.removeTaskFromDay(_dayKey, taskId);
     await _reload();
   }
@@ -78,7 +202,7 @@ class TodayController extends AsyncNotifier<DayPlan> {
   }) async {
     await _repo.closeDay(dayKey: _dayKey, whys: whys, note: note);
     await _reload();
-    await syncDailyReminders(_repo, _dayKey);
+    await syncDailyReminders(_repo, _dayKey, ref.read(appLanguageProvider));
   }
 
   Future<void> reload() => _reload();
@@ -174,7 +298,10 @@ class HabitsController extends AsyncNotifier<List<Habit>> {
         replacement: replacement,
         reminderMinutes: reminderMinutes,
       );
-      await Notifications.instance.scheduleHabitReminder(habit);
+      await Notifications.instance.scheduleHabitReminder(
+        habit,
+        lang: ref.read(appLanguageProvider),
+      );
     } else {
       await _repo.updateHabit(
         id: id,
@@ -186,7 +313,10 @@ class HabitsController extends AsyncNotifier<List<Habit>> {
         reminderMinutes: reminderMinutes,
       );
       final habit = (await _repo.habits()).firstWhere((h) => h.id == id);
-      await Notifications.instance.scheduleHabitReminder(habit);
+      await Notifications.instance.scheduleHabitReminder(
+        habit,
+        lang: ref.read(appLanguageProvider),
+      );
     }
     await _reload();
   }
@@ -232,10 +362,26 @@ final statsProvider = FutureProvider<StatsData>((ref) {
   return ref.read(repoProvider).stats();
 });
 
+/// Total count of closed/completed days (Non-Punitive Active Days).
+final activeDaysProvider = FutureProvider<int>((ref) async {
+  ref.watch(todayProvider);
+  return ref.read(repoProvider).activeDaysCount();
+});
+
+/// Maximum allowed tasks for today based on active days progression.
+final taskCapacityProvider = FutureProvider<int>((ref) async {
+  final active = await ref.watch(activeDaysProvider.future);
+  return maxTasksForActiveDays(active);
+});
+
 /// Re-plans the OS-level morning/evening/weekly nudges around today's state.
 /// Call after planning, closing the day, changing reminder times, or on day
 /// rollover.
-Future<void> syncDailyReminders(Repo repo, String dayKey) async {
+Future<void> syncDailyReminders(
+  Repo repo,
+  String dayKey, [
+  AppLanguage lang = AppLanguage.fa,
+]) async {
   final plan = await repo.dayPlan(dayKey);
   final morning = await repo.reminderMinutes(
     'rem_morning',
@@ -250,5 +396,6 @@ Future<void> syncDailyReminders(Repo repo, String dayKey) async {
     closedToday: plan.closed,
     morningMinutes: morning,
     eveningMinutes: evening,
+    lang: lang,
   );
 }

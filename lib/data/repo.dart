@@ -1,46 +1,81 @@
 import 'dart:convert';
-import 'dart:math';
-
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 
 import '../core/fa.dart';
 import 'database.dart';
 import 'models.dart';
 
-String _uid() {
-  final r = Random();
-  final now = DateTime.now().millisecondsSinceEpoch.toRadixString(36);
-  final rand = List.generate(6, (_) => r.nextInt(36).toRadixString(36)).join();
-  return '$now$rand';
-}
+const _uuid = Uuid();
 
 class Repo {
   Future<Database> get _db => AppDatabase.instance.db;
 
-  // ---------- backlog ----------
+  // ---------- tasks & backlog (domain: tasks) ----------
 
   Future<List<BacklogItem>> backlog() async {
-    final rows = await (await _db).query('backlog', orderBy: 'created_at DESC');
+    final d = await _db;
+    final rows = await d.query(
+      'tasks',
+      where: "status = 'pending' AND deleted_at IS NULL",
+      orderBy: 'created_at DESC',
+    );
     return rows
         .map(
-          (r) =>
-              BacklogItem(id: r['id'] as String, title: r['title'] as String),
+          (r) => BacklogItem(
+            id: r['id'] as String,
+            title: r['title'] as String,
+            notes: (r['notes'] as String?) ?? '',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(
+              (r['created_at'] as int?) ?? 0,
+            ),
+            updatedAt: DateTime.fromMillisecondsSinceEpoch(
+              (r['updated_at'] as int?) ?? 0,
+            ),
+            deletedAt: r['deleted_at'] == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(r['deleted_at'] as int),
+          ),
         )
         .toList();
   }
 
-  Future<BacklogItem> addBacklog(String title) async {
-    final item = BacklogItem(id: _uid(), title: title);
-    await (await _db).insert('backlog', {
-      'id': item.id,
-      'title': item.title,
-      'created_at': DateTime.now().millisecondsSinceEpoch,
+  Future<BacklogItem> addBacklog(String title, {String notes = ''}) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final id = _uuid.v4();
+    final item = BacklogItem(
+      id: id,
+      title: title,
+      notes: notes,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(now),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(now),
+    );
+    final d = await _db;
+    await d.insert('tasks', {
+      'id': id,
+      'title': title,
+      'notes': notes,
+      'is_boulder': 0,
+      'status': 'pending',
+      'scheduled_date': null,
+      'reminder_time': null,
+      'active_order': 0,
+      'created_at': now,
+      'updated_at': now,
+      'deleted_at': null,
     });
     return item;
   }
 
   Future<void> deleteBacklog(String id) async {
-    await (await _db).delete('backlog', where: 'id = ?', whereArgs: [id]);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.update(
+      'tasks',
+      {'deleted_at': now, 'updated_at': now},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   // ---------- day plan ----------
@@ -49,25 +84,35 @@ class Repo {
     final d = await _db;
     final dayRows = await d.query(
       'days',
-      where: 'day_key = ?',
+      where: 'day_key = ? AND deleted_at IS NULL',
       whereArgs: [dayKey],
     );
     final taskRows = await d.query(
-      'day_tasks',
-      where: 'day_key = ?',
+      'tasks',
+      where: 'scheduled_date = ? AND deleted_at IS NULL',
       whereArgs: [dayKey],
-      orderBy: 'sort ASC',
+      orderBy: 'active_order ASC',
     );
     final tasks = taskRows
         .map(
           (r) => DayTask(
-            taskId: r['task_id'] as String,
+            taskId: r['id'] as String,
             title: r['title'] as String,
-            done: (r['done'] as int) == 1,
-            sort: r['sort'] as int,
+            done: (r['status'] as String) == 'completed',
+            sort: (r['active_order'] as int?) ?? 0,
+            notes: (r['notes'] as String?) ?? '',
+            isBoulder: (r['is_boulder'] as int?) == 1,
+            reminderTime: r['reminder_time'] as int?,
+            createdAt: DateTime.fromMillisecondsSinceEpoch(
+              (r['created_at'] as int?) ?? 0,
+            ),
+            updatedAt: DateTime.fromMillisecondsSinceEpoch(
+              (r['updated_at'] as int?) ?? 0,
+            ),
           ),
         )
         .toList();
+
     if (dayRows.isEmpty) return DayPlan.empty(dayKey);
     final row = dayRows.first;
     return DayPlan(
@@ -78,8 +123,18 @@ class Repo {
       tasks: tasks,
       closed: row['closed_at'] != null,
       outcome: row['outcome'] == null ? null : (row['outcome'] as int) == 1,
-      whys: (jsonDecode(row['whys'] as String) as List).cast<String>(),
-      note: row['note'] as String,
+      whys: (jsonDecode((row['whys'] as String?) ?? '[]') as List)
+          .cast<String>(),
+      note: (row['note'] as String?) ?? '',
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        (row['created_at'] as int?) ?? 0,
+      ),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        (row['updated_at'] as int?) ?? 0,
+      ),
+      deletedAt: row['deleted_at'] == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(row['deleted_at'] as int),
     );
   }
 
@@ -92,26 +147,55 @@ class Repo {
     required int prediction,
   }) async {
     final d = await _db;
+    final now = DateTime.now().millisecondsSinceEpoch;
     await d.transaction((tx) async {
-      final old = await tx.query(
-        'day_tasks',
-        where: 'day_key = ?',
-        whereArgs: [dayKey],
+      final selectedIds = selected.map((s) => s.id).toSet();
+
+      // Reset any tasks previously scheduled for this day that are no longer selected
+      await tx.update(
+        'tasks',
+        {'scheduled_date': null, 'is_boulder': 0, 'updated_at': now},
+        where:
+            'scheduled_date = ? AND id NOT IN (${selectedIds.map((_) => '?').join(', ')})',
+        whereArgs: [dayKey, ...selectedIds],
       );
-      final oldDone = {
-        for (final r in old) r['task_id'] as String: (r['done'] as int) == 1,
-      };
-      await tx.delete('day_tasks', where: 'day_key = ?', whereArgs: [dayKey]);
+
+      // Assign selected tasks to today with order and boulder flag
       for (var i = 0; i < selected.length; i++) {
         final t = selected[i];
-        await tx.insert('day_tasks', {
-          'day_key': dayKey,
-          'task_id': t.id,
-          'title': t.title,
-          'done': (oldDone[t.id] ?? false) ? 1 : 0,
-          'sort': i,
-        });
+        final isBoulder = t.id == boulderId;
+        final count = Sqflite.firstIntValue(
+          await tx.rawQuery('SELECT COUNT(*) FROM tasks WHERE id = ?', [t.id]),
+        );
+        if (count != null && count > 0) {
+          await tx.update(
+            'tasks',
+            {
+              'scheduled_date': dayKey,
+              'active_order': i,
+              'is_boulder': isBoulder ? 1 : 0,
+              'updated_at': now,
+            },
+            where: 'id = ?',
+            whereArgs: [t.id],
+          );
+        } else {
+          await tx.insert('tasks', {
+            'id': t.id,
+            'title': t.title,
+            'notes': t.notes,
+            'is_boulder': isBoulder ? 1 : 0,
+            'status': 'pending',
+            'scheduled_date': dayKey,
+            'reminder_time': null,
+            'active_order': i,
+            'created_at': now,
+            'updated_at': now,
+            'deleted_at': null,
+          });
+        }
       }
+
       await tx.insert('days', {
         'day_key': dayKey,
         'planned': 1,
@@ -119,51 +203,97 @@ class Repo {
         'prediction': prediction,
         'whys': '[]',
         'note': '',
+        'created_at': now,
+        'updated_at': now,
+        'deleted_at': null,
       }, conflictAlgorithm: ConflictAlgorithm.replace);
     });
   }
 
   Future<void> setTaskDone(String dayKey, String taskId, bool done) async {
-    await (await _db).update(
-      'day_tasks',
-      {'done': done ? 1 : 0},
-      where: 'day_key = ? AND task_id = ?',
-      whereArgs: [dayKey, taskId],
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.update(
+      'tasks',
+      {'status': done ? 'completed' : 'pending', 'updated_at': now},
+      where: 'id = ?',
+      whereArgs: [taskId],
     );
   }
 
-  /// Renames a task everywhere its title is stored (today's list is a
-  /// denormalized copy of the backlog title).
+  /// Renames a task everywhere its title is stored.
   Future<void> renameTask(String dayKey, String taskId, String title) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.update(
+      'tasks',
+      {'title': title, 'updated_at': now},
+      where: 'id = ?',
+      whereArgs: [taskId],
+    );
+  }
+
+  /// Updates or clears reminder_time on a task.
+  Future<void> updateTaskReminder(String taskId, int? reminderMinutes) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.update(
+      'tasks',
+      {'reminder_time': reminderMinutes, 'updated_at': now},
+      where: 'id = ?',
+      whereArgs: [taskId],
+    );
+  }
+
+  /// Retrieves a task by id.
+  Future<Task?> getTask(String taskId) async {
+    final d = await _db;
+    final rows = await d.query(
+      'tasks',
+      where: 'id = ?',
+      whereArgs: [taskId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    final r = rows.first;
+    return Task(
+      id: r['id'] as String,
+      title: r['title'] as String,
+      notes: (r['notes'] as String?) ?? '',
+      isBoulder: (r['is_boulder'] as int?) == 1,
+      status: (r['status'] as String?) ?? 'pending',
+      scheduledDate: r['scheduled_date'] as String?,
+      reminderTime: r['reminder_time'] as int?,
+      activeOrder: (r['active_order'] as int?) ?? 0,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        (r['created_at'] as int?) ?? 0,
+      ),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        (r['updated_at'] as int?) ?? 0,
+      ),
+      deletedAt: r['deleted_at'] == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(r['deleted_at'] as int),
+    );
+  }
+
+  /// Removes a task from today's plan. If it was the boulder, the next task inherits the crown.
+  Future<void> removeTaskFromDay(String dayKey, String taskId) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
     final d = await _db;
     await d.transaction((tx) async {
       await tx.update(
-        'day_tasks',
-        {'title': title},
-        where: 'day_key = ? AND task_id = ?',
-        whereArgs: [dayKey, taskId],
-      );
-      await tx.update(
-        'backlog',
-        {'title': title},
+        'tasks',
+        {
+          'scheduled_date': null,
+          'is_boulder': 0,
+          'deleted_at': now,
+          'updated_at': now,
+        },
         where: 'id = ?',
         whereArgs: [taskId],
       );
-    });
-  }
 
-  /// Removes a task from today's plan (and the backlog). If it was the
-  /// boulder, the first remaining task inherits the crown; if nothing remains,
-  /// the day falls back to unplanned.
-  Future<void> removeTaskFromDay(String dayKey, String taskId) async {
-    final d = await _db;
-    await d.transaction((tx) async {
-      await tx.delete(
-        'day_tasks',
-        where: 'day_key = ? AND task_id = ?',
-        whereArgs: [dayKey, taskId],
-      );
-      await tx.delete('backlog', where: 'id = ?', whereArgs: [taskId]);
       final dayRows = await tx.query(
         'days',
         where: 'day_key = ?',
@@ -171,23 +301,31 @@ class Repo {
       );
       if (dayRows.isEmpty) return;
       if (dayRows.first['boulder_id'] != taskId) return;
+
       final remaining = await tx.query(
-        'day_tasks',
-        where: 'day_key = ?',
+        'tasks',
+        where: 'scheduled_date = ? AND deleted_at IS NULL',
         whereArgs: [dayKey],
-        orderBy: 'sort ASC',
+        orderBy: 'active_order ASC',
       );
       if (remaining.isEmpty) {
         await tx.update(
           'days',
-          {'boulder_id': null, 'planned': 0},
+          {'boulder_id': null, 'planned': 0, 'updated_at': now},
           where: 'day_key = ?',
           whereArgs: [dayKey],
         );
       } else {
+        final newBoulderId = remaining.first['id'] as String;
+        await tx.update(
+          'tasks',
+          {'is_boulder': 1, 'updated_at': now},
+          where: 'id = ?',
+          whereArgs: [newBoulderId],
+        );
         await tx.update(
           'days',
-          {'boulder_id': remaining.first['task_id']},
+          {'boulder_id': newBoulderId, 'updated_at': now},
           where: 'day_key = ?',
           whereArgs: [dayKey],
         );
@@ -195,41 +333,64 @@ class Repo {
     });
   }
 
-  /// Adds a task to today's list (used by "promote thought"). Also ensures it
-  /// exists in the backlog so a replan doesn't lose it.
+  /// Adds a task to today's list (used by "promote thought").
   Future<void> addTaskToDay(String dayKey, BacklogItem item) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
     final d = await _db;
     await d.transaction((tx) async {
       final maxSort =
           Sqflite.firstIntValue(
             await tx.rawQuery(
-              'SELECT MAX(sort) FROM day_tasks WHERE day_key = ?',
+              'SELECT MAX(active_order) FROM tasks WHERE scheduled_date = ? AND deleted_at IS NULL',
               [dayKey],
             ),
           ) ??
           -1;
-      await tx.insert('day_tasks', {
-        'day_key': dayKey,
-        'task_id': item.id,
-        'title': item.title,
-        'done': 0,
-        'sort': maxSort + 1,
-      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+
+      final count = Sqflite.firstIntValue(
+        await tx.rawQuery('SELECT COUNT(*) FROM tasks WHERE id = ?', [item.id]),
+      );
+      if (count != null && count > 0) {
+        await tx.update(
+          'tasks',
+          {
+            'scheduled_date': dayKey,
+            'active_order': maxSort + 1,
+            'updated_at': now,
+          },
+          where: 'id = ?',
+          whereArgs: [item.id],
+        );
+      } else {
+        await tx.insert('tasks', {
+          'id': item.id,
+          'title': item.title,
+          'notes': item.notes,
+          'is_boulder': 0,
+          'status': 'pending',
+          'scheduled_date': dayKey,
+          'reminder_time': null,
+          'active_order': maxSort + 1,
+          'created_at': now,
+          'updated_at': now,
+          'deleted_at': null,
+        });
+      }
     });
   }
 
-  /// Evening review: closes the day and removes completed tasks from the
-  /// backlog for good.
+  /// Evening review: closes the day.
   Future<void> closeDay({
     required String dayKey,
     required List<String> whys,
     required String note,
   }) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
     final d = await _db;
     await d.transaction((tx) async {
       final tasks = await tx.query(
-        'day_tasks',
-        where: 'day_key = ?',
+        'tasks',
+        where: 'scheduled_date = ? AND deleted_at IS NULL',
         whereArgs: [dayKey],
       );
       final dayRows = await tx.query(
@@ -241,23 +402,17 @@ class Repo {
       final boulderId = dayRows.first['boulder_id'] as String?;
       var outcome = false;
       for (final t in tasks) {
-        final done = (t['done'] as int) == 1;
-        if (t['task_id'] == boulderId) outcome = done;
-        if (done) {
-          await tx.delete(
-            'backlog',
-            where: 'id = ?',
-            whereArgs: [t['task_id']],
-          );
-        }
+        final done = (t['status'] as String) == 'completed';
+        if (t['id'] == boulderId) outcome = done;
       }
       await tx.update(
         'days',
         {
-          'closed_at': DateTime.now().millisecondsSinceEpoch,
+          'closed_at': now,
           'outcome': outcome ? 1 : 0,
           'whys': jsonEncode(whys),
           'note': note,
+          'updated_at': now,
         },
         where: 'day_key = ?',
         whereArgs: [dayKey],
@@ -265,11 +420,13 @@ class Repo {
     });
   }
 
-  // ---------- thoughts ----------
+  // ---------- thoughts (domain: thoughts) ----------
 
   Future<List<Thought>> thoughts() async {
-    final rows = await (await _db).query(
+    final d = await _db;
+    final rows = await d.query(
       'thoughts',
+      where: 'deleted_at IS NULL',
       orderBy: 'created_at DESC',
     );
     return rows
@@ -281,17 +438,27 @@ class Repo {
             createdAt: DateTime.fromMillisecondsSinceEpoch(
               r['created_at'] as int,
             ),
+            updatedAt: DateTime.fromMillisecondsSinceEpoch(
+              (r['updated_at'] as int?) ?? 0,
+            ),
+            deletedAt: r['deleted_at'] == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(r['deleted_at'] as int),
           ),
         )
         .toList();
   }
 
   Future<void> addThought(String text, ThoughtCategory category) async {
-    await (await _db).insert('thoughts', {
-      'id': _uid(),
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.insert('thoughts', {
+      'id': _uuid.v4(),
       'text': text,
       'category': category.db,
-      'created_at': DateTime.now().millisecondsSinceEpoch,
+      'created_at': now,
+      'updated_at': now,
+      'deleted_at': null,
     });
   }
 
@@ -300,41 +467,65 @@ class Repo {
     String text,
     ThoughtCategory category,
   ) async {
-    await (await _db).update(
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.update(
       'thoughts',
-      {'text': text, 'category': category.db},
+      {'text': text, 'category': category.db, 'updated_at': now},
       where: 'id = ?',
       whereArgs: [id],
     );
   }
 
   Future<void> deleteThought(String id) async {
-    await (await _db).delete('thoughts', where: 'id = ?', whereArgs: [id]);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.update(
+      'thoughts',
+      {'deleted_at': now, 'updated_at': now},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
-  /// Promote a thought: becomes a backlog item, and lands directly on today's
-  /// list when there is room — never on a closed day. Returns true if it made
-  /// it onto today.
+  /// Returns total count of closed/completed days (Non-Punitive Active Days).
+  Future<int> activeDaysCount() async {
+    final d = await _db;
+    final res = await d.rawQuery(
+      'SELECT COUNT(*) FROM days WHERE closed_at IS NOT NULL AND deleted_at IS NULL',
+    );
+    return Sqflite.firstIntValue(res) ?? 0;
+  }
+
+  /// Promote a thought: becomes a task in the backlog, and lands directly on today's
+  /// list when there is room — never on a closed day.
   Future<bool> promoteThought(Thought t, String dayKey) async {
     final plan = await dayPlan(dayKey);
     final item = await addBacklog(t.text);
     await deleteThought(t.id);
-    final hasRoom = plan.planned && !plan.closed && plan.tasks.length < 3;
+    final active = await activeDaysCount();
+    final maxTasks = maxTasksForActiveDays(active);
+    final hasRoom =
+        plan.planned && !plan.closed && plan.tasks.length < maxTasks;
     if (hasRoom) await addTaskToDay(dayKey, item);
     return hasRoom;
   }
 
   /// Puts a deleted thought back exactly as it was (undo).
   Future<void> restoreThought(Thought t) async {
-    await (await _db).insert('thoughts', {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.insert('thoughts', {
       'id': t.id,
       'text': t.text,
       'category': t.category.db,
       'created_at': t.createdAt.millisecondsSinceEpoch,
+      'updated_at': now,
+      'deleted_at': null,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  // ---------- focus sessions ----------
+  // ---------- focus sessions (domain: focus_sessions) ----------
 
   Future<String> startFocusSession({
     required String dayKey,
@@ -343,22 +534,27 @@ class Repo {
     required int plannedMin,
     String kind = 'task',
   }) async {
-    final id = _uid();
-    await (await _db).insert('focus_sessions', {
+    final id = _uuid.v4();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.insert('focus_sessions', {
       'id': id,
-      'day_key': dayKey,
       'task_id': taskId,
+      'duration_seconds': 0,
+      'completed_at': null,
+      'day_key': dayKey,
       'title': title,
       'planned_min': plannedMin,
-      'started_at': DateTime.now().millisecondsSinceEpoch,
+      'started_at': now,
+      'ended_at': null,
       'completed': 0,
       'kind': kind,
+      'created_at': now,
+      'updated_at': now,
     });
     return id;
   }
 
-  /// [endedAtMs] lets a session that expired while the app was dead be closed
-  /// at its real end time instead of "now".
   Future<void> endFocusSession({
     required String sessionId,
     required bool completed,
@@ -366,25 +562,46 @@ class Repo {
     String? interruptTag,
     int? endedAtMs,
   }) async {
-    await (await _db).update(
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final endedAt = endedAtMs ?? now;
+    final d = await _db;
+    final rows = await d.query(
+      'focus_sessions',
+      where: 'id = ?',
+      whereArgs: [sessionId],
+    );
+    int durationSec = 0;
+    if (rows.isNotEmpty) {
+      final startedAt = (rows.first['started_at'] as int?) ?? now;
+      durationSec = ((endedAt - startedAt) / 1000).round().clamp(0, 86400);
+    }
+
+    await d.update(
       'focus_sessions',
       {
-        'ended_at': endedAtMs ?? DateTime.now().millisecondsSinceEpoch,
+        'ended_at': endedAt,
+        'duration_seconds': durationSec,
+        'completed_at': completed ? endedAt : null,
         'completed': completed ? 1 : 0,
         if (interruptNote != null) 'interrupt_note': interruptNote,
         if (interruptTag != null) 'interrupt_tag': interruptTag,
+        'updated_at': now,
       },
       where: 'id = ?',
       whereArgs: [sessionId],
     );
   }
 
-  // ---------- habits ----------
+  // ---------- habits (domain: habits) ----------
 
   Future<List<Habit>> habits() async {
     final d = await _db;
-    final rows = await d.query('habits', orderBy: 'sort ASC, created ASC');
-    final logRows = await d.query('habit_logs');
+    final rows = await d.query(
+      'habits',
+      where: 'deleted_at IS NULL',
+      orderBy: 'sort ASC, created ASC',
+    );
+    final logRows = await d.query('habit_logs', where: 'deleted_at IS NULL');
     final logs = <String, Map<String, String>>{};
     for (final r in logRows) {
       (logs[r['habit_id'] as String] ??= {})[r['day_key'] as String] =
@@ -395,13 +612,24 @@ class Repo {
           (r) => Habit(
             id: r['id'] as String,
             title: r['title'] as String,
-            cue: r['cue'] as String,
+            cue: (r['cue'] as String?) ?? '',
             created: r['created'] as String,
+            frequency: (r['frequency'] as String?) ?? 'daily',
+            recoveryCount: (r['recovery_count'] as int?) ?? 0,
             isBad: (r['is_bad'] as int) == 1,
-            badCost: r['bad_cost'] as String,
-            replacement: r['replacement'] as String,
+            badCost: (r['bad_cost'] as String?) ?? '',
+            replacement: (r['replacement'] as String?) ?? '',
             reminderMinutes: r['reminder_minutes'] as int?,
             logs: logs[r['id'] as String] ?? const {},
+            createdAt: DateTime.fromMillisecondsSinceEpoch(
+              (r['created_at'] as int?) ?? 0,
+            ),
+            updatedAt: DateTime.fromMillisecondsSinceEpoch(
+              (r['updated_at'] as int?) ?? 0,
+            ),
+            deletedAt: r['deleted_at'] == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(r['deleted_at'] as int),
           ),
         )
         .toList();
@@ -414,34 +642,46 @@ class Repo {
     required String badCost,
     required String replacement,
     required int? reminderMinutes,
+    String frequency = 'daily',
   }) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
     final d = await _db;
     final maxSort =
         Sqflite.firstIntValue(
-          await d.rawQuery('SELECT MAX(sort) FROM habits'),
+          await d.rawQuery(
+            'SELECT MAX(sort) FROM habits WHERE deleted_at IS NULL',
+          ),
         ) ??
         -1;
     final habit = Habit(
-      id: _uid(),
+      id: _uuid.v4(),
       title: title,
       cue: cue,
       created: todayKey(),
+      frequency: frequency,
       isBad: isBad,
       badCost: badCost,
       replacement: replacement,
       reminderMinutes: reminderMinutes,
       logs: const {},
+      createdAt: DateTime.fromMillisecondsSinceEpoch(now),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(now),
     );
     await d.insert('habits', {
       'id': habit.id,
       'title': title,
       'cue': cue,
       'created': habit.created,
+      'frequency': frequency,
+      'recovery_count': 0,
       'is_bad': isBad ? 1 : 0,
       'bad_cost': badCost,
       'replacement': replacement,
       'reminder_minutes': reminderMinutes,
       'sort': maxSort + 1,
+      'created_at': now,
+      'updated_at': now,
+      'deleted_at': null,
     });
     return habit;
   }
@@ -454,16 +694,21 @@ class Repo {
     required String badCost,
     required String replacement,
     required int? reminderMinutes,
+    String frequency = 'daily',
   }) async {
-    await (await _db).update(
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.update(
       'habits',
       {
         'title': title,
         'cue': cue,
+        'frequency': frequency,
         'is_bad': isBad ? 1 : 0,
         'bad_cost': badCost,
         'replacement': replacement,
         'reminder_minutes': reminderMinutes,
+        'updated_at': now,
       },
       where: 'id = ?',
       whereArgs: [id],
@@ -471,17 +716,30 @@ class Repo {
   }
 
   Future<void> deleteHabit(String id) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
     final d = await _db;
-    await d.delete('habits', where: 'id = ?', whereArgs: [id]);
-    await d.delete('habit_logs', where: 'habit_id = ?', whereArgs: [id]);
+    await d.update(
+      'habits',
+      {'deleted_at': now, 'updated_at': now},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    await d.update(
+      'habit_logs',
+      {'deleted_at': now, 'updated_at': now},
+      where: 'habit_id = ?',
+      whereArgs: [id],
+    );
   }
 
   /// Records today's status for a habit; pass null to clear it.
   Future<void> logHabit(String habitId, String dayKey, String? status) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
     final d = await _db;
     if (status == null) {
-      await d.delete(
+      await d.update(
         'habit_logs',
+        {'deleted_at': now, 'updated_at': now},
         where: 'habit_id = ? AND day_key = ?',
         whereArgs: [habitId, dayKey],
       );
@@ -490,41 +748,95 @@ class Repo {
         'habit_id': habitId,
         'day_key': dayKey,
         'status': status,
+        'created_at': now,
+        'updated_at': now,
+        'deleted_at': null,
       }, conflictAlgorithm: ConflictAlgorithm.replace);
     }
   }
 
-  // ---------- settings / fun ----------
+  // ---------- leisure / fun (domain: leisure) ----------
+
+  Future<FunConfig?> funConfig() async {
+    final d = await _db;
+    final rows = await d.query(
+      'leisure',
+      where: 'deleted_at IS NULL',
+      orderBy: 'updated_at DESC',
+      limit: 1,
+    );
+    if (rows.isNotEmpty) {
+      final r = rows.first;
+      return FunConfig(
+        title: r['title'] as String,
+        minutes: (r['duration_minutes'] as int?) ?? 30,
+      );
+    }
+    return FunConfig.fromJson(await getSetting('fun'));
+  }
+
+  Future<void> setFunConfig(FunConfig fun) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    final existing = await d.query(
+      'leisure',
+      where: 'deleted_at IS NULL',
+      limit: 1,
+    );
+    if (existing.isNotEmpty) {
+      await d.update(
+        'leisure',
+        {
+          'title': fun.title,
+          'duration_minutes': fun.minutes,
+          'updated_at': now,
+        },
+        where: 'id = ?',
+        whereArgs: [existing.first['id']],
+      );
+    } else {
+      await d.insert('leisure', {
+        'id': _uuid.v4(),
+        'title': fun.title,
+        'duration_minutes': fun.minutes,
+        'created_at': now,
+        'updated_at': now,
+        'deleted_at': null,
+      });
+    }
+    await setSetting('fun', fun.toJson());
+  }
+
+  // ---------- settings ----------
 
   Future<String?> getSetting(String key) async {
-    final rows = await (await _db).query(
-      'settings',
-      where: 'k = ?',
-      whereArgs: [key],
-    );
+    final d = await _db;
+    final rows = await d.query('settings', where: 'k = ?', whereArgs: [key]);
     return rows.isEmpty ? null : rows.first['v'] as String;
   }
 
   Future<void> setSetting(String key, String value) async {
-    await (await _db).insert('settings', {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.insert('settings', {
       'k': key,
       'v': value,
+      'updated_at': now,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<FunConfig?> funConfig() async =>
-      FunConfig.fromJson(await getSetting('fun'));
-
-  Future<void> setFunConfig(FunConfig fun) => setSetting('fun', fun.toJson());
-
-  // ---------- energy ----------
+  // ---------- energy checks ----------
 
   Future<void> addEnergyCheck(int level) async {
-    await (await _db).insert('energy_checks', {
-      'id': _uid(),
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.insert('energy_checks', {
+      'id': _uuid.v4(),
       'day_key': todayKey(),
       'hour': DateTime.now().hour,
       'level': level,
+      'created_at': now,
+      'updated_at': now,
     });
   }
 
@@ -532,12 +844,11 @@ class Repo {
 
   Future<void> markReviewDone() => setSetting('last_review', todayKey());
 
-  // ---------- daily reminders (retention loop) ----------
+  // ---------- daily reminders ----------
 
   static const defaultMorningMin = 8 * 60 + 30;
   static const defaultEveningMin = 21 * 60 + 30;
 
-  /// Reminder minute-of-day, or null when the user turned it off.
   Future<int?> reminderMinutes(String key, int fallback) async {
     final raw = await getSetting(key);
     if (raw == null) return fallback;
@@ -551,18 +862,18 @@ class Repo {
   // ---------- backup / restore ----------
 
   static const _exportTables = [
-    'backlog',
+    'tasks',
     'days',
-    'day_tasks',
-    'thoughts',
-    'focus_sessions',
     'habits',
     'habit_logs',
+    'leisure',
+    'focus_sessions',
+    'thoughts',
     'energy_checks',
     'settings',
   ];
 
-  /// Full snapshot of every table as portable JSON.
+  /// Full snapshot of every domain table as portable JSON.
   Future<String> exportJson() async {
     final d = await _db;
     final tables = <String, List<Map<String, Object?>>>{};
@@ -571,14 +882,13 @@ class Repo {
     }
     return jsonEncode({
       'app': 'taknoghte',
-      'version': 1,
+      'version': 2,
       'exportedAt': DateTime.now().toIso8601String(),
       'tables': tables,
     });
   }
 
-  /// Replaces ALL local data with the backup. Caller must confirm first.
-  /// Throws [FormatException] on anything that is not a valid backup.
+  /// Restores local data from JSON backup with backward compatibility.
   Future<void> importJson(String raw) async {
     final Object? decoded;
     try {
@@ -588,11 +898,11 @@ class Repo {
     }
     if (decoded is! Map<String, dynamic> ||
         decoded['app'] != 'taknoghte' ||
-        decoded['version'] != 1 ||
         decoded['tables'] is! Map<String, dynamic>) {
       throw const FormatException('not a taknoghte backup');
     }
     final tables = decoded['tables'] as Map<String, dynamic>;
+    final now = DateTime.now().millisecondsSinceEpoch;
     final d = await _db;
     await d.transaction((tx) async {
       for (final t in _exportTables) {
@@ -609,6 +919,53 @@ class Repo {
           }
         }
       }
+
+      // Backward compatibility: If older v1 backup contains backlog or day_tasks
+      if (tables.containsKey('backlog') && tables['tasks'] == null) {
+        final backlogRows = tables['backlog'];
+        if (backlogRows is List) {
+          for (final row in backlogRows) {
+            if (row is Map) {
+              await tx.insert('tasks', {
+                'id': row['id'],
+                'title': row['title'],
+                'notes': '',
+                'is_boulder': 0,
+                'status': 'pending',
+                'scheduled_date': null,
+                'reminder_time': null,
+                'active_order': 0,
+                'created_at': row['created_at'] ?? now,
+                'updated_at': row['created_at'] ?? now,
+                'deleted_at': null,
+              }, conflictAlgorithm: ConflictAlgorithm.ignore);
+            }
+          }
+        }
+      }
+
+      if (tables.containsKey('day_tasks') && tables['tasks'] == null) {
+        final dayTaskRows = tables['day_tasks'];
+        if (dayTaskRows is List) {
+          for (final row in dayTaskRows) {
+            if (row is Map) {
+              await tx.insert('tasks', {
+                'id': row['task_id'],
+                'title': row['title'],
+                'notes': '',
+                'is_boulder': 0,
+                'status': (row['done'] == 1) ? 'completed' : 'pending',
+                'scheduled_date': row['day_key'],
+                'reminder_time': null,
+                'active_order': row['sort'] ?? 0,
+                'created_at': now,
+                'updated_at': now,
+                'deleted_at': null,
+              }, conflictAlgorithm: ConflictAlgorithm.replace);
+            }
+          }
+        }
+      }
     });
   }
 
@@ -621,7 +978,8 @@ class Repo {
     // Closed nights with a prediction.
     final closed = await d.query(
       'days',
-      where: 'closed_at IS NOT NULL AND prediction IS NOT NULL',
+      where:
+          'closed_at IS NOT NULL AND prediction IS NOT NULL AND deleted_at IS NULL',
       orderBy: 'day_key DESC',
     );
     final closedCount = closed.length;
@@ -687,8 +1045,7 @@ class Repo {
       focusMinutes[idx] += (ms / 60000).round().clamp(0, 24 * 60);
     }
 
-    // Interrupt patterns: tag counts over the last 30 days (the real "pattern")
-    // plus a few recent free-text notes for color.
+    // Interrupt patterns: tag counts over the last 30 days
     final tagRows = await d.query(
       'focus_sessions',
       columns: ['interrupt_tag'],

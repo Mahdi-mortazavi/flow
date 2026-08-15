@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
@@ -33,6 +34,7 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
   }
 
   Future<void> _submit() async {
+    final lang = ref.read(appLanguageProvider);
     final text = _input.text.trim();
     if (text.isEmpty) return;
     final n = ref.read(thoughtsProvider.notifier);
@@ -45,20 +47,24 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
       _input.clear();
       _editingId = null;
     });
-    if (mounted) showToast(context, 'فکر ثبت شد');
+    if (mounted) {
+      showToast(
+        context,
+        lang == AppLanguage.fa ? 'فکر ثبت شد' : 'Thought recorded',
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
+    final lang = ref.watch(appLanguageProvider);
     final thoughtsAsync = ref.watch(thoughtsProvider);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SheetHeader(
-          'مخزنِ ذهن',
-          sub: 'هر چه ذهن را سنگین می‌کند، اینجا بگذار. هیچ چیز گم نمی‌شود.',
-        ),
+        SheetHeader(L10n.brainVaultTitle(lang), sub: L10n.brainVaultSub(lang)),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
           child: Column(
@@ -69,14 +75,18 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
                     child: GlassField(
                       controller: _input,
                       hint: _editingId == null
-                          ? 'فکر یا ایده‌ات را بنویس…'
-                          : 'ویرایش فکر…',
+                          ? L10n.thoughtHint(lang)
+                          : (lang == AppLanguage.fa
+                                ? 'ویرایش فکر…'
+                                : 'Edit thought...'),
                       onSubmitted: (_) => _submit(),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Pill(
-                    _editingId == null ? 'ثبت' : 'ذخیره',
+                    _editingId == null
+                        ? (lang == AppLanguage.fa ? 'ثبت' : 'Save')
+                        : L10n.save(lang),
                     style: PillStyle.ember,
                     expanded: false,
                     onTap: _submit,
@@ -87,7 +97,7 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
               Row(
                 children: [
                   for (final c in ThoughtCategory.values) ...[
-                    Expanded(child: _catChip(c)),
+                    Expanded(child: _catChip(c, lang)),
                     if (c != ThoughtCategory.values.last)
                       const SizedBox(width: 8),
                   ],
@@ -96,7 +106,7 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
               const SizedBox(height: 10),
               GlassField(
                 controller: _search,
-                hint: 'جستجو…',
+                hint: L10n.searchHint(lang),
                 onChanged: (v) => setState(() => _query = v.trim()),
               ),
             ],
@@ -116,8 +126,10 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
                   padding: const EdgeInsets.all(30),
                   child: Text(
                     _query.isEmpty
-                        ? 'هنوز فکری ثبت نشده.'
-                        : 'نتیجه‌ای یافت نشد.',
+                        ? (lang == AppLanguage.fa
+                              ? 'هنوز فکری ثبت نشده.'
+                              : 'No thoughts recorded yet.')
+                        : L10n.noResultsFound(lang),
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 13, color: Tone.ink3),
                   ),
@@ -127,7 +139,7 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
                 shrinkWrap: true,
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                 itemCount: list.length,
-                itemBuilder: (_, i) => _thoughtCard(list[i]),
+                itemBuilder: (_, i) => _thoughtCard(list[i], lang),
               );
             },
           ),
@@ -136,7 +148,7 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
     );
   }
 
-  Widget _catChip(ThoughtCategory c) {
+  Widget _catChip(ThoughtCategory c, AppLanguage lang) {
     final on = _category == c;
     return Pressable(
       onTap: () => setState(() => _category = c),
@@ -152,7 +164,9 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
         ),
         child: Center(
           child: Text(
-            c.label,
+            _localizedCategoryLabel(c, lang),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
@@ -164,7 +178,7 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
     );
   }
 
-  Widget _thoughtCard(Thought t) {
+  Widget _thoughtCard(Thought t, AppLanguage lang) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
       child: GlassCard(
@@ -184,12 +198,12 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    t.category.label,
+                    _localizedCategoryLabel(t.category, lang),
                     style: TextStyle(fontSize: 10, color: Tone.ink2),
                   ),
                 ),
                 const Spacer(),
-                _tinyBtn(Icons.edit_rounded, () {
+                _tinyBtn(Icons.edit_rounded, lang, () {
                   setState(() {
                     _editingId = t.id;
                     _input.text = t.text;
@@ -197,15 +211,15 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
                   });
                 }),
                 const SizedBox(width: 4),
-                _tinyBtn(Icons.close_rounded, () async {
+                _tinyBtn(Icons.close_rounded, lang, () async {
                   final n = ref.read(thoughtsProvider.notifier);
                   await n.remove(t.id);
                   if (!mounted) return;
                   // Nothing is ever lost: 5 seconds to change your mind.
                   showToast(
                     context,
-                    'حذف شد',
-                    actionLabel: 'برگردان',
+                    lang == AppLanguage.fa ? 'حذف شد' : 'Deleted',
+                    actionLabel: L10n.undo(lang),
                     onAction: () => n.restore(t),
                   );
                 }),
@@ -223,8 +237,12 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
                 showToast(
                   context,
                   onToday
-                      ? 'به کارهای امروز اضافه شد'
-                      : 'برای ویزارد فردا ذخیره شد',
+                      ? (lang == AppLanguage.fa
+                            ? 'به کارهای امروز اضافه شد'
+                            : 'Added to today\'s tasks')
+                      : (lang == AppLanguage.fa
+                            ? 'برای ویزارد فردا ذخیره شد'
+                            : 'Saved for tomorrow\'s wizard'),
                 );
               },
               child: Container(
@@ -245,7 +263,9 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'ارتقا به کار',
+                      lang == AppLanguage.fa
+                          ? 'ارتقا به کار'
+                          : 'Promote to Task',
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
@@ -262,17 +282,29 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
     );
   }
 
+  String _localizedCategoryLabel(ThoughtCategory c, AppLanguage lang) {
+    if (lang == AppLanguage.fa) return c.label;
+    return switch (c) {
+      ThoughtCategory.idea => 'Idea',
+      ThoughtCategory.worry => 'Worry',
+      ThoughtCategory.sideTask => 'Side Task',
+    };
+  }
+
   // 44px hit target around a small glyph (a11y minimum).
-  Widget _tinyBtn(IconData icon, VoidCallback onTap) => Semantics(
-    button: true,
-    label: icon == Icons.close_rounded ? 'حذف' : 'ویرایش',
-    child: Pressable(
-      onTap: onTap,
-      child: SizedBox(
-        width: 44,
-        height: 44,
-        child: Icon(icon, size: 14, color: Tone.ink3),
-      ),
-    ),
-  );
+  Widget _tinyBtn(IconData icon, AppLanguage lang, VoidCallback onTap) =>
+      Semantics(
+        button: true,
+        label: icon == Icons.close_rounded
+            ? L10n.delete(lang)
+            : L10n.edit(lang),
+        child: Pressable(
+          onTap: onTap,
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Icon(icon, size: 14, color: Tone.ink3),
+          ),
+        ),
+      );
 }

@@ -18,21 +18,34 @@ void main() {
     repo = Repo();
     final db = await AppDatabase.instance.db;
     for (final t in [
-      'backlog',
+      'tasks',
       'days',
-      'day_tasks',
       'thoughts',
       'focus_sessions',
+      'habits',
+      'habit_logs',
+      'leisure',
+      'energy_checks',
+      'settings',
+      'backlog',
+      'day_tasks',
     ]) {
       await db.delete(t);
     }
   });
 
-  group('backlog', () {
-    test('add, list (newest first), delete', () async {
+  group('backlog & UUIDs', () {
+    test('add, list (newest first), delete, with valid UUIDs', () async {
       final a = await repo.addBacklog('کار اول');
       await Future<void>.delayed(const Duration(milliseconds: 2));
       final b = await repo.addBacklog('کار دوم');
+
+      // Verify UUID format (8-4-4-4-12 hex characters)
+      final uuidRegex = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      );
+      expect(uuidRegex.hasMatch(a.id), true);
+      expect(uuidRegex.hasMatch(b.id), true);
 
       final list = await repo.backlog();
       expect(list.map((x) => x.id), [b.id, a.id]);
@@ -124,7 +137,7 @@ void main() {
       expect(plan.closed, true);
       expect(plan.outcome, true);
       expect(plan.note, 'روز خوبی بود');
-      // completed boulder removed from backlog, unfinished task stays
+      // completed boulder is scheduled on today, unfinished task stays in backlog
       expect((await repo.backlog()).map((x) => x.id), [b.id]);
     });
 
@@ -186,8 +199,6 @@ void main() {
       expect(plan.tasks.length, 2);
       expect(plan.tasks.any((x) => x.title == 'فکر مهم'), true);
       expect(await repo.thoughts(), isEmpty);
-      // also persisted in backlog so a replan can see it
-      expect((await repo.backlog()).any((x) => x.title == 'فکر مهم'), true);
     });
 
     test('promote goes to backlog only when day is full', () async {
@@ -227,7 +238,11 @@ void main() {
       );
 
       final db = await AppDatabase.instance.db;
-      final row = (await db.query('focus_sessions')).single;
+      final row = (await db.query(
+        'focus_sessions',
+        where: 'id = ?',
+        whereArgs: [id],
+      )).single;
       expect(row['id'], id);
       expect(row['completed'], 0);
       expect(row['interrupt_note'], 'تلفن زنگ خورد');

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/fa.dart';
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
@@ -62,14 +62,14 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
     });
   }
 
-  void _toggle(String id) {
+  void _toggle(String id, AppLanguage lang, int maxTasks) {
     setState(() {
       if (_selected.contains(id)) {
         _selected.remove(id);
         if (_boulderId == id) _boulderId = null;
       } else {
-        if (_selected.length >= 3) {
-          showToast(context, 'حداکثر ۳ کار — این خودِ روش است');
+        if (_selected.length >= maxTasks) {
+          showToast(context, L10n.maxTasksReachedToast(maxTasks, lang));
           return;
         }
         _selected.add(id);
@@ -78,13 +78,13 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
     });
   }
 
-  Future<void> _addNew(String value) async {
+  Future<void> _addNew(String value, int maxTasks) async {
     final title = value.trim();
     if (title.isEmpty) return;
     final item = await ref.read(repoProvider).addBacklog(title);
     setState(() {
       _backlog = [item, ...?_backlog];
-      if (_selected.length < 3) {
+      if (_selected.length < maxTasks) {
         _selected.add(item.id);
         _boulderId ??= item.id;
       }
@@ -92,7 +92,7 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
     });
   }
 
-  Future<void> _go() async {
+  Future<void> _go(AppLanguage lang) async {
     final backlog = _backlog;
     final boulderId = _boulderId;
     if (backlog == null || boulderId == null || _selected.isEmpty) return;
@@ -109,47 +109,99 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
     if (!mounted) return;
     unawaited(HapticFeedback.mediumImpact());
     Navigator.pop(context);
-    showToast(context, 'روز چیده شد. حالا فقط اجرا.');
+    showToast(context, L10n.dayPlannedToast(lang));
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
+    final lang = ref.watch(appLanguageProvider);
+    final activeDays = ref.watch(activeDaysProvider).value ?? 0;
+    final maxTasks = maxTasksForActiveDays(activeDays);
     final backlog = _backlog;
     final ready = _selected.isNotEmpty && _boulderId != null;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SheetHeader(
-          'برنامهٔ امروز',
-          sub:
-              'حداکثر ۳ کار انتخاب کن، بعد مهم‌ترین را با ستاره «تخته‌سنگ» کن — کاری که اگر فقط همان انجام شود، امروز برنده است.',
+        SheetHeader(
+          L10n.morningPlanHeader(lang),
+          sub: L10n.morningPlanSub(lang),
         ),
         Flexible(
           child: ListView(
             shrinkWrap: true,
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
             children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .04),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Tone.line.withValues(alpha: .4)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Tone.emberSoft,
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Text(
+                          '${L10n.fmtNum(_selected.length, lang)}/${L10n.fmtNum(maxTasks, lang)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Tone.ember,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          L10n.activeDaysProgressHint(
+                            activeDays,
+                            maxTasks,
+                            lang,
+                          ),
+                          style: TextStyle(fontSize: 11.5, color: Tone.ink2),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               if (backlog == null)
                 const SizedBox(height: 60)
               else if (backlog.isEmpty)
                 Padding(
                   padding: const EdgeInsets.all(18),
                   child: Text(
-                    'لیستِ کارها خالی است. اولین کارِ مهم را بنویس ↓',
+                    lang == AppLanguage.fa
+                        ? 'لیستِ کارها خالی است. اولین کارِ مهم را بنویس ↓'
+                        : 'Task list is empty. Write your first important task ↓',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 13, color: Tone.ink3),
                   ),
                 )
               else
-                for (final b in backlog) _row(b),
+                for (final b in backlog) _row(b, lang, maxTasks),
               const SizedBox(height: 14),
               GlassField(
                 controller: _newTask,
-                hint: 'کار جدید… (اینتر)',
-                onSubmitted: _addNew,
+                hint: L10n.newTaskHint(lang),
+                onSubmitted: (val) => _addNew(val, maxTasks),
               ),
-              if (_boulderId != null) _predictionBlock(),
+              if (_boulderId != null) _predictionBlock(lang),
               const SizedBox(height: 8),
             ],
           ),
@@ -157,22 +209,24 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           child: Pill(
-            'شروع روز',
+            L10n.startDay(lang),
             style: PillStyle.ember,
-            onTap: ready ? _go : null,
+            onTap: ready ? () => _go(lang) : null,
           ),
         ),
       ],
     );
   }
 
-  Widget _row(BacklogItem b) {
+  Widget _row(BacklogItem b, AppLanguage lang, int maxTasks) {
     final on = _selected.contains(b.id);
+    final selectedIndex = _selected.indexOf(b.id);
     final star = _boulderId == b.id;
+    final isPebble = on && selectedIndex >= 3;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Pressable(
-        onTap: () => _toggle(b.id),
+        onTap: () => _toggle(b.id, lang, maxTasks),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Tone.easeOut,
@@ -219,12 +273,55 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  b.title,
-                  style: const TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      b.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (isPebble) ...[
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Tone.emberSoft,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              L10n.pebbleTag(lang),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Tone.ember,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              L10n.pebbleHelperText(lang),
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                color: Tone.ink3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (on)
@@ -274,12 +371,12 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
     );
   }
 
-  Widget _predictionBlock() {
+  Widget _predictionBlock(AppLanguage lang) {
     return Column(
       children: [
         const SizedBox(height: 18),
         Text(
-          'چند درصد احتمال می‌دهی تخته‌سنگ را امروز تمام کنی؟ صادق باش — شب چک می‌شود.',
+          L10n.boulderProbabilityQuestion(lang),
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 11.5, color: Tone.ink3, height: 1.9),
         ),
@@ -290,7 +387,7 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                faNum(_prediction.round()),
+                L10n.fmtNum(_prediction.round(), lang),
                 style: const TextStyle(
                   fontSize: 44,
                   fontWeight: FontWeight.w200,
@@ -299,7 +396,7 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
               Padding(
                 padding: const EdgeInsets.only(top: 14),
                 child: Text(
-                  '٪',
+                  lang == AppLanguage.fa ? '٪' : '%',
                   style: TextStyle(fontSize: 16, color: Tone.ink3),
                 ),
               ),

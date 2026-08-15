@@ -1,7 +1,7 @@
 name: taknoghte
 description: "تک‌نقطه — سیستم مدیریت تمرکز، انرژی و زمان"
 publish_to: 'none'
-version: 0.5.1+7
+version: 0.5.2+8
 
 environment:
   sdk: ^3.9.0
@@ -23,6 +23,8 @@ dependencies:
   file_picker: ^11.0.2
   android_intent_plus: ^6.0.0
   quick_actions: ^1.1.0
+  uuid: ^4.5.1
+  flutter_timezone: ^5.1.0
 
 dev_dependencies:
   flutter_test:

@@ -71,7 +71,8 @@ boulder (تخته‌سنگ) and primary CTAs. Font: Vazirmatn (bundled, weights 
 - Pushing a `v*` tag publishes a GitHub Release with FOUR APKs + a `.sha256`
   each: `universal` (all ABIs — the one to hand users) plus `arm64-v8a`,
   `armeabi-v7a`, `x86_64`. Release body comes from RELEASE_NOTES.md — update
-  it BEFORE tagging. Version lives in pubspec (`version: x.y.z+n`).
+  it BEFORE tagging with clean, concise bilingual bullet points (FA/EN).
+  Version lives in pubspec (`version: x.y.z+n`).
 - Release signing (v0.5.2+) uses a real keystore, NOT the debug key. The
   keystore lives OUTSIDE the repo at `E:\flow-signing\` (with backups +
   KEYSTORE-README.txt); CI reads it from the `ANDROID_KEYSTORE_BASE64` /

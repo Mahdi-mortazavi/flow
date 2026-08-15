@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/fa.dart';
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../state/providers.dart';
 import '../widgets/glass.dart';
@@ -41,6 +41,7 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
   }
 
   Future<void> _save() async {
+    final lang = ref.read(appLanguageProvider);
     final plan = await ref.read(todayProvider.future);
     final whys = _whys
         .map((c) => c.text.trim())
@@ -48,7 +49,7 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
         .toList();
     if (!plan.boulderDone && whys.isEmpty) {
       if (mounted) {
-        showToast(context, 'حداقل یک «چرا» — همین‌جا یادگیری اتفاق می‌افتد');
+        showToast(context, L10n.toastAtLeastOneWhy(lang));
       }
       return;
     }
@@ -61,13 +62,15 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
     showToast(
       context,
       plan.boulderDone
-          ? 'ثبت شد. روزِ برنده.'
-          : 'ثبت شد. فردا با سیستمِ اصلاح‌شده.',
+          ? L10n.toastRecordedWinningDay(lang)
+          : L10n.toastRecordedImprovedSystem(lang),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
+    final lang = ref.watch(appLanguageProvider);
     final planAsync = ref.watch(todayProvider);
     return planAsync.when(
       loading: () => const SizedBox(height: 200),
@@ -76,7 +79,12 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SheetHeader('مرور شب', sub: 'شصت ثانیه. صادقانه.'),
+          SheetHeader(
+            L10n.eveningReviewTitle(lang),
+            sub: lang == AppLanguage.fa
+                ? 'شصت ثانیه. صادقانه.'
+                : '60 seconds. Honestly.',
+          ),
           Flexible(
             child: ListView(
               shrinkWrap: true,
@@ -85,7 +93,7 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                   child: Text(
-                    'چک نهایی',
+                    lang == AppLanguage.fa ? 'چک نهایی' : 'Final Check',
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w600,
@@ -124,8 +132,8 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
                                 ),
                                 children: [
                                   if (t.taskId == plan.boulderId)
-                                    const TextSpan(
-                                      text: '  تخته‌سنگ',
+                                    TextSpan(
+                                      text: '  ${L10n.theBoulder(lang)}',
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
@@ -135,18 +143,20 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
                                     ),
                                 ],
                               ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                _whyChain(plan.boulderDone, plan.prediction),
+                _whyChain(plan.boulderDone, plan.prediction, lang),
                 const SizedBox(height: 16),
                 GlassField(
                   controller: _note,
-                  label: 'یک خط برای امروز',
-                  hint: 'مهم‌ترین چیزی که امروز فهمیدی…',
+                  label: L10n.nightNoteLabel(lang),
+                  hint: L10n.nightNoteHint(lang),
                 ),
                 const SizedBox(height: 8),
               ],
@@ -155,7 +165,7 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             child: Pill(
-              'ثبت و بستنِ روز',
+              L10n.confirmCloseDayAction(lang),
               style: PillStyle.ember,
               onTap: _save,
             ),
@@ -165,24 +175,22 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
     );
   }
 
-  Widget _whyChain(bool boulderDone, int? prediction) {
+  Widget _whyChain(bool boulderDone, int? prediction, AppLanguage lang) {
     if (boulderDone) {
       return Padding(
         padding: const EdgeInsets.only(top: 14),
         child: Text(
-          'تخته‌سنگ افتاد — پیش‌بینی‌ات ${faNum(prediction ?? 0)}٪ بود. ثبت می‌شود.',
-          style: const TextStyle(
-            fontSize: 11.5,
-            color: Tone.ember,
-            height: 1.9,
-          ),
+          lang == AppLanguage.fa
+              ? 'تخته‌سنگ افتاد — پیش‌بینی‌ات ${L10n.fmtNum(prediction ?? 0, lang)}٪ بود. ثبت می‌شود.'
+              : 'The Boulder fell — your prediction was ${L10n.fmtNum(prediction ?? 0, lang)}%. Recording.',
+          style: TextStyle(fontSize: 11.5, color: Tone.ember, height: 1.9),
         ),
       );
     }
-    const hints = [
-      'چرا انجام نشد؟',
-      'و آن چرا پیش آمد؟',
-      'و ریشهٔ آن؟ (چه چیزی در سیستمِ فردا عوض شود؟)',
+    final hints = [
+      L10n.whyHint(0, lang),
+      L10n.whyHint(1, lang),
+      L10n.whyHint(2, lang),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,7 +198,9 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
         Padding(
           padding: const EdgeInsets.only(top: 14, bottom: 4),
           child: Text(
-            'تخته‌سنگ نیفتاد. بدونِ سرزنش — فقط زنجیرهٔ چرا، تا علتِ سیستمی:',
+            lang == AppLanguage.fa
+                ? 'تخته‌سنگ نیفتاد. بدونِ سرزنش — فقط زنجیرهٔ چرا، تا علتِ سیستمی:'
+                : 'The Boulder didn\'t fall. No blame — just the why-chain to the systemic cause:',
             style: TextStyle(fontSize: 11.5, color: Tone.ink3, height: 1.9),
           ),
         ),

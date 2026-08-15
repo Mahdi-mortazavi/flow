@@ -18,15 +18,17 @@ void main() {
     repo = Repo();
     final db = await AppDatabase.instance.db;
     for (final t in [
-      'backlog',
+      'tasks',
       'days',
-      'day_tasks',
       'thoughts',
       'focus_sessions',
       'habits',
       'habit_logs',
+      'leisure',
       'energy_checks',
       'settings',
+      'backlog',
+      'day_tasks',
     ]) {
       await db.delete(t);
     }
@@ -173,14 +175,16 @@ void main() {
       // Simulate a fresh install.
       final db = await AppDatabase.instance.db;
       for (final t in [
-        'backlog',
+        'tasks',
         'days',
-        'day_tasks',
         'thoughts',
         'habits',
         'habit_logs',
+        'leisure',
         'energy_checks',
         'settings',
+        'backlog',
+        'day_tasks',
       ]) {
         await db.delete(t);
       }

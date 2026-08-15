@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/fa.dart';
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
@@ -42,6 +42,8 @@ class _StatsBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(accentProvider);
+    final lang = ref.watch(appLanguageProvider);
     final s = stats;
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 10, 18, 40),
@@ -63,7 +65,9 @@ class _StatsBody extends ConsumerWidget {
                   border: Border.all(color: Tone.line),
                 ),
                 child: Icon(
-                  Icons.arrow_forward_rounded,
+                  Directionality.of(context) == TextDirection.rtl
+                      ? Icons.arrow_forward_rounded
+                      : Icons.arrow_back_rounded,
                   size: 19,
                   color: Tone.ink2,
                 ),
@@ -74,12 +78,15 @@ class _StatsBody extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'آینه',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                  Text(
+                    L10n.statsMirrorTitle(lang),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   Text(
-                    'این اعداد قضاوت نیستند؛ داده‌اند برای تنظیمِ فردا.',
+                    L10n.realityWithoutJudgment(lang),
                     style: TextStyle(fontSize: 11.5, color: Tone.ink3),
                   ),
                 ],
@@ -90,54 +97,62 @@ class _StatsBody extends ConsumerWidget {
         const SizedBox(height: 22),
         Row(
           children: [
-            _stat('${_fmt(s.winRate)}٪', 'تخته‌سنگ‌های افتاده'),
+            _stat('${_fmt(s.winRate, lang)}٪', L10n.winRateSub(lang)),
             const SizedBox(width: 9),
-            // Optimism is noisy below a handful of nights — hide the number
-            // (and the warning color) until it means something.
             _stat(
               !s.optimismReliable || s.gap == null
                   ? '—'
-                  : '${s.gap! > 0 ? '+' : ''}${faNum(s.gap!)}',
-              'خوش‌بینیِ پیش‌بینی',
+                  : '${s.gap! > 0 ? '+' : ''}${L10n.fmtNum(s.gap!, lang)}',
+              L10n.optimismGapSub(lang),
               warn: s.optimismReliable && (s.gap ?? 0) > 15,
             ),
             const SizedBox(width: 9),
-            _stat('${_fmt(s.recoveryRate)}٪', 'بازگشت بعد از شکست'),
+            _stat('${_fmt(s.recoveryRate, lang)}٪', L10n.recoveryRateSub(lang)),
           ],
         ),
         if (!s.optimismReliable)
           _hint(
-            'خوش‌بینیِ پیش‌بینی بعد از ${faNum(StatsData.optimismMinNights)} شبِ بسته معنا پیدا می‌کند — فعلاً داده کم است.',
+            lang == AppLanguage.fa
+                ? 'خوش‌بینیِ پیش‌بینی بعد از ${L10n.fmtNum(StatsData.optimismMinNights, lang)} شبِ بسته معنا پیدا می‌کند — فعلاً داده کم است.'
+                : 'Optimism gap becomes meaningful after ${L10n.fmtNum(StatsData.optimismMinNights, lang)} closed nights — data is insufficient for now.',
           )
         else if ((s.gap ?? 0) > 15)
           _hint(
-            'پیش‌بینی‌هایت به‌طور میانگین ${faNum(s.gap!)} واحد خوش‌بینانه است — فردا صبح، عدد را صادقانه‌تر بگذار.',
+            lang == AppLanguage.fa
+                ? 'پیش‌بینی‌هایت به‌طور میانگین ${L10n.fmtNum(s.gap!, lang)} واحد خوش‌بینانه است — فردا صبح، عدد را صادقانه‌تر بگذار.'
+                : 'Your predictions are on average ${L10n.fmtNum(s.gap!, lang)} points optimistic — calibrate more honestly tomorrow morning.',
           ),
         if (s.recoveryRate != null)
           _hint(
-            '«بازگشت» مهم‌ترین عدد این صفحه است: قهرمانِ عادت کسی نیست که هرگز نمی‌افتد؛ کسی است که فردایش برمی‌گردد.',
+            lang == AppLanguage.fa
+                ? '«بازگشت» مهم‌ترین عدد این صفحه است: قهرمانِ عادت کسی نیست که هرگز نمی‌افتد؛ کسی است که فردایش برمی‌گردد.'
+                : '"Recovery" is the most important metric on this screen: a habit hero isn\'t someone who never slips, but someone who returns the next day.',
           ),
         const SizedBox(height: 24),
-        _eyebrow('کارِ عمیق — ۷ روز اخیر'),
-        FocusChart(minutes: s.focusMinutesLast7),
+        _eyebrow(L10n.last7DaysFocusChartTitle(lang)),
+        FocusChart(minutes: s.focusMinutesLast7, lang: lang),
         Padding(
           padding: const EdgeInsets.fromLTRB(6, 8, 6, 0),
           child: Text(
-            'مجموع این هفته: ${faNum((s.focusMinutesWeek / 60).toStringAsFixed(1))} ساعت',
+            lang == AppLanguage.fa
+                ? 'مجموع این هفته: ${L10n.fmtNum((s.focusMinutesWeek / 60).toStringAsFixed(1), lang)} ساعت'
+                : 'Total this week: ${L10n.fmtNum((s.focusMinutesWeek / 60).toStringAsFixed(1), lang)} hours',
             style: TextStyle(fontSize: 11.5, color: Tone.ink2),
           ),
         ),
         if (s.goldenHour != null) ...[
           const SizedBox(height: 24),
-          _eyebrow('ساعتِ طلایی انرژی'),
+          _eyebrow(L10n.goldenHour(lang)),
           GlassCard(
             child: Row(
               children: [
-                const Icon(Icons.bolt_rounded, size: 20, color: Tone.ember),
+                Icon(Icons.bolt_rounded, size: 20, color: Tone.ember),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'اوج انرژی تو حدود ساعت ${faNum(s.goldenHour!)} تا ${faNum(s.goldenHour! + 3)} است — تخته‌سنگ را همان‌جا بگذار.',
+                    lang == AppLanguage.fa
+                        ? 'اوج انرژی تو حدود ساعت ${L10n.fmtNum(s.goldenHour!, lang)} تا ${L10n.fmtNum(s.goldenHour! + 3, lang)} است — تخته‌سنگ را همان‌جا بگذار.'
+                        : 'Your peak focus time is around ${L10n.fmtNum(s.goldenHour!, lang)}:00 to ${L10n.fmtNum(s.goldenHour! + 3, lang)}:00 — place The Boulder right there.',
                     style: const TextStyle(fontSize: 13.5, height: 1.8),
                   ),
                 ),
@@ -147,17 +162,19 @@ class _StatsBody extends ConsumerWidget {
         ],
         if (s.interruptCounts.isNotEmpty) ...[
           const SizedBox(height: 24),
-          _eyebrow('الگوی قطع‌شدن‌ها — ۳۰ روز'),
-          _InterruptPattern(counts: s.interruptCounts),
+          _eyebrow(L10n.rankedPatterns30DaysTitle(lang)),
+          _InterruptPattern(counts: s.interruptCounts, lang: lang),
         ],
         const SizedBox(height: 24),
-        _eyebrow('هفت شبِ آخر'),
+        _eyebrow(lang == AppLanguage.fa ? 'هفت شبِ آخر' : 'Last Seven Nights'),
         if (s.lastNights.isEmpty)
           GlassCard(
             padding: const EdgeInsets.all(20),
             child: Center(
               child: Text(
-                'هنوز شبی بسته نشده.',
+                lang == AppLanguage.fa
+                    ? 'هنوز شبی بسته نشده.'
+                    : 'No nights recorded yet.',
                 style: TextStyle(fontSize: 12.5, color: Tone.ink3),
               ),
             ),
@@ -183,17 +200,21 @@ class _StatsBody extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            faDayLabel(n.dayKey),
+                            L10n.fmtDayLabel(n.dayKey, lang),
                             style: TextStyle(fontSize: 12.5, color: Tone.ink3),
                           ),
                         ),
                         Text(
-                          'پیش‌بینی ${faNum(n.prediction)}٪',
+                          lang == AppLanguage.fa
+                              ? 'پیش‌بینی ${L10n.fmtNum(n.prediction, lang)}٪'
+                              : 'Prediction ${L10n.fmtNum(n.prediction, lang)}%',
                           style: TextStyle(fontSize: 12.5, color: Tone.ink2),
                         ),
                         const SizedBox(width: 16),
                         Text(
-                          n.outcome ? 'افتاد' : 'نیفتاد',
+                          n.outcome
+                              ? (lang == AppLanguage.fa ? 'افتاد' : 'Fell')
+                              : (lang == AppLanguage.fa ? 'نیفتاد' : 'Missed'),
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
@@ -208,14 +229,16 @@ class _StatsBody extends ConsumerWidget {
           ),
         const SizedBox(height: 26),
         Pill(
-          'بازبینیِ مبنا-صفر',
+          L10n.weeklyReviewTitle(lang),
           icon: Icons.filter_list_rounded,
           onTap: () => openReviewSheet(context),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(6, 10, 6, 0),
           child: Text(
-            'برای هر کار و عادت فقط یک سؤال: «اگر امروز در لیست نبود، دوباره اضافه‌اش می‌کردی؟»',
+            lang == AppLanguage.fa
+                ? 'برای هر کار و عادت فقط یک سؤال: «اگر امروز در لیست نبود، دوباره اضافه‌اش می‌کردی؟»'
+                : 'For each task and habit, just one question: "If it wasn\'t on the list today, would you add it again?"',
             style: TextStyle(fontSize: 11, color: Tone.ink3, height: 1.8),
           ),
         ),
@@ -223,7 +246,8 @@ class _StatsBody extends ConsumerWidget {
     );
   }
 
-  String _fmt(int? v) => v == null ? '—' : faNum(v);
+  String _fmt(int? v, AppLanguage lang) =>
+      v == null ? '—' : L10n.fmtNum(v, lang);
 
   Widget _stat(String value, String label, {bool warn = false}) => Expanded(
     child: GlassCard(
@@ -275,18 +299,21 @@ class _StatsBody extends ConsumerWidget {
   );
 }
 
-/// Seven slim bars, today at the end (start side in RTL is right).
+/// Seven slim bars, today at the end.
 class FocusChart extends StatelessWidget {
   final List<int> minutes;
-  const FocusChart({super.key, required this.minutes});
+  final AppLanguage lang;
+  const FocusChart({
+    super.key,
+    required this.minutes,
+    this.lang = AppLanguage.fa,
+  });
 
   @override
   Widget build(BuildContext context) {
     final maxM = minutes.fold(0, (a, b) => a > b ? a : b);
     return GlassCard(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
-      // Tall enough that the top value label + bar + «امروز» label fit even at
-      // the 1.3× text scale the app allows — otherwise the column overflows.
       child: SizedBox(
         height: 118,
         child: Row(
@@ -299,7 +326,7 @@ class FocusChart extends StatelessWidget {
                   children: [
                     if (minutes[i] > 0)
                       Text(
-                        faNum(minutes[i]),
+                        L10n.fmtNum(minutes[i], lang),
                         style: TextStyle(fontSize: 9, color: Tone.ink3),
                       ),
                     const SizedBox(height: 4),
@@ -316,7 +343,9 @@ class FocusChart extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      i == 6 ? 'امروز' : '',
+                      i == 6
+                          ? (lang == AppLanguage.fa ? 'امروز' : 'Today')
+                          : '',
                       style: TextStyle(fontSize: 9, color: Tone.ink3),
                     ),
                   ],
@@ -331,11 +360,11 @@ class FocusChart extends StatelessWidget {
   }
 }
 
-/// Ranked interrupt reasons as labeled bars — the actual "pattern", not a
-/// list of one-off notes.
+/// Ranked interrupt reasons as labeled bars.
 class _InterruptPattern extends StatelessWidget {
   final Map<InterruptTag, int> counts;
-  const _InterruptPattern({required this.counts});
+  final AppLanguage lang;
+  const _InterruptPattern({required this.counts, required this.lang});
 
   @override
   Widget build(BuildContext context) {
@@ -356,7 +385,9 @@ class _InterruptPattern extends StatelessWidget {
                   SizedBox(
                     width: 96,
                     child: Text(
-                      '${e.key.emoji}  ${e.key.label}',
+                      '${e.key.emoji}  ${_tagLabel(e.key, lang)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
@@ -388,7 +419,7 @@ class _InterruptPattern extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    faNum(e.value),
+                    L10n.fmtNum(e.value, lang),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -402,5 +433,16 @@ class _InterruptPattern extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _tagLabel(InterruptTag tag, AppLanguage lang) {
+    if (lang == AppLanguage.fa) return tag.label;
+    return switch (tag) {
+      InterruptTag.phone => 'Phone',
+      InterruptTag.people => 'People',
+      InterruptTag.tired => 'Fatigue',
+      InterruptTag.thought => 'Thought',
+      InterruptTag.other => 'Other',
+    };
   }
 }

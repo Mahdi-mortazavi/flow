@@ -3,17 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quick_actions/quick_actions.dart';
-
-import '../../core/fa.dart';
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
-import '../../services/notifications.dart';
 import '../../state/providers.dart';
 import '../evening/evening_sheet.dart';
 import '../focus/focus_screen.dart';
-import '../habits/friction_sheet.dart';
-import '../habits/habit_editor.dart';
 import '../settings/settings_sheet.dart';
 import '../stats/review_sheet.dart';
 import '../stats/stats_screen.dart';
@@ -22,102 +17,12 @@ import '../widgets/glass.dart';
 import '../wizard/morning_wizard.dart';
 import 'task_edit_sheet.dart';
 
-class TodayScreen extends ConsumerStatefulWidget {
+class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});
 
   @override
-  ConsumerState<TodayScreen> createState() => _TodayScreenState();
-}
-
-class _TodayScreenState extends ConsumerState<TodayScreen>
-    with WidgetsBindingObserver {
-  var _bootstrapped = false;
-  Timer? _dayWatch;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
-    // Midnight rollover while the app stays open: cheap 30s check.
-    _dayWatch = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => _onPossibleDayChange(),
-    );
-  }
-
-  @override
-  void dispose() {
-    _dayWatch?.cancel();
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _onPossibleDayChange();
-  }
-
-  Future<void> _onPossibleDayChange() async {
-    if (!ref.read(dayKeyProvider.notifier).refresh()) return;
-    await syncDailyReminders(ref.read(repoProvider), ref.read(dayKeyProvider));
-    // Fresh day: open the wizard unless a focus session is running.
-    final plan = await ref.read(todayProvider.future);
-    if (!mounted) return;
-    if (!plan.planned && ref.read(focusProvider) == null) {
-      unawaited(openMorningWizard(context, ref));
-    }
-  }
-
-  Future<void> _bootstrap() async {
-    if (_bootstrapped) return;
-    _bootstrapped = true;
-    await Notifications.instance.requestPermissions();
-    // Wire up notification actions («انجام شد ✓» on a habit reminder).
-    Notifications.instance.onHabitsChanged = () {
-      if (mounted) ref.invalidate(habitsProvider);
-    };
-    await Notifications.instance.consumeLaunchAction();
-    // Idempotent re-sync of daily habit reminders.
-    final habits = await ref.read(habitsProvider.future);
-    if (!mounted) return;
-    await Notifications.instance.syncHabitReminders(habits);
-    if (!mounted) return;
-    await syncDailyReminders(ref.read(repoProvider), ref.read(dayKeyProvider));
-    if (!mounted) return;
-    final restored = await ref.read(focusProvider.notifier).restore();
-    if (!mounted) return;
-    if (restored) {
-      unawaited(Navigator.of(context).push(FocusScreen.route()));
-      return;
-    }
-    _setupQuickActions();
-    final plan = await ref.read(todayProvider.future);
-    if (!mounted) return;
-    if (!plan.planned) {
-      await Future<void>.delayed(const Duration(milliseconds: 600));
-      if (mounted) unawaited(openMorningWizard(context, ref));
-    }
-  }
-
-  /// Long-press the launcher icon → «ثبت فکر»: capture a thought without the
-  /// full trip through the home screen. Fires on cold start too.
-  void _setupQuickActions() {
-    const QuickActions()
-      ..initialize((type) {
-        if (type == 'new_thought' && mounted) openVaultSheet(context);
-      })
-      ..setShortcutItems(const [
-        ShortcutItem(
-          type: 'new_thought',
-          localizedTitle: 'ثبت فکر',
-          icon: 'ic_stat_dot',
-        ),
-      ]);
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(accentProvider);
     final planAsync = ref.watch(todayProvider);
     return Scaffold(
       body: Stack(
@@ -145,11 +50,12 @@ class _TodayScreenState extends ConsumerState<TodayScreen>
 }
 
 /// The two soft radial glows behind everything.
-class _Ambient extends StatelessWidget {
+class _Ambient extends ConsumerWidget {
   const _Ambient();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(accentProvider);
     final size = MediaQuery.sizeOf(context);
     return IgnorePointer(
       child: Stack(
@@ -188,8 +94,9 @@ class _TodayBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 140),
       children: [
         Reveal(child: _Header(plan: plan)),
         const Reveal(order: 1, child: _ReviewBanner()),
@@ -199,7 +106,7 @@ class _TodayBody extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _Eyebrow('تخته‌سنگِ امروز'),
+              _Eyebrow(L10n.boulderOfToday(lang)),
               BoulderCard(plan: plan),
             ],
           ),
@@ -211,26 +118,16 @@ class _TodayBody extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 22),
-                const _Eyebrow('دو کارِ دیگر'),
+                _Eyebrow(L10n.otherTasksHeader(plan.others.length, lang)),
                 for (final t in plan.others) _OtherTaskRow(plan: plan, task: t),
               ],
             ),
           ),
         const SizedBox(height: 22),
-        const Reveal(order: 3, child: _HabitsSection()),
-        const SizedBox(height: 22),
-        const Reveal(
-          order: 4,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [_Eyebrow('وقتِ آزادِ بی‌گناه'), _FunCard()],
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Reveal(order: 5, child: _EnergyCard()),
+        const Reveal(order: 3, child: _EnergyCard()),
         if (plan.planned)
           Reveal(
-            order: 6,
+            order: 4,
             child: Column(
               children: [
                 const SizedBox(height: 26),
@@ -249,6 +146,7 @@ class _Header extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 6, 4, 20),
       child: Row(
@@ -259,7 +157,7 @@ class _Header extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  faTodayLabel(),
+                  L10n.fmtTodayLabel(lang),
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
@@ -267,9 +165,12 @@ class _Header extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 3),
-                const Text(
-                  'تک‌نقطه',
-                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800),
+                Text(
+                  L10n.appTitle(lang),
+                  style: const TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ],
             ),
@@ -288,7 +189,12 @@ class _Header extends ConsumerWidget {
             icon: Icons.edit_rounded,
             onTap: () {
               if (plan.closed) {
-                showToast(context, 'امروز بسته شده — فردا از نو');
+                showToast(
+                  context,
+                  lang == AppLanguage.fa
+                      ? 'امروز بسته شده — فردا از نو'
+                      : 'Today is closed — start fresh tomorrow',
+                );
                 return;
               }
               openMorningWizard(context, ref);
@@ -383,6 +289,8 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
+    final lang = ref.watch(appLanguageProvider);
     final plan = widget.plan;
     _syncBreath();
     if (!plan.planned) {
@@ -393,10 +301,10 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _EmberTag('یک نقطهٔ داغ'),
+            _EmberTag(lang == AppLanguage.fa ? 'یک نقطهٔ داغ' : 'One Hot Spot'),
             const SizedBox(height: 13),
             Text(
-              'امروز هنوز چیده نشده. سه کار، یک تخته‌سنگ، یک پیش‌بینی — کمتر از یک دقیقه.',
+              L10n.todayNotPlannedYet(lang),
               style: TextStyle(
                 fontSize: 15.5,
                 color: Tone.ink2,
@@ -406,7 +314,7 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
             ),
             const SizedBox(height: 17),
             Pill(
-              'چیدنِ امروز',
+              L10n.planToday(lang),
               style: PillStyle.ember,
               onTap: () => openMorningWizard(context, ref),
             ),
@@ -430,6 +338,7 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
               taskId: b.taskId,
               title: b.title,
               isBoulder: true,
+              reminderTime: b.reminderTime,
             );
           },
           child: GlassCard(
@@ -450,10 +359,49 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _EmberTag('تخته‌سنگ'),
+                Row(
+                  children: [
+                    _EmberTag(L10n.boulderTitle(lang)),
+                    if (b.reminderTime != null && !b.done) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Tone.accent.withAlpha(25),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: Tone.accent.withAlpha(50)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.notifications_active_rounded,
+                              size: 11,
+                              color: Tone.accent,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              L10n.fmtTime(b.reminderTime!, lang),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Tone.accent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
                 const SizedBox(height: 13),
                 Text(
                   b.title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 21,
                     fontWeight: FontWeight.w700,
@@ -467,13 +415,15 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
                 Row(
                   children: [
                     Text(
-                      'پیش‌بینی صبح: ${faNum(plan.prediction ?? 0)}٪',
+                      lang == AppLanguage.fa
+                          ? 'پیش‌بینی صبح: ${L10n.fmtNum(plan.prediction ?? 0, lang)}٪'
+                          : 'Morning prediction: ${L10n.fmtNum(plan.prediction ?? 0, lang)}%',
                       style: TextStyle(fontSize: 12.5, color: Tone.ink2),
                     ),
                     if (b.done) ...[
                       const SizedBox(width: 6),
-                      const Text(
-                        '— انجام شد',
+                      Text(
+                        lang == AppLanguage.fa ? '— انجام شد' : '— Done',
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
@@ -496,7 +446,7 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
                         if (!b.done) ...[
                           Expanded(
                             child: Pill(
-                              'شروع تمرکز',
+                              L10n.startFocus(lang),
                               style: PillStyle.ember,
                               icon: Icons.play_arrow_rounded,
                               onTap: () => startFocusFlow(
@@ -511,8 +461,13 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
                         ],
                         Expanded(
                           child: Pill(
-                            b.done ? 'برگردان' : 'علامتِ انجام',
-                            onTap: () => _toggleBoulder(context, ref, plan, b),
+                            b.done
+                                ? L10n.undo(lang)
+                                : (lang == AppLanguage.fa
+                                      ? 'علامتِ انجام'
+                                      : 'Mark Done'),
+                            onTap: () =>
+                                _toggleBoulder(context, ref, plan, b, lang),
                           ),
                         ),
                       ],
@@ -560,12 +515,18 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
     WidgetRef ref,
     DayPlan plan,
     DayTask b,
+    AppLanguage lang,
   ) {
     final newDone = !b.done;
     ref.read(todayProvider.notifier).setTaskDone(b.taskId, newDone);
     if (newDone) {
       HapticFeedback.heavyImpact();
-      showToast(context, 'تخته‌سنگ افتاد. بقیهٔ روز، پایین‌سرازیری است.');
+      showToast(
+        context,
+        lang == AppLanguage.fa
+            ? 'تخته‌سنگ افتاد! 🪨'
+            : 'The Boulder has fallen! 🪨',
+      );
     }
   }
 }
@@ -586,7 +547,7 @@ class _EmberTag extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.local_fire_department_rounded,
             size: 12,
             color: Tone.ember,
@@ -594,7 +555,7 @@ class _EmberTag extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               color: Tone.ember,
@@ -613,7 +574,10 @@ class _OtherTaskRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     final locked = !plan.boulderDone && !task.done;
+    final taskIndex = plan.tasks.indexOf(task);
+    final isPebble = taskIndex >= 3;
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
       child: Opacity(
@@ -628,6 +592,7 @@ class _OtherTaskRow extends ConsumerWidget {
               taskId: task.taskId,
               title: task.title,
               isBoulder: false,
+              reminderTime: task.reminderTime,
             );
           },
           child: GlassCard(
@@ -647,6 +612,8 @@ class _OtherTaskRow extends ConsumerWidget {
                     children: [
                       Text(
                         task.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
@@ -657,9 +624,68 @@ class _OtherTaskRow extends ConsumerWidget {
                               : null,
                         ),
                       ),
+                      if (task.reminderTime != null && !task.done) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.notifications_active_rounded,
+                              size: 12,
+                              color: Tone.accent,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              L10n.fmtTime(task.reminderTime!, lang),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Tone.accent,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (isPebble) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Tone.emberSoft,
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(4),
+                                ),
+                              ),
+                              child: Text(
+                                L10n.pebbleTag(lang),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Tone.ember,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                L10n.pebbleHelperText(lang),
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  color: Tone.ink3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       if (locked)
                         Text(
-                          'پشتِ تخته‌سنگ در صف',
+                          L10n.queuedBehindBoulder(lang),
                           style: TextStyle(fontSize: 11.5, color: Tone.ink3),
                         ),
                     ],
@@ -667,19 +693,38 @@ class _OtherTaskRow extends ConsumerWidget {
                 ),
                 if (!task.done)
                   Pressable(
-                    onTap: () => _play(context, ref),
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      _play(context, ref, lang);
+                    },
                     child: Container(
-                      width: 38,
-                      height: 38,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .05),
-                        borderRadius: BorderRadius.circular(13),
+                        color: Tone.accent.withValues(alpha: .12),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Tone.line),
                       ),
-                      child: Icon(
-                        Icons.play_arrow_rounded,
-                        size: 18,
-                        color: Tone.ink2,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.play_arrow_rounded,
+                            size: 16,
+                            color: Tone.accent,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            L10n.focusButton(lang),
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: Tone.accent,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -691,15 +736,23 @@ class _OtherTaskRow extends ConsumerWidget {
     );
   }
 
-  Future<void> _play(BuildContext context, WidgetRef ref) async {
+  Future<void> _play(
+    BuildContext context,
+    WidgetRef ref,
+    AppLanguage lang,
+  ) async {
     if (!plan.boulderDone) {
       final b = plan.boulder;
       final (goBoulder, _) = await showConfirmSheet(
         context,
-        title: 'تخته‌سنگ هنوز مانده',
-        sub: 'قانونِ خانه: اول سنگِ بزرگ. مطمئنی می‌خواهی از رویش بپری؟',
-        yesLabel: 'اول تخته‌سنگ',
-        noLabel: 'به‌هرحال شروع کن',
+        title: lang == AppLanguage.fa
+            ? 'تخته‌سنگ هنوز مانده'
+            : 'The Boulder remains',
+        sub: lang == AppLanguage.fa
+            ? 'قانونِ خانه: اول سنگِ بزرگ. مطمئنی می‌خواهی از رویش بپری؟'
+            : 'Rule of the house: The Boulder comes first. Are you sure you want to skip it?',
+        yesLabel: lang == AppLanguage.fa ? 'اول تخته‌سنگ' : 'Boulder First',
+        noLabel: lang == AppLanguage.fa ? 'به‌هرحال شروع کن' : 'Start Anyway',
       );
       if (!context.mounted) return;
       if (goBoulder && b != null) {
@@ -725,6 +778,7 @@ class _EveningCta extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     if (plan.closed) {
       return Opacity(
         opacity: .7,
@@ -739,15 +793,17 @@ class _EveningCta extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'روز بسته شد',
-                      style: TextStyle(
+                    Text(
+                      lang == AppLanguage.fa ? 'روز بسته شد' : 'Day Closed',
+                      style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
-                      'فردا، دوباره از تخته‌سنگ.',
+                      lang == AppLanguage.fa
+                          ? 'فردا، دوباره از تخته‌سنگ.'
+                          : 'Tomorrow, start fresh with the Boulder.',
                       style: TextStyle(fontSize: 11.5, color: Tone.ink3),
                     ),
                   ],
@@ -770,18 +826,27 @@ class _EveningCta extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'مرور شب',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                Text(
+                  L10n.eveningReviewTitle(lang),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 Text(
-                  '۶۰ ثانیه — چک، چرا، یک خط',
+                  L10n.eveningReviewSub(lang),
                   style: TextStyle(fontSize: 11.5, color: Tone.ink3),
                 ),
               ],
             ),
           ),
-          Icon(Icons.chevron_left_rounded, size: 20, color: Tone.ink3),
+          Icon(
+            Directionality.of(context) == TextDirection.rtl
+                ? Icons.chevron_left_rounded
+                : Icons.chevron_right_rounded,
+            size: 20,
+            color: Tone.ink3,
+          ),
         ],
       ),
     );
@@ -805,6 +870,7 @@ class _ReviewBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     final due = ref.watch(statsProvider).value?.reviewDue ?? false;
     if (!due) return const SizedBox.shrink();
     return Padding(
@@ -815,7 +881,7 @@ class _ReviewBanner extends ConsumerWidget {
         onTap: () => openReviewSheet(context),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.local_fire_department_rounded,
               size: 18,
               color: Tone.ember,
@@ -825,457 +891,33 @@ class _ReviewBanner extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'وقتِ بازبینی مبنا-صفر است',
-                    style: TextStyle(
+                  Text(
+                    lang == AppLanguage.fa
+                        ? 'وقتِ بازبینی مبنا-صفر است'
+                        : 'Time for zero-based review',
+                    style: const TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
-                    'لیستِ کوتاه، نصفِ تمرکز است — ۵ دقیقه',
+                    lang == AppLanguage.fa
+                        ? 'لیستِ کوتاه، نصفِ تمرکز است — ۵ دقیقه'
+                        : 'A concise list is half the focus — 5 minutes',
                     style: TextStyle(fontSize: 11, color: Tone.ink3),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_left_rounded, size: 18, color: Tone.ink3),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ==================== HABITS ====================
-
-class _HabitsSection extends ConsumerWidget {
-  const _HabitsSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final habitsAsync = ref.watch(habitsProvider);
-    final habits = habitsAsync.value ?? const <Habit>[];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(6, 0, 6, 10),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'عادت‌ها',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: Tone.ink3,
-                    letterSpacing: .4,
-                  ),
-                ),
-              ),
-              Pressable(
-                onTap: () => openHabitEditor(context),
-                child: Text(
-                  '+ عادت',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: Tone.ink2,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (habits.isEmpty)
-          GlassCard(
-            padding: const EdgeInsets.all(20),
-            child: Text(
-              'عادت یعنی: بعد از یک رویدادِ همیشگی، یک رفتارِ کوچک.\nبا «+ عادت» اولین لنگر را بگذار.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12.5, color: Tone.ink3, height: 2),
-            ),
-          )
-        else
-          for (final h in habits)
-            h.isBad ? _BadHabitRow(habit: h) : _GoodHabitRow(habit: h),
-      ],
-    );
-  }
-}
-
-class _GoodHabitRow extends ConsumerWidget {
-  final Habit habit;
-  const _GoodHabitRow({required this.habit});
-
-  /// Recovery-first messaging instead of a punishing streak.
-  (String, Color)? _note(String today) {
-    if (habit.doneOn(today)) return null;
-    final y = shiftDayKey(today, -1);
-    final y2 = shiftDayKey(today, -2);
-    final missedY = habit.created.compareTo(y) <= 0 && !habit.doneOn(y);
-    final missedY2 = habit.created.compareTo(y2) <= 0 && !habit.doneOn(y2);
-    if (missedY && missedY2) {
-      return ('دو روز شد — فقط نسخهٔ ۲ دقیقه‌ای را بزن', Tone.warn);
-    }
-    if (missedY) {
-      return ('دیروز جا ماند — امروز برگرد، زنجیره سالم می‌ماند', Tone.ember);
-    }
-    return null;
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final today = ref.watch(dayKeyProvider);
-    final done = habit.doneOn(today);
-    final note = _note(today);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 9),
-      child: GlassCard(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        onTap: () => openHabitEditor(context, habit: habit),
-        child: Row(
-          children: [
-            CheckCircle(
-              on: done,
-              onTap: () => ref
-                  .read(habitsProvider.notifier)
-                  .log(habit.id, done ? null : 'done'),
-            ),
-            const SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    habit.title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: done ? Tone.ink3 : Tone.ink,
-                      decoration: done ? TextDecoration.lineThrough : null,
-                    ),
-                  ),
-                  Text(
-                    'بعد از ${habit.cue}',
-                    style: TextStyle(fontSize: 11.5, color: Tone.ink3),
-                  ),
-                  if (note != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        note.$1,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: note.$2,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (habit.reminderMinutes != null)
-              Icon(
-                Icons.notifications_none_rounded,
-                size: 14,
-                color: Tone.ink3,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BadHabitRow extends ConsumerWidget {
-  final Habit habit;
-  const _BadHabitRow({required this.habit});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final today = ref.watch(dayKeyProvider);
-    final status = habit.statusOn(today);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 9),
-      child: GlassCard(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        onTap: () => openHabitEditor(context, habit: habit),
-        child: Row(
-          children: [
-            Container(
-              width: 27,
-              height: 27,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Tone.warn.withValues(alpha: .10),
-                border: Border.all(color: Tone.warn.withValues(alpha: .3)),
-              ),
-              child: Icon(
-                Icons.block_rounded,
-                size: 13,
-                color: Tone.warn.withValues(alpha: .8),
-              ),
-            ),
-            const SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    habit.title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    'بعد از ${habit.cue}',
-                    style: TextStyle(fontSize: 11.5, color: Tone.ink3),
-                  ),
-                  if (status == 'resisted')
-                    const Padding(
-                      padding: EdgeInsets.only(top: 2),
-                      child: Text(
-                        'امروز مقاومت کردی ✓',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Tone.ember,
-                        ),
-                      ),
-                    )
-                  else if (status == 'slip')
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        'لغزش ثبت شد — فردا روزِ جدید است',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Tone.ink3,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (status == null)
-              Pressable(
-                onTap: () => openFrictionSheet(context, habit),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Tone.warn.withValues(alpha: .08),
-                    borderRadius: BorderRadius.circular(11),
-                    border: Border.all(color: Tone.warn.withValues(alpha: .2)),
-                  ),
-                  child: Text(
-                    'وسوسه شدم',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: Tone.warn.withValues(alpha: .9),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ==================== FUN ====================
-
-class _FunCard extends ConsumerWidget {
-  const _FunCard();
-
-  Future<void> _edit(
-    BuildContext context,
-    WidgetRef ref,
-    FunConfig? fun,
-  ) async {
-    final title = TextEditingController(text: fun?.title ?? '');
-    final minutes = TextEditingController(text: '${fun?.minutes ?? 45}');
-    final saved = await showGlassSheet<bool>(
-      context,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.only(bottom: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SheetHeader(
-              'وقتِ آزاد',
-              sub:
-                  'تفریح، باقی‌ماندهٔ روز نیست؛ بخشِ رسمی برنامه است. زمان‌دار و بی‌گناه.',
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-              child: Column(
-                children: [
-                  GlassField(
-                    controller: title,
-                    label: 'چه کاری؟',
-                    hint: 'مثلاً: گیم، سریال، موسیقی',
-                  ),
-                  const SizedBox(height: 12),
-                  GlassField(
-                    controller: minutes,
-                    label: 'چند دقیقه؟',
-                    hint: '45',
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 16),
-                  Pill(
-                    'ذخیره',
-                    style: PillStyle.ember,
-                    onTap: () => Navigator.pop(ctx, true),
-                  ),
-                ],
-              ),
+            Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? Icons.chevron_left_rounded
+                  : Icons.chevron_right_rounded,
+              size: 18,
+              color: Tone.ink3,
             ),
           ],
         ),
-      ),
-    );
-    final t = title.text.trim();
-    final m = (int.tryParse(minutes.text) ?? 45).clamp(5, 240);
-    title.dispose();
-    minutes.dispose();
-    if (saved != true) return;
-    if (t.isEmpty) {
-      if (context.mounted) showToast(context, 'اسمِ تفریح را بنویس');
-      return;
-    }
-    await ref.read(funProvider.notifier).save(FunConfig(title: t, minutes: m));
-  }
-
-  /// Temptation bundling: before the boulder falls, fun is soft-locked — an
-  /// honest speed-bump, not a wall. Once it's done, play runs immediately.
-  Future<void> _play(
-    BuildContext context,
-    WidgetRef ref,
-    FunConfig fun,
-    bool locked,
-  ) async {
-    if (locked) {
-      final (goBoulder, _) = await showConfirmSheet(
-        context,
-        title: 'اول تخته‌سنگ؟',
-        sub:
-            'تفریح بعد از افتادنِ تخته‌سنگ، واقعاً بی‌گناه می‌شود. الان مطمئنی؟',
-        yesLabel: 'صبر می‌کنم',
-        noLabel: 'به‌هرحال شروع کن',
-      );
-      if (!context.mounted || goBoulder) return;
-    }
-    unawaited(
-      startFocusFlow(
-        context,
-        ref,
-        taskId: null,
-        title: fun.title,
-        kind: 'fun',
-        fixedMinutes: fun.minutes,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final fun = ref.watch(funProvider).value;
-    final plan = ref.watch(todayProvider).value;
-    final locked = (plan?.planned ?? false) && !(plan?.boulderDone ?? false);
-    if (fun == null) {
-      return GlassCard(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        onTap: () => _edit(context, ref, null),
-        child: Row(
-          children: [
-            Icon(Icons.add_rounded, size: 16, color: Tone.ink3),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'یک تفریحِ زمان‌دار تعریف کن — بدون آن، فان به وسطِ کار نشت می‌کند',
-                style: TextStyle(fontSize: 13, color: Tone.ink3, height: 1.7),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    return GlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      onTap: () => _edit(context, ref, fun),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  fun.title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  locked
-                      ? 'تخته‌سنگ بیفتد، بی‌گناه‌تر می‌شود'
-                      : 'بی‌گناه. بخشِ رسمی برنامه.',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: locked
-                        ? Tone.ember.withValues(alpha: .75)
-                        : Tone.ink3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .05),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Tone.line),
-            ),
-            child: Text(
-              '${faNum(fun.minutes)} دقیقه',
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: Tone.ink3,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Pressable(
-            onTap: () => _play(context, ref, fun, locked),
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: .05),
-                borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: Tone.line),
-              ),
-              child: Icon(
-                locked ? Icons.lock_outline_rounded : Icons.play_arrow_rounded,
-                size: 18,
-                color: locked ? Tone.ember.withValues(alpha: .75) : Tone.ink2,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1288,17 +930,23 @@ class _EnergyCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     Widget chip(String label, int level) => Pressable(
       onTap: () async {
         await ref.read(repoProvider).addEnergyCheck(level);
         ref.invalidate(statsProvider);
         if (context.mounted) {
           unawaited(HapticFeedback.selectionClick());
-          showToast(context, 'ثبت شد — ساعتِ طلایی‌ات کم‌کم پیدا می‌شود');
+          showToast(
+            context,
+            lang == AppLanguage.fa
+                ? 'ثبت شد — ساعتِ طلایی‌ات کم‌کم پیدا می‌شود'
+                : 'Logged — your Golden Hour pattern will emerge',
+          );
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: .04),
           borderRadius: BorderRadius.circular(999),
@@ -1317,75 +965,82 @@ class _EnergyCard extends ConsumerWidget {
 
     // One slim row — a two-second check-in, not a form.
     return GlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
-          const Icon(Icons.bolt_rounded, size: 16, color: Tone.ember),
+          Icon(Icons.bolt_rounded, size: 16, color: Tone.ember),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'انرژی الان؟',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Tone.ink2,
-              ),
-            ),
-          ),
-          chip('کم', 1),
-          const SizedBox(width: 6),
-          chip('متوسط', 2),
-          const SizedBox(width: 6),
-          chip('زیاد', 3),
-        ],
-      ),
-    );
-  }
-}
-
-class _VaultFab extends StatelessWidget {
-  final VoidCallback onTap;
-  const _VaultFab({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Pressable(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF232329), Color(0xFF141418)],
-          ),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Tone.line),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: .6),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.psychology_outlined, size: 18, color: Tone.ink2),
-            const SizedBox(width: 8),
-            Text(
-              'تخلیهٔ ذهن',
+              lang == AppLanguage.fa ? 'انرژی الان؟' : 'Energy right now?',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: Tone.ink2,
               ),
             ),
-          ],
+          ),
+          const SizedBox(width: 6),
+          chip(lang == AppLanguage.fa ? 'کم' : 'Low', 1),
+          const SizedBox(width: 5),
+          chip(lang == AppLanguage.fa ? 'متوسط' : 'Med', 2),
+          const SizedBox(width: 5),
+          chip(lang == AppLanguage.fa ? 'زیاد' : 'High', 3),
+        ],
+      ),
+    );
+  }
+}
+
+class _VaultFab extends ConsumerWidget {
+  final VoidCallback onTap;
+  const _VaultFab({required this.onTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: 14, bottom: 74),
+      child: Pressable(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF232329), Color(0xFF141418)],
+            ),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: Tone.line),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .5),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.psychology_outlined, size: 18, color: Tone.ink2),
+              const SizedBox(width: 8),
+              Text(
+                L10n.brainVaultTitle(lang),
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: Tone.ink2,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

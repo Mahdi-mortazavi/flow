@@ -5,11 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../core/fa.dart';
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../data/repo.dart';
 import '../../state/providers.dart';
-import '../today/today_screen.dart';
+import '../home/home_screen.dart';
 import '../widgets/glass.dart';
 
 const onboardedKey = 'onboarded_v1';
@@ -24,11 +24,15 @@ class OnboardingScreen extends ConsumerStatefulWidget {
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _Slide {
+class _SlideData {
   final Widget visual;
-  final String title;
-  final String body;
-  const _Slide({required this.visual, required this.title, required this.body});
+  final String Function(AppLanguage) title;
+  final String Function(AppLanguage) body;
+  const _SlideData({
+    required this.visual,
+    required this.title,
+    required this.body,
+  });
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
@@ -38,29 +42,31 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   var _evening = Repo.defaultEveningMin;
 
   static final _slides = [
-    const _Slide(
+    const _SlideData(
       visual: _EmberDot(),
-      title: 'تک‌نقطه',
-      body:
-          'هر روز، فقط یک نقطهٔ داغ.\nبقیهٔ کارها پشتِ آن صف می‌کشند.\nذهنِ شلوغ، این‌طور آرام می‌شود.',
+      title: L10n.onboardingSlide1Title,
+      body: L10n.onboardingSlide1Body,
     ),
-    _Slide(
+    _SlideData(
       visual: _icon(Icons.local_fire_department_rounded),
-      title: 'تخته‌سنگ و پیش‌بینی',
-      body:
-          'صبح، مهم‌ترین کار را ستاره می‌زنی و صادقانه پیش‌بینی می‌کنی.\nشب چک می‌شود — بدون سرزنش،\nفقط برای اینکه ذهنت کالیبره شود.',
+      title: L10n.onboardingSlide2Title,
+      body: L10n.onboardingSlide2Body,
     ),
-    _Slide(
+    _SlideData(
       visual: _icon(Icons.restart_alt_rounded),
-      title: 'عادت‌هایی که برمی‌گردند',
-      body:
-          'اینجا زنجیرِ تنبیهی نداریم.\nقهرمانِ عادت کسی است که فردایِ شکست برمی‌گردد.\nما همان روز را می‌شماریم.',
+      title: (lang) => lang == AppLanguage.fa
+          ? 'عادت‌هایی که برمی‌گردند'
+          : 'Habits that bounce back',
+      body: (lang) => lang == AppLanguage.fa
+          ? 'اینجا زنجیرِ تنبیهی نداریم.\nقهرمانِ عادت کسی است که فردایِ شکست برمی‌گردد.\nما همان روز را می‌شماریم.'
+          : 'No punitive streak breaks here.\nA habit hero is someone who returns the day after a slip.\nWe count that recovery day.',
     ),
-    _Slide(
+    _SlideData(
       visual: _icon(Icons.notifications_active_rounded),
-      title: 'دو قرارِ کوچک با خودت',
-      body:
-          'صبح، یک یادآوریِ چیدن.\nشب، یک یادآوریِ بستن.\nهمه‌چیز فقط روی گوشیِ خودت می‌ماند — بدون اکانت، بدون ردیابی.',
+      title: L10n.onboardingSlide3Title,
+      body: (lang) => lang == AppLanguage.fa
+          ? 'صبح، یک یادآوریِ چیدن.\nشب، یک یادآوریِ بستن.\nهمه‌چیز فقط روی گوشیِ خودت می‌ماند — بدون اکانت، بدون ردیابی.'
+          : 'Morning: a kickoff reminder.\nNight: a closure review.\nEverything stays strictly on your device — no account, no tracking.',
     ),
   ];
 
@@ -92,12 +98,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final repo = ref.read(repoProvider);
     await repo.setReminderMinutes('rem_morning', _morning);
     await repo.setReminderMinutes('rem_evening', _evening);
-    await syncDailyReminders(repo, ref.read(dayKeyProvider));
+    await syncDailyReminders(
+      repo,
+      ref.read(dayKeyProvider),
+      ref.read(appLanguageProvider),
+    );
     if (!mounted) return;
     unawaited(
       Navigator.of(context).pushReplacement(
         PageRouteBuilder<void>(
-          pageBuilder: (_, __, ___) => const TodayScreen(),
+          pageBuilder: (_, __, ___) => const HomeScreen(),
           transitionsBuilder: (_, anim, __, child) =>
               FadeTransition(opacity: anim, child: child),
           transitionDuration: const Duration(milliseconds: 450),
@@ -106,7 +116,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _reminderRow(String label, int value, ValueChanged<int> onChanged) {
+  Widget _reminderRow(
+    String label,
+    int value,
+    AppLanguage lang,
+    ValueChanged<int> onChanged,
+  ) {
     return GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       onTap: () async {
@@ -129,14 +144,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ),
           Text(
-            faNum(
+            L10n.fmtNum(
               '${(value ~/ 60).toString().padLeft(2, '0')}:${(value % 60).toString().padLeft(2, '0')}',
+              lang,
             ),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: Tone.ember,
-              fontFeatures: [FontFeature.tabularFigures()],
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ],
@@ -146,6 +162,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
+    final lang = ref.watch(appLanguageProvider);
     final last = _page == _slides.length - 1;
     return Scaffold(
       body: SafeArea(
@@ -158,7 +176,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Text(
-                    'رد شدن',
+                    lang == AppLanguage.fa ? 'رد شدن' : 'Skip',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -187,7 +205,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         s.visual,
                         const SizedBox(height: 40),
                         Text(
-                          s.title,
+                          s.title(lang),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 28,
@@ -197,7 +215,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         ),
                         const SizedBox(height: 18),
                         Text(
-                          s.body,
+                          s.body(lang),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14.5,
@@ -208,14 +226,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         if (isLast) ...[
                           const SizedBox(height: 26),
                           _reminderRow(
-                            'یادآور صبح',
+                            L10n.morningReminder(lang),
                             _morning,
+                            lang,
                             (v) => setState(() => _morning = v),
                           ),
                           const SizedBox(height: 8),
                           _reminderRow(
-                            'یادآور شب',
+                            L10n.eveningReminder(lang),
                             _evening,
+                            lang,
                             (v) => setState(() => _evening = v),
                           ),
                         ],
@@ -249,7 +269,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(28, 26, 28, 30),
               child: Pill(
-                last ? 'شروع' : 'بعدی',
+                last
+                    ? (lang == AppLanguage.fa ? 'شروع' : 'Start')
+                    : L10n.next(lang),
                 style: PillStyle.ember,
                 onTap: () {
                   if (last) {
@@ -321,10 +343,10 @@ class _EmberDotState extends State<_EmberDot>
                 height: 26 + 4 * t,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Color(0xFFF6B26E), Color(0xFFE7994C)],
+                    colors: [Tone.accentLight, Tone.accentDark],
                   ),
                   boxShadow: [
                     BoxShadow(

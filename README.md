@@ -1,272 +1,164 @@
 <div align="center">
 
-<img src="docs/banner.png" alt="Flow — تک‌نقطه" width="100%">
+<img src="docs/banner.svg?v=3" alt="re-flow — Flow / تک‌نقطه" width="100%">
 
 <br/>
 
-[![Build](https://github.com/Mahdi-mortazavi/flow/actions/workflows/build.yml/badge.svg)](https://github.com/Mahdi-mortazavi/flow/actions)
-[![Release](https://img.shields.io/github/v/release/Mahdi-mortazavi/flow?label=%D8%A2%D8%AE%D8%B1%DB%8C%D9%86%20%D9%86%D8%B3%D8%AE%D9%87&color=EFA55C)](https://github.com/Mahdi-mortazavi/flow/releases/latest)
-[![Platform](https://img.shields.io/badge/platform-Android%20arm64-3DDC84?logo=android&logoColor=white)](https://github.com/Mahdi-mortazavi/flow/releases/latest)
-[![Made with Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
-[![Privacy](https://img.shields.io/badge/privacy-100%25%20offline-4ade80)](#-حریم-خصوصی--مالکیت-داده)
-[![License](https://img.shields.io/badge/license-open%20source-8b8b93)](#)
+[![GitHub Release](https://img.shields.io/github/v/release/re-code-sh/re-flow?style=for-the-badge&logo=github&color=EFA55C&logoColor=white)](https://github.com/re-code-sh/re-flow/releases/latest)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/re-code-sh/re-flow/build.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=CI)](https://github.com/re-code-sh/re-flow/actions)
+[![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/re-code-sh/re-flow/releases/latest)
+[![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
+[![Locales](https://img.shields.io/badge/Locale-Persian%20%7C%20English-EFA55C?style=for-the-badge)](#-key-features)
+[![Privacy](https://img.shields.io/badge/Privacy-100%25%20Offline-4ade80?style=for-the-badge)](#-privacy--local-data)
 
-### **اپ‌های Todo به تو لیست می‌دهند. مشکلِ تو لیست نیست — تصمیم است.**
+### **re-flow (Flow / تک‌نقطه)**
+*A liquid-glass daily focus protocol, habit engine, and self-calibration OS.*
 
-*Flow یک Todo-app نیست؛ یک **پروتکل روزانه‌ی مبتنی بر علم رفتار** است که هر روز فقط یک سؤال می‌پرسد:*
-### «اگر فقط یک کار امروز انجام شود، کدام است؟»
-
-<br/>
-
-**[ ⬇️ دانلود نسخه‌ی اندروید (APK) ](https://github.com/Mahdi-mortazavi/flow/releases/latest)** · [مشکل](#-مسئله) · [راه‌حل](#-راهحل-تکنقطه) · [چرا ما](#-چرا-flow-برنده-میشود) · [نقشه‌ی راه](#-نقشهی-راه)
+[ **⬇️ Download Latest APK** ](https://github.com/re-code-sh/re-flow/releases/latest) · [Features](#-key-features) · [Accent Palettes](#-liquid-glass-accent-palettes) · [Build Instructions](#%EF%B8%8F-build-from-source)
 
 </div>
 
 ---
 
-## 🎯 در یک جمله
+## ⚡ Overview
 
-> **Flow (تک‌نقطه)** یک «سیستم‌عاملِ تمرکز» موبایلیِ کاملاً آفلاین است که به‌جای مدیریتِ لیستِ کارها، **رفتارِ روزانه‌ات را مهندسی می‌کند** — یک کارِ ستاره‌دار در روز، تایمرِ تمرکزِ ضدضربه، عادت‌هایی که بعد از شکست برمی‌گردند، و آماری که به‌جای قضاوت، آینه می‌شود.
+**re-flow** (**Flow / تک‌نقطه**) is an open-source, 100% offline daily focus app built with Flutter. Built around a dark "Liquid Glass" theme, it eliminates streak anxiety, remote tracking, and clutter — centering your daily energy around one primary goal (**The Boulder / تخته‌سنگ**).
 
----
-
-## 📱 پیش‌نمایش
-
-<div align="center">
-<table>
-<tr>
-<td align="center" width="25%"><img src="docs/screenshots/today.png" alt="صفحه‌ی امروز — تخته‌سنگ" width="200"/><br/><sub><b>امروز</b><br/>تخته‌سنگ + پیش‌بینی</sub></td>
-<td align="center" width="25%"><img src="docs/screenshots/focus.png" alt="تایمر تمرکز" width="200"/><br/><sub><b>تمرکز</b><br/>رینگ ضدضربه</sub></td>
-<td align="center" width="25%"><img src="docs/screenshots/interrupt.png" alt="چیپ‌های قطع تمرکز" width="200"/><br/><sub><b>قطع تمرکز</b><br/>ثبتِ یک‌لمسی</sub></td>
-<td align="center" width="25%"><img src="docs/screenshots/mirror.png" alt="آینه — آمار" width="200"/><br/><sub><b>آینه</b><br/>آمارِ بدونِ قضاوت</sub></td>
-</tr>
-</table>
-
-<sub>روی دستگاه واقعی (اندروید، RTL فارسی، فونت وزیرمتن) — <a href="docs/screenshots/settings.png">یادآورها و پشتیبان‌گیری</a></sub>
-
-</div>
+> [!NOTE]
+> This repository is an enhanced, internationalized fork of [Mahdi-mortazavi/flow](https://github.com/Mahdi-mortazavi/flow) with full English/Persian LTR/RTL support, customizable accent palettes, dynamic OS launcher labels, active-days task scaling, and automated CI/CD releases.
 
 ---
 
-## 🧠 مسئله
+## 🎨 Liquid Glass Accent Palettes
 
-هر ابزارِ بهره‌وری‌ای که تا امروز نصب کرده‌ای، یک فرضِ غلط دارد: **«اگر لیستِ بهتری داشته باشی، بهتر عمل می‌کنی.»** اما داده‌ی رفتاری خلافش را می‌گوید. مشکلِ واقعی جای دیگری است:
+Instantly switch accent colors across buttons, progress rings, highlights, and glass glows in real-time — no app restart needed.
 
-| نقطه‌ی شکست | چه اتفاقی می‌افتد |
-|---|---|
-| 🧊 **فلجِ انتخاب** | صبح با ۲۰ کارِ «مهم» شروع می‌کنی؛ مغز زیرِ بارِ انتخاب قفل می‌کند و شب با عذاب وجدان تمام می‌شود. |
-| ⛓️ **دام streak** | عادت‌ها با «قدرت اراده» شروع و با اولین شکستِ زنجیره برای همیشه رها می‌شوند. |
-| 📱 **نشتِ تمرکز** | وسطِ کارِ عمیق یک فکرِ مزاحم می‌آید؛ نیم‌ساعت بعد در اینستاگرامی. |
-| 😔 **تفریحِ گناه‌آلود** | تفریح هیچ‌وقت «مجاز» نیست، پس با احساس گناه به وسطِ کار نشت می‌کند. |
-| 🎲 **خودفریبیِ نامرئی** | هیچ‌وقت نمی‌فهمی چقدر خوش‌بینانه برنامه می‌ریزی، چون هیچ‌کس شب ازت حساب نمی‌کشد. |
-
-**نتیجه:** بازارِ اپ‌های Todo اشباع است، اما نرخِ رهاسازیِ (churn) همه‌شان بالاست — چون هیچ‌کدام ریشه‌ی مشکل، یعنی **تصمیم‌گیری و رفتار**، را هدف نگرفته‌اند.
+| Accent Palette | Preview Badge | Hex Code | Persian Name | English Name |
+|---|---|---|---|---|
+| **Ember** *(Default)* | ![](https://img.shields.io/badge/-%20-EFA55C) | `#EFA55C` | کهربایی | Ember |
+| **Alpine Pine** | ![](https://img.shields.io/badge/-%20-4EAF7B) | `#4EAF7B` | سوزن کاج | Alpine Pine |
+| **Abyssal Indigo** | ![](https://img.shields.io/badge/-%20-5486EB) | `#5486EB` | نیلی ژرف | Abyssal Indigo |
+| **Smoked Mulberry** | ![](https://img.shields.io/badge/-%20-D65B6E) | `#D65B6E` | شاتوتی | Smoked Mulberry |
+| **Mist Slate** | ![](https://img.shields.io/badge/-%20-A2ADC0) | `#A2ADC0` | گرانیت مه‌آلود | Mist Slate |
+| **Night Iris** | ![](https://img.shields.io/badge/-%20-9F7AEA) | `#9F7AEA` | شفق شبانه | Night Iris |
 
 ---
 
-## ◉ راه‌حل: تک‌نقطه
+## 🚀 Key Features
 
-Flow مسئله را از سرِ دیگر می‌گیرد. به‌جای «چطور کارهای بیشتری را مدیریت کنیم؟» می‌پرسد **«چطور مطمئن شویم مهم‌ترین کار انجام می‌شود؟»** — و این را به یک پروتکلِ روزانه‌ی کمتر از دو دقیقه‌ای تبدیل می‌کند که هر مرحله‌اش از یک اصلِ اثبات‌شده‌ی علومِ رفتاری ساخته شده.
+<details open>
+<summary><b>🌐 Full Dual-Language & Native Locale Engine</b></summary>
 
-<table>
-<tr>
-<td width="50%" valign="top">
+- **Instant LTR / RTL Switching**: Seamless toggle between English and Persian with full typography and UI alignment.
+- **Dynamic OS Launcher Title**: Launcher icon title automatically switches between **Flow** and **تک‌نقطه** depending on system/app locale.
+- **Localized Timer & Numbers**: Clock displays English digits (`24:59`) in English mode and Persian numerals (`۲۴:۵۹`) in Persian mode.
+- **Localized Notifications**: Morning planning nudges, evening review reminders, task alarms, and habit cues broadcast in your active language.
+</details>
 
-### 🔥 تخته‌سنگ (The Boulder)
-هر صبح، حداکثر ۳ کار انتخاب می‌کنی و مهم‌ترین را ستاره می‌زنی — این «تخته‌سنگ» توست. بقیه پشتش صف می‌کشند (با راهِ فرارِ آگاهانه، نه دیوار). یک برنده‌ی روشن به‌جای بیست کارِ نیمه‌کاره.
+<details open>
+<summary><b>⏰ Exact Scheduled Task Reminders & Alarms (P0)</b></summary>
 
-</td>
-<td width="50%" valign="top">
+- **Exact Background Alarms**: Set exact reminder times on any task with an iOS-style wheel time picker.
+- **Direct Notification Deep-Linking**: Tapping the notification or its "Focus" action launches the app directly into Focus mode pre-loaded with that task.
+- **Smart Lifecycle Management**: Notifications automatically cancel or reschedule if a task is marked done, edited, or deleted.
+- **Visual Reminder Badges**: Task cards display active reminder times directly in the Today view.
+</details>
 
-### 🎯 پیش‌بینی صادقانه
-صبح می‌گویی «چند درصد احتمال دارد تخته‌سنگ بیفتد؟» — شب چک می‌شود. بعد از چند هفته، اپ **شکافِ خوش‌بینی‌ات** را نشان می‌دهد: چند واحد خودت را گول می‌زنی.
+<details open>
+<summary><b>⚡ Direct Task-to-Focus Workflow & Auto-Completion</b></summary>
 
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
+- **One-Tap Focus Launch**: Launch a focus session directly from any task card (including The Boulder) without extra menus.
+- **In-Session Task Binding**: Active task title is prominently displayed inside the responsive focus ring with your chosen accent color.
+- **Session Completion Flow**: Seamless post-timer prompt allowing you to mark the task completed or log focus time only.
+</details>
 
-### ⏱ تمرکزِ ضدضربه
-تایمرِ تمام‌صفحه بر پایه‌ی ساعتِ سیستم — اپ را ببندی، گوشی ری‌استارت شود، تایمر درست می‌ماند و زنگِ پایان روی خودِ OS ثبت است. فکرِ مزاحم آمد؟ بدونِ خروج از تمرکز، دو ثانیه‌ای در **مخزنِ ذهن** رهایش می‌کنی.
+<details open>
+<summary><b>📱 Fluid Portrait Responsiveness & Overflow Protection</b></summary>
 
-</td>
-<td width="50%" valign="top">
+- **Dynamic LayoutBuilder Ring**: Circular timer ring and typography adapt smoothly ($180\text{dp} - 284\text{dp}$) across all vertical screen heights.
+- **Zero RenderFlex Overflows**: Tested and verified across multiple aspect ratios (16:9, 19.5:9, 20:9, 21:9) and accessibility text scales ($1.3\times$).
+- **Keyboard-Proof Bottom Sheets**: All modal sheets and wizards smoothly scroll when the soft keyboard is open.
+- **Smart Multi-Line Truncation**: Ellipsis and wrapping for long task titles, habit cues, and category tags.
+</details>
 
-### 🌱 عادت‌هایی که برمی‌گردند
-فرمولِ لنگر «بعد از [X]، [رفتار کوچک]» + یادآور دقیقاً در لحظه‌ی محرک. **بدونِ streakِ تنبیهی.** عددِ قهرمانِ این اپ، **نرخِ بازگشت بعد از شکست** است، نه طولِ زنجیره.
+<details open>
+<summary><b>🧭 3-Tab Liquid Glass Navigation & Floating Brain Vault</b></summary>
 
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
+- **3-Tab Navigation Bar**: Floating glass bar separating **Tasks (کارها)**, **Habits (عادت‌ها)**, and **Leisure (فراغت)**.
+- **Floating Brain Vault Pill**: Ergonomically elevated pill button above the bottom bar for rapid 2-second thought dumping without visual clutter.
+</details>
 
-### 🌙 مرورِ شبِ ۶۰ ثانیه‌ای
-چکِ نهایی + اگر تخته‌سنگ نیفتاد، زنجیره‌ی «چرا» تا رسیدن به علتِ *سیستمی* — بدون سرزنش. یادگیری همین‌جا اتفاق می‌افتد.
+<details open>
+<summary><b>📈 Active Days Task Capacity Progression</b></summary>
 
-</td>
-<td width="50%" valign="top">
+- **Non-Punitive Scaling**: Task slots unlock automatically based on total completed active days in local SQLite without streak-reset penalties:
+  - **0–14 Days**: 3 tasks max (1 Boulder + 2 secondary)
+  - **15–29 Days**: 4 tasks max (1 Boulder + 2 secondary + 1 Pebble)
+  - **30+ Days**: 5 tasks max cap (1 Boulder + 2 secondary + 2 Pebbles)
+- **Pebble Slots (سنگریزه)**: Slots 4 & 5 designated for quick-win, low-energy tasks (<15 minutes).
+</details>
 
-### 🪞 آینه
-آمارِ بدونِ قضاوت: نرخِ برد، شکافِ خوش‌بینی، نرخِ بازگشت، نمودارِ کارِ عمیقِ هفته، الگوی قطع‌شدن‌ها، و **ساعتِ طلاییِ انرژی‌ات**.
+<details open>
+<summary><b>🧠 Core Behavioral Psychology & Habit Protocol</b></summary>
 
-</td>
-</tr>
-</table>
-
-<details>
-<summary><b>+ سه ابزارِ دیگر که چسبندگی می‌سازند</b> (کلیک کنید)</summary>
-
-<br/>
-
-- **🚫 ترکِ عادتِ بد با جایگزینی** — لحظه‌ی وسوسه → ۱۰ ثانیه مکثِ اجباری + هزینه‌ی بلندمدت جلوی چشم + یک دکمه: «به‌جایش: …». همان محرک، پاسخِ جدید. (Friction Engineering)
-- **🎮 وقتِ آزادِ بی‌گناه** — تفریح بخشِ رسمیِ برنامه است، زمان‌دار و بی‌عذاب. تا تخته‌سنگ نیفتاده «قفلِ نرم» است؛ بعد از افتادن، پاداشِ شرطیِ روز. (Temptation Bundling)
-- **🔍 بازبینیِ مبنا-صفر** — هر هفته برای تک‌تکِ کارها و عادت‌ها فقط یک سؤال: «اگر امروز در لیست نبود، دوباره اضافه‌اش می‌کردی؟»
-
+- **🪨 The Boulder**: Lock in 1 primary goal each morning. Secondary tasks queue behind it.
+- **🎯 Prediction & Optimism Gap**: Estimate morning completion probability vs night outcome to track self-overestimation.
+- **🏖️ Guilt-Free Play (Leisure)**: Dedicated leisure timer and block as the antidote to Parkinson's Law.
+- **🌱 Habit Anchor & Friction**: Anchor routine cues and set friction pauses for bad habits. Measures *Recovery Rate* instead of fragile streaks.
+- **🌙 60-Second Evening Review**: Nightly check-in + 3-Why root cause analysis when The Boulder fails.
 </details>
 
 ---
 
-## 🔄 محصول در عمل: یک روزِ کامل
-
-روزِ کاربرِ Flow یک حلقه‌ی بسته است — هر مرحله ورودیِ مرحله‌ی بعد را می‌سازد:
-
-```
-   صبح  ─────────────►  روز  ─────────────►  شب  ─────────────►  هفته
-   ┌──────────┐        ┌──────────┐        ┌──────────┐        ┌──────────┐
-   │ تخته‌سنگ  │        │  تمرکزِ   │        │  مرورِ    │        │  آینه +  │
-   │  + پیش‌   │───────►│  ضدضربه  │───────►│  ۶۰ثانیه │───────►│  بازبینیِ │
-   │  بینی %  │        │ + مخزنِ  │        │ + چرا؟   │        │ مبنا-صفر │
-   └──────────┘        │   ذهن    │        └──────────┘        └──────────┘
-    < ۹۰ ثانیه          └──────────┘         < ۶۰ ثانیه
-        │                                         │
-        └───────────  یادآورِ هوشمندِ OS  ◄────────┘
-              (اگر روز چیده/بسته نشد — وگرنه بی‌صدا رد می‌شود)
-```
-
-نتیجه: کاربر هر روز حداقل **یک بار برنده می‌شود**، و اپ بی‌آنکه بار اضافه کند، خودش کاربر را برمی‌گرداند.
-
----
-
-## 🚀 چرا Flow برنده می‌شود
-
-بازارِ Todo پر است — اما همه در یک محورِ اشتباه رقابت می‌کنند: «امکاناتِ بیشتر». Flow در محورِ دیگری بازی می‌کند: **تغییرِ رفتار.**
-
-| | اپ‌های Todo معمولی | **Flow (تک‌نقطه)** |
-|---|:---:|:---:|
-| واحدِ اصلی | لیستِ نامحدودِ کار | **یک تخته‌سنگِ روزانه** |
-| نگاه به شکست | streakِ شکسته = باخت | **نرخِ بازگشت = بردِ واقعی** |
-| برنامه‌ریزی | حدس و امید | **پیش‌بینیِ کالیبره‌شده** |
-| تمرکز | تایمرِ درون‌اپی (با کرش می‌پرد) | **مبتنی بر ساعتِ OS، ضدِ کرش** |
-| حواس‌پرتی | باید اپ را ببندی | **مخزنِ ذهن، بدونِ خروج** |
-| تفریح | بیرونِ سیستم | **پاداشِ رسمیِ درونِ سیستم** |
-| آمار | نمودارِ افتخار | **آینه‌ی بدونِ قضاوت** |
-| داده | ابر / اکانت / ردیابی | **۱۰۰٪ روی گوشی، بدونِ سرور** |
-
-**دفاعِ محصول (moat):** هر قابلیت به یک اصلِ علومِ رفتاری گره خورده و در قالبِ یک حلقه‌ی روزانه چفت شده. کپی‌کردنِ یک صفحه آسان است؛ کپی‌کردنِ کلِ پروتکل و انسجامِ رفتاری‌اش نیست.
-
----
-
-## 🔬 علم پشتِ محصول
-
-هر تصمیمِ طراحی، یک منبعِ آکادمیک دارد — این اپ نظرِ شخصی نیست، پیاده‌سازیِ پژوهش است:
-
-| تکنیک | منبع | کجای اپ |
-|---|---|---|
-| Implementation Intentions | Gollwitzer | فرمولِ عادت + یادآور روی محرک |
-| Tiny Habits / قانونِ ۲ دقیقه | BJ Fogg | کوچک‌سازیِ خودکار بعد از شکست |
-| Self-compassion بجای streak | Kristin Neff | پیام‌های بازگشت، نرخِ بازگشت |
-| Metacognitive Calibration | — | پیش‌بینیِ صبح در برابرِ نتیجه‌ی شب |
-| Five Whys | Toyota / Lean | زنجیره‌ی چرا در مرورِ شب |
-| Zeigarnik Effect | — | مخزنِ ذهن، حتی وسطِ تمرکز |
-| Friction Engineering | — | مکثِ ۱۰ ثانیه‌ای + جایگزینِ یک‌لمسی |
-| Zero-based Thinking | — | بازبینیِ هفتگی |
-| Temptation Bundling | Katy Milkman | وقتِ آزادِ رسمی |
-| Ultradian Rhythm | — | چک‌اینِ انرژی و ساعتِ طلایی |
-
----
-
-## 📊 وضعیت و بلوغِ محصول
+## 📱 Interface Showcase
 
 <div align="center">
-
-| نسخه‌ی فعلی | فازهای کامل‌شده | تست‌های خودکار | حریم خصوصی |
-|:---:|:---:|:---:|:---:|
-| **v0.5.0** | **۳.۶ از ۴** | **۴۳+ در CI** | **۱۰۰٪ آفلاین** |
-
+<table>
+<tr>
+<td align="center" width="25%"><img src="docs/screenshots/today.png" alt="Today Screen" width="200"/><br/><sub><b>Today</b></sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/focus.png" alt="Focus Timer" width="200"/><br/><sub><b>Focus</b></sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/interrupt.png" alt="Interrupts" width="200"/><br/><sub><b>Interrupts</b></sub></td>
+<td align="center" width="25%"><img src="docs/screenshots/mirror.png" alt="Stats Mirror" width="200"/><br/><sub><b>Stats Mirror</b></sub></td>
+</tr>
+</table>
 </div>
 
-Flow یک نمونه‌ی اولیه نیست — یک محصولِ منتشرشده با انضباطِ مهندسیِ جدی است. هر کامیت از **تحلیلِ استاتیکِ سخت‌گیرانه، بررسیِ فرمت و ۴۳+ تستِ خودکار** در CI عبور می‌کند و ریلیزها خودکار ساخته و منتشر می‌شوند. دسترسی‌پذیری جدی گرفته شده: هدف‌های لمسی ≥۴۴px، برچسب‌های اسکرین‌ریدر، و پشتیبانی از فونتِ درشت.
+---
+
+## 🔒 Privacy & Local Data
+
+- **100% Offline**: Zero remote telemetry, zero analytics tracking, no server dependency.
+- **Local SQLite Database**: All plans, focus sessions, and habit logs stay strictly on device.
+- **Backup & Restore**: JSON export/import for easy local data ownership and migrations.
 
 ---
 
-## 🔒 حریم خصوصی و مالکیتِ داده
-
-**همه‌چیز فقط روی گوشیِ خودت.** SQLiteِ محلی، بدونِ اکانت، بدونِ سرور، بدونِ آنالیتیکس، بدونِ اینترنت. کدش هم جلوی چشمت است.
-
-- 💾 **پشتیبان‌گیریِ کاملِ JSON** با یک ضربه و بازیابی از فایل
-- ↩️ **Undo برای حذف‌ها** — و بازبینیِ هفتگی تا لحظه‌ی تأیید هیچ‌چیز را پاک نمی‌کند
-- 🔓 **بدونِ قفل‌شدن** — داده‌ات همیشه قابلِ خروج و در فرمتِ باز است
-
-> در دنیایی که هر اپِ بهره‌وری داده‌ات را می‌فروشد، آفلاین‌بودنِ Flow یک ویژگی نیست — یک **موضع** است.
-
----
-
-## 🎨 دیزاین — Liquid Glass Ember
-
-بوم تقریباً سیاه (`#060608`)، سطوحِ شیشه‌ایِ مونوکروم، و دقیقاً *یک* رنگِ گرم (کهربایی `#EFA55C`) که فقط به مهم‌ترین چیزِ روز — تخته‌سنگ — تعلق دارد. الهام‌گرفته از زبانِ طراحیِ اپل: سلسله‌مراتب با نور و فاصله، نه با شلوغی. فونت: وزیرمتن (بومی، RTL).
-
-> «یک رنگ برای یک تصمیم» — کلِ فلسفه‌ی محصول در سیستمِ رنگش خلاصه شده.
-
----
-
-## 📥 نصب
-
-1. از [Releases](https://github.com/Mahdi-mortazavi/flow/releases/latest) فایل `‎.apk` را دانلود کن
-2. اجازه‌ی «نصب از منابعِ ناشناس» را بده و نصب کن
-3. اجازه‌ی نوتیفیکیشن را تأیید کن (زنگِ پایانِ تمرکز و یادآورِ عادت)
-
-**پیش‌نیاز:** اندروید ۵+ با پردازنده‌ی ۶۴بیتی (arm64-v8a)
-
----
-
-## 🛠 ساخت از سورس
+## 🛠️ Build from Source
 
 ```bash
-git clone https://github.com/Mahdi-mortazavi/flow.git
-cd flow
+git clone https://github.com/re-code-sh/re-flow.git
+cd re-flow
 flutter pub get
 flutter run
 ```
 
-**پشته‌ی فنی:** Flutter 3.35 · Riverpod 3 · SQLite (sqflite) · flutter_local_notifications · تقویمِ جلالی (shamsi_date) · فونتِ وزیرمتن
+### 🧪 Code Hygiene & Verification
+
+```bash
+# Verify formatting
+dart format --output=none --set-exit-if-changed lib test
+
+# Run static analysis
+flutter analyze
+
+# Run unit & widget test suite (86 tests)
+flutter test
+```
 
 ---
 
-## 🗺 نقشه‌ی راه
+## 📜 Credits & License
 
-- [x] **فاز ۱** — تخته‌سنگ، پیش‌بینی، تمرکز، مرورِ شب، مخزنِ ذهن
-- [x] **فاز ۲** — عادت‌ها با یادآور روی محرک، ترکِ عادت با جایگزینی، وقتِ آزاد
-- [x] **فاز ۳** — آینه، بازبینیِ مبنا-صفر، چک‌اینِ انرژی و ساعتِ طلایی
-- [x] **فاز ۳.۵** — حلقه‌ی بازگشت (یادآورِ صبح/شب/هفتگی)، پشتیبان‌گیری و بازیابی، Undo، آیکونِ برند، دسترسی‌پذیری
-- [x] **فاز ۳.۶** — ویرایش/حذفِ کار با لمسِ طولانی، چیپ‌های یک‌لمسیِ قطعِ تمرکز + الگوی دسته‌بندی‌شده، قفلِ نرمِ وقتِ آزاد، شرطِ داده برای شکافِ خوش‌بینی، میان‌بُرِ «ثبتِ فکر»
-- [ ] **فاز ۴** — ویجتِ صفحه‌ی اصلی، Live Activity، لایه‌ی هویت و ارزش‌ها، DNDِ خودکار
-
----
-
-<div align="center">
-
-## English
-
-**Flow (Tak-Noghteh, "single point")** is an offline-first, Persian-language **focus & habit OS** for Android — built on behavioral science rather than willpower.
-
-Todo apps hand you a list. But your problem was never the list — it's the **decision**. Flow replaces the infinite backlog with a single daily protocol: one starred **"boulder"** task with a morning success **prediction** (checked honestly at night), a crash-proof wall-clock **focus timer** with an OS-level end alarm, anchor-based **habits** with cue-time actionable notifications, **recovery-rate instead of punishing streaks**, a 10-second **friction pause** with one-tap replacement for breaking bad habits, a 60-second evening **why-chain** review, guilt-free scheduled **fun**, one-tap **energy check-ins** that reveal your golden hour, and a judgment-free stats **mirror**.
-
-Every feature maps to a peer-reviewed behavioral principle, chained into one daily loop that pulls the user back on its own. **100% on-device — no account, no server, no tracking.**
-
-*Built with Flutter · Liquid-glass ember design*
-
-<br/>
-
-**[ ⬇️ Download the latest release ](https://github.com/Mahdi-mortazavi/flow/releases/latest)**
-
-</div>
+- Original project by [Mahdi-mortazavi/flow](https://github.com/Mahdi-mortazavi/flow).
+- Maintained & upgraded by [re-code-sh/re-flow](https://github.com/re-code-sh/re-flow).
+- Released under the [MIT License](LICENSE).

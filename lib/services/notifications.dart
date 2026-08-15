@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart' show Color;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../core/fa.dart';
+import '../core/l10n.dart';
 import '../data/models.dart';
 import '../data/repo.dart';
 
@@ -23,6 +25,9 @@ class Notifications {
   static const _weeklyId = 3003;
   static const _habitDoneAction = 'habit_done';
   static const _habitCategory = 'habit_cue';
+  static const _taskCategory = 'task_reminder';
+  static const _taskFocusAction = 'task_focus';
+  static const _taskDoneAction = 'task_done';
   static const _ember = Color(0xFFEFA55C);
 
   final _plugin = FlutterLocalNotificationsPlugin();
@@ -32,9 +37,26 @@ class Notifications {
   /// the database.
   void Function()? onHabitsChanged;
 
+  /// Triggered when the user taps a task reminder notification or action.
+  void Function(String taskId, String? actionId)? onTaskLaunch;
+
   Future<void> init() async {
     if (_ready) return;
     tzdata.initializeTimeZones();
+    try {
+      final info = await FlutterTimezone.getLocalTimezone();
+      final timeZoneName = info.identifier;
+      try {
+        tz.setLocalLocation(tz.getLocation(timeZoneName));
+      } catch (_) {
+        final loc = tz.timeZoneDatabase.locations[timeZoneName];
+        if (loc != null) {
+          tz.setLocalLocation(loc);
+        }
+      }
+    } catch (e) {
+      debugPrint('Notifications.init timezone detection failed: $e');
+    }
     const android = AndroidInitializationSettings('ic_stat_dot');
     final ios = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -46,17 +68,28 @@ class Notifications {
           actions: [
             DarwinNotificationAction.plain(
               _habitDoneAction,
-              'انجام شد ✓',
+              '✓',
+              options: {DarwinNotificationActionOption.foreground},
+            ),
+          ],
+        ),
+        DarwinNotificationCategory(
+          _taskCategory,
+          actions: [
+            DarwinNotificationAction.plain(
+              _taskFocusAction,
+              'Focus',
+              options: {DarwinNotificationActionOption.foreground},
+            ),
+            DarwinNotificationAction.plain(
+              _taskDoneAction,
+              'Done',
               options: {DarwinNotificationActionOption.foreground},
             ),
           ],
         ),
       ],
     );
-    // Never let a plugin/resource failure escape: a missing notification icon
-    // or an OEM quirk must degrade notifications gracefully, not crash the
-    // whole app (this runs during startup). Marked ready either way so we
-    // don't spin retrying a permanent failure.
     try {
       await _plugin.initialize(
         settings: InitializationSettings(android: android, iOS: ios),
@@ -72,46 +105,56 @@ class Notifications {
       _handleAction(response.actionId, response.payload);
 
   Future<void> _handleAction(String? actionId, String? payload) async {
-    if (actionId == _habitDoneAction && payload != null && payload.isNotEmpty) {
-      await Repo().logHabit(payload, todayKey(), 'done');
+    if (payload == null || payload.isEmpty) return;
+    if (actionId == _habitDoneAction || payload.startsWith('habit:')) {
+      final habitId = payload.replaceFirst('habit:', '');
+      await Repo().logHabit(habitId, todayKey(), 'done');
       onHabitsChanged?.call();
+    } else if (payload.startsWith('task:')) {
+      final taskId = payload.replaceFirst('task:', '');
+      if (actionId == _taskDoneAction) {
+        await Repo().setTaskDone(todayKey(), taskId, true);
+        await cancelTaskReminder(taskId);
+        onTaskLaunch?.call(taskId, _taskDoneAction);
+      } else {
+        onTaskLaunch?.call(taskId, _taskFocusAction);
+      }
     }
   }
 
   /// Handles the case where tapping a notification action launched the app.
   Future<void> consumeLaunchAction() async {
     await init();
-    final details = await _plugin.getNotificationAppLaunchDetails();
-    if (details?.didNotificationLaunchApp ?? false) {
-      final r = details!.notificationResponse;
-      if (r != null) await _handleAction(r.actionId, r.payload);
-    }
+    try {
+      final details = await _plugin.getNotificationAppLaunchDetails();
+      if (details?.didNotificationLaunchApp ?? false) {
+        final r = details!.notificationResponse;
+        if (r != null) await _handleAction(r.actionId, r.payload);
+      }
+    } catch (_) {}
   }
 
   Future<void> requestPermissions() async {
     await init();
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    await android?.requestNotificationsPermission();
-    // Android 12+: exact alarms need a user grant; the focus-end bell is the
-    // whole point of the timer, so ask once up front.
     try {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      await android?.requestNotificationsPermission();
       if (!(await android?.canScheduleExactNotifications() ?? true)) {
         await android?.requestExactAlarmsPermission();
       }
-    } catch (_) {
-      // Older plugin/OS combinations — inexact fallback covers us.
-    }
-    await _plugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >()
-        ?.requestPermissions(alert: true, badge: true, sound: true);
+    } catch (_) {}
+    try {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+    } catch (_) {}
   }
 
-  /// Whether the focus-end alarm will ring on time (exact) or may drift.
   Future<bool> exactAlarmsAllowed() async {
     await init();
     try {
@@ -128,57 +171,62 @@ class Notifications {
 
   // ---------- focus end alarm ----------
 
-  Future<void> scheduleFocusEnd(DateTime endAt, String taskTitle) async {
+  Future<void> scheduleFocusEnd(
+    DateTime endAt,
+    String taskTitle, {
+    AppLanguage lang = AppLanguage.fa,
+  }) async {
     await init();
     if (endAt.isBefore(DateTime.now())) return;
-    const details = NotificationDetails(
+    final details = NotificationDetails(
       android: AndroidNotificationDetails(
         'focus_end',
-        'پایان تمرکز',
-        channelDescription: 'اعلان پایان جلسه تمرکز',
+        L10n.focusEndChannelName(lang),
+        channelDescription: L10n.focusEndChannelName(lang),
         importance: Importance.max,
         priority: Priority.high,
         category: AndroidNotificationCategory.alarm,
         color: _ember,
       ),
-      iOS: DarwinNotificationDetails(
+      iOS: const DarwinNotificationDetails(
         presentAlert: true,
         presentSound: true,
         interruptionLevel: InterruptionLevel.timeSensitive,
       ),
     );
     final when = tz.TZDateTime.from(endAt, tz.local);
+    final title = L10n.focusEndTimeUpTitle(lang);
+    final body = L10n.focusEndTimeUpBody(taskTitle, lang);
     try {
       await _plugin.zonedSchedule(
         id: _focusEndId,
-        title: 'زمان تمام شد',
-        body: 'کمال‌گرایی را رها کن — «$taskTitle» را همین حالا ثبت کن.',
+        title: title,
+        body: body,
         scheduledDate: when,
         notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
     } catch (_) {
-      // Exact alarms denied — an inexact alarm is an acceptable fallback.
-      await _plugin.zonedSchedule(
-        id: _focusEndId,
-        title: 'زمان تمام شد',
-        body: 'کمال‌گرایی را رها کن — «$taskTitle» را همین حالا ثبت کن.',
-        scheduledDate: when,
-        notificationDetails: details,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      );
+      try {
+        await _plugin.zonedSchedule(
+          id: _focusEndId,
+          title: title,
+          body: body,
+          scheduledDate: when,
+          notificationDetails: details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      } catch (_) {}
     }
   }
 
   Future<void> cancelFocusEnd() async {
     await init();
-    await _plugin.cancel(id: _focusEndId);
+    await _safeCancel(_focusEndId);
   }
 
   // ---------- habit reminders ----------
 
-  /// Stable notification id per habit (FNV-1a, kept positive and clear of
-  /// the reserved ids).
   static int habitNotifId(String habitId) {
     var hash = 0x811c9dc5;
     for (final c in habitId.codeUnits) {
@@ -187,20 +235,22 @@ class Notifications {
     return 10000 + (hash % 100000000);
   }
 
-  /// (Re)schedules the daily reminder at the habit's anchor time.
-  Future<void> scheduleHabitReminder(Habit habit) async {
+  Future<void> scheduleHabitReminder(
+    Habit habit, {
+    AppLanguage lang = AppLanguage.fa,
+  }) async {
     await init();
     final id = habitNotifId(habit.id);
     final minutes = habit.reminderMinutes;
     if (minutes == null) {
-      await _plugin.cancel(id: id);
+      await _safeCancel(id);
       return;
     }
-    const details = NotificationDetails(
+    final details = NotificationDetails(
       android: AndroidNotificationDetails(
         'habit_cue',
-        'یادآور عادت',
-        channelDescription: 'یادآوری عادت در لحظه محرک',
+        L10n.habitNotificationChannelName(lang),
+        channelDescription: L10n.habitNotificationChannelName(lang),
         importance: Importance.high,
         priority: Priority.high,
         category: AndroidNotificationCategory.reminder,
@@ -208,22 +258,25 @@ class Notifications {
         actions: [
           AndroidNotificationAction(
             _habitDoneAction,
-            'انجام شد ✓',
+            L10n.habitNotificationActionDone(lang),
             showsUserInterface: true,
           ),
         ],
       ),
-      iOS: DarwinNotificationDetails(
+      iOS: const DarwinNotificationDetails(
         presentAlert: true,
         categoryIdentifier: _habitCategory,
       ),
     );
-    await _plugin.zonedSchedule(
+    await _safeZonedSchedule(
       id: id,
-      title: 'بعد از ${habit.cue}',
-      body: habit.isBad
-          ? 'مراقب باش — به‌جایش: ${habit.replacement.isEmpty ? 'دو دقیقه قدم بزن' : habit.replacement}'
-          : '${habit.title} — نسخهٔ ۲ دقیقه‌ای هم قبول است.',
+      title: L10n.habitNotificationCueTitle(habit.cue, lang),
+      body: L10n.habitNotificationBody(
+        isBad: habit.isBad,
+        title: habit.title,
+        replacement: habit.replacement,
+        lang: lang,
+      ),
       scheduledDate: _nextOccurrence(minutes),
       notificationDetails: details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -234,94 +287,229 @@ class Notifications {
 
   Future<void> cancelHabitReminder(String habitId) async {
     await init();
-    await _plugin.cancel(id: habitNotifId(habitId));
+    await _safeCancel(habitNotifId(habitId));
   }
 
-  /// Idempotent re-sync of all habit reminders (call at startup).
-  Future<void> syncHabitReminders(List<Habit> habits) async {
+  Future<void> syncHabitReminders(
+    List<Habit> habits, {
+    AppLanguage lang = AppLanguage.fa,
+  }) async {
     for (final h in habits) {
-      await scheduleHabitReminder(h);
+      await scheduleHabitReminder(h, lang: lang);
     }
+  }
+
+  // ---------- task scheduled reminders ----------
+
+  static int taskNotifId(String taskId) {
+    var hash = 0x811c9dc5;
+    for (final c in taskId.codeUnits) {
+      hash = ((hash ^ c) * 0x01000193) & 0x7fffffff;
+    }
+    return 20000 + (hash % 100000000);
+  }
+
+  Future<void> scheduleTaskReminder({
+    required String taskId,
+    required String taskTitle,
+    required int minutesOfDay,
+    required String dayKey,
+    AppLanguage lang = AppLanguage.fa,
+  }) async {
+    await init();
+    final id = taskNotifId(taskId);
+
+    final parts = dayKey.split('-');
+    final year = int.tryParse(parts[0]) ?? DateTime.now().year;
+    final month = int.tryParse(parts[1]) ?? DateTime.now().month;
+    final day = int.tryParse(parts[2]) ?? DateTime.now().day;
+
+    final target = DateTime(
+      year,
+      month,
+      day,
+      minutesOfDay ~/ 60,
+      minutesOfDay % 60,
+    );
+
+    if (!target.isAfter(DateTime.now())) {
+      await _safeCancel(id);
+      return;
+    }
+
+    final when = tz.TZDateTime.from(target, tz.local);
+
+    final details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'task_reminder',
+        L10n.taskReminderChannelName(lang),
+        channelDescription: L10n.taskReminderChannelName(lang),
+        importance: Importance.max,
+        priority: Priority.high,
+        category: AndroidNotificationCategory.alarm,
+        color: _ember,
+        actions: [
+          AndroidNotificationAction(
+            _taskFocusAction,
+            L10n.focusButton(lang),
+            showsUserInterface: true,
+          ),
+          AndroidNotificationAction(
+            _taskDoneAction,
+            lang == AppLanguage.fa ? 'انجام شد' : 'Done',
+            showsUserInterface: true,
+          ),
+        ],
+      ),
+      iOS: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentSound: true,
+        interruptionLevel: InterruptionLevel.timeSensitive,
+        categoryIdentifier: _taskCategory,
+      ),
+    );
+
+    await _safeZonedSchedule(
+      id: id,
+      title: L10n.taskReminderNotificationTitle(taskTitle, lang),
+      body: L10n.taskReminderNotificationBody(lang),
+      scheduledDate: when,
+      notificationDetails: details,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      payload: 'task:$taskId',
+    );
+  }
+
+  Future<void> cancelTaskReminder(String taskId) async {
+    await init();
+    await _safeCancel(taskNotifId(taskId));
   }
 
   // ---------- retention loop: morning / evening / weekly ----------
 
   tz.TZDateTime _nextOccurrence(int minutesOfDay, {bool skipToday = false}) {
-    final now = tz.TZDateTime.now(tz.local);
-    var when = tz.TZDateTime(
-      tz.local,
+    final now = DateTime.now();
+    var target = DateTime(
       now.year,
       now.month,
       now.day,
       minutesOfDay ~/ 60,
       minutesOfDay % 60,
     );
-    if (skipToday || !when.isAfter(now)) {
-      when = when.add(const Duration(days: 1));
+    if (skipToday || !target.isAfter(now)) {
+      target = target.add(const Duration(days: 1));
     }
-    return when;
+    return tz.TZDateTime.from(target, tz.local);
   }
 
-  static const _quietDetails = NotificationDetails(
-    android: AndroidNotificationDetails(
-      'daily_ritual',
-      'یادآور روزانه',
-      channelDescription: 'یادآور چیدن صبح و مرور شب',
-      color: _ember,
-    ),
-    iOS: DarwinNotificationDetails(presentAlert: true),
-  );
-
-  /// Re-plans the morning/evening nudges around today's actual state:
-  /// planned already → today's morning nudge is skipped; day closed →
-  /// tonight's nudge is skipped. Repeats daily after the first fire.
+  /// Re-plans the morning/evening nudges around today's actual state.
   Future<void> syncDailyReminders({
     required bool plannedToday,
     required bool closedToday,
     required int? morningMinutes,
     required int? eveningMinutes,
+    AppLanguage lang = AppLanguage.fa,
   }) async {
     await init();
-    await _plugin.cancel(id: _morningId);
-    await _plugin.cancel(id: _eveningId);
+    await _safeCancel(_morningId);
+    await _safeCancel(_eveningId);
+
+    final quietDetails = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'daily_ritual',
+        L10n.dailyRitualChannelName(lang),
+        channelDescription: L10n.dailyRitualChannelName(lang),
+        color: _ember,
+      ),
+      iOS: const DarwinNotificationDetails(presentAlert: true),
+    );
 
     if (morningMinutes != null) {
-      await _plugin.zonedSchedule(
+      await _safeZonedSchedule(
         id: _morningId,
-        title: 'روزت هنوز چیده نشده',
-        body: 'سه کار، یک تخته‌سنگ، یک پیش‌بینی — کمتر از یک دقیقه.',
+        title: L10n.morningNotificationTitle(lang),
+        body: L10n.morningNotificationBody(lang),
         scheduledDate: _nextOccurrence(morningMinutes, skipToday: plannedToday),
-        notificationDetails: _quietDetails,
+        notificationDetails: quietDetails,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
       );
     }
     if (eveningMinutes != null) {
-      await _plugin.zonedSchedule(
+      await _safeZonedSchedule(
         id: _eveningId,
-        title: 'مرور شب',
-        body: '۶۰ ثانیه: چک، چرا، یک خط — و روز بسته می‌شود.',
+        title: L10n.eveningNotificationTitle(lang),
+        body: L10n.eveningNotificationBody(lang),
         scheduledDate: _nextOccurrence(eveningMinutes, skipToday: closedToday),
-        notificationDetails: _quietDetails,
+        notificationDetails: quietDetails,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
       );
     }
 
-    // Weekly mirror nudge — Friday 20:30, repeats weekly.
-    final now = tz.TZDateTime.now(tz.local);
-    var weekly = tz.TZDateTime(tz.local, now.year, now.month, now.day, 20, 30);
+    final now = DateTime.now();
+    var weekly = DateTime(now.year, now.month, now.day, 20, 30);
     while (weekly.weekday != DateTime.friday || !weekly.isAfter(now)) {
       weekly = weekly.add(const Duration(days: 1));
     }
-    await _plugin.zonedSchedule(
+    await _safeZonedSchedule(
       id: _weeklyId,
-      title: 'هفته تمام شد',
-      body: 'یک نگاه به آینه بینداز — اعداد، قضاوت نیستند.',
-      scheduledDate: weekly,
-      notificationDetails: _quietDetails,
+      title: L10n.weeklyNotificationTitle(lang),
+      body: L10n.weeklyNotificationBody(lang),
+      scheduledDate: tz.TZDateTime.from(weekly, tz.local),
+      notificationDetails: quietDetails,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
     );
+  }
+
+  Future<void> _safeCancel(int id) async {
+    try {
+      await _plugin.cancel(id: id);
+    } catch (_) {}
+  }
+
+  Future<void> _safeZonedSchedule({
+    required int id,
+    required String title,
+    required String body,
+    required tz.TZDateTime scheduledDate,
+    required NotificationDetails notificationDetails,
+    required AndroidScheduleMode androidScheduleMode,
+    DateTimeComponents? matchDateTimeComponents,
+    String? payload,
+  }) async {
+    try {
+      await _plugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: notificationDetails,
+        androidScheduleMode: androidScheduleMode,
+        matchDateTimeComponents: matchDateTimeComponents,
+        payload: payload,
+      );
+    } catch (e) {
+      debugPrint(
+        'zonedSchedule failed for id $id with $androidScheduleMode: $e',
+      );
+      if (androidScheduleMode == AndroidScheduleMode.exactAllowWhileIdle) {
+        try {
+          await _plugin.zonedSchedule(
+            id: id,
+            title: title,
+            body: body,
+            scheduledDate: scheduledDate,
+            notificationDetails: notificationDetails,
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            matchDateTimeComponents: matchDateTimeComponents,
+            payload: payload,
+          );
+        } catch (e2) {
+          debugPrint('zonedSchedule fallback inexact failed for id $id: $e2');
+        }
+      }
+    }
   }
 }

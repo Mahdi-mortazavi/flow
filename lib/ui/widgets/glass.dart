@@ -9,8 +9,11 @@ import 'package:flutter/cupertino.dart'
         CupertinoThemeData;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/l10n.dart';
 import '../../core/theme.dart';
+import '../../state/providers.dart';
 
 /// The liquid-glass surface every card in the app sits on.
 class GlassCard extends StatelessWidget {
@@ -152,14 +155,18 @@ class Pill extends StatelessWidget {
           Icon(icon, size: 17, color: fg),
           const SizedBox(width: 8),
         ],
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14.5,
-            fontWeight: style == PillStyle.quiet
-                ? FontWeight.w600
-                : FontWeight.w700,
-            color: fg,
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 14.5,
+              fontWeight: style == PillStyle.quiet
+                  ? FontWeight.w600
+                  : FontWeight.w700,
+              color: fg,
+            ),
           ),
         ),
       ],
@@ -173,10 +180,10 @@ class Pill extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(Tone.rPill),
           gradient: style == PillStyle.ember
-              ? const LinearGradient(
+              ? LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFFF6B26E), Color(0xFFE7994C)],
+                  colors: [Tone.accentLight, Tone.accentDark],
                 )
               : LinearGradient(
                   begin: Alignment.topCenter,
@@ -249,10 +256,10 @@ class CheckCircle extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: on
-            ? const LinearGradient(
+            ? LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFFF6B26E), Color(0xFFE7994C)],
+                colors: [Tone.accentLight, Tone.accentDark],
               )
             : null,
         border: on
@@ -441,9 +448,11 @@ class GlassField extends StatelessWidget {
 void showToast(
   BuildContext context,
   String message, {
+  TextDirection? textDirection,
   String? actionLabel,
   VoidCallback? onAction,
 }) {
+  final dir = textDirection ?? Directionality.of(context);
   final overlay = Overlay.of(context, rootOverlay: true);
   late final OverlayEntry entry;
   var handled = false;
@@ -487,11 +496,11 @@ void showToast(
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                textDirection: TextDirection.rtl,
+                textDirection: dir,
                 children: [
                   Text(
                     message,
-                    textDirection: TextDirection.rtl,
+                    textDirection: dir,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -518,7 +527,7 @@ void showToast(
                         ),
                         child: Text(
                           actionLabel,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: Tone.ember,
@@ -546,68 +555,75 @@ void showToast(
 Future<int?> showWheelTimePicker(
   BuildContext context, {
   required int initialMinutes,
-  String title = 'انتخاب ساعت',
+  String? title,
   String? sub,
+  String? confirmLabel,
 }) async {
   var selected = initialMinutes;
   final ok = await showGlassSheet<bool>(
     context,
-    builder: (ctx) => Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SheetHeader(title, sub: sub),
-          SizedBox(
-            height: 190,
-            child: CupertinoTheme(
-              data: const CupertinoThemeData(
-                brightness: Brightness.dark,
-                textTheme: CupertinoTextThemeData(
-                  dateTimePickerTextStyle: TextStyle(
-                    fontFamily: 'Vazirmatn',
-                    fontSize: 21,
-                    color: Tone.ink,
+    builder: (ctx) => Consumer(
+      builder: (context, ref, _) {
+        final lang = ref.watch(appLanguageProvider);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SheetHeader(title ?? L10n.selectTime(lang), sub: sub),
+              SizedBox(
+                height: 190,
+                child: CupertinoTheme(
+                  data: const CupertinoThemeData(
+                    brightness: Brightness.dark,
+                    textTheme: CupertinoTextThemeData(
+                      dateTimePickerTextStyle: TextStyle(
+                        fontFamily: 'Vazirmatn',
+                        fontSize: 21,
+                        color: Tone.ink,
+                      ),
+                    ),
+                  ),
+                  child: CupertinoDatePicker(
+                    mode: CupertinoDatePickerMode.time,
+                    use24hFormat: true,
+                    initialDateTime: DateTime(
+                      2026,
+                      1,
+                      1,
+                      initialMinutes ~/ 60,
+                      initialMinutes % 60,
+                    ),
+                    onDateTimeChanged: (d) => selected = d.hour * 60 + d.minute,
                   ),
                 ),
               ),
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.time,
-                use24hFormat: true,
-                initialDateTime: DateTime(
-                  2026,
-                  1,
-                  1,
-                  initialMinutes ~/ 60,
-                  initialMinutes % 60,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                child: Pill(
+                  confirmLabel ?? L10n.set(lang),
+                  style: PillStyle.ember,
+                  onTap: () => Navigator.pop(ctx, true),
                 ),
-                onDateTimeChanged: (d) => selected = d.hour * 60 + d.minute,
               ),
-            ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: Pill(
-              'تنظیم',
-              style: PillStyle.ember,
-              onTap: () => Navigator.pop(ctx, true),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     ),
   );
   return ok == true ? selected : null;
 }
 
 /// Human-readable failure state instead of a raw exception dump.
-class ErrorCard extends StatelessWidget {
+class ErrorCard extends ConsumerWidget {
   final VoidCallback onRetry;
   const ErrorCard({super.key, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
@@ -616,19 +632,19 @@ class ErrorCard extends StatelessWidget {
           children: [
             Icon(Icons.cloud_off_rounded, size: 34, color: Tone.ink3),
             const SizedBox(height: 14),
-            const Text(
-              'مشکلی پیش آمد',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            Text(
+              L10n.errorTitle(lang),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
-              'داده‌هایت سر جایش است — فقط خواندنش خطا خورد.',
+              L10n.errorSub(lang),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12.5, color: Tone.ink3, height: 1.9),
             ),
             const SizedBox(height: 18),
             Pill(
-              'تلاش دوباره',
+              L10n.retry(lang),
               style: PillStyle.ember,
               expanded: false,
               onTap: onRetry,
