@@ -13,6 +13,7 @@ import 'package:taknoghte/data/repo.dart';
 import 'package:taknoghte/services/notifications.dart';
 import 'package:taknoghte/state/providers.dart';
 import 'package:taknoghte/ui/today/today_screen.dart';
+import 'package:taknoghte/ui/widgets/glass.dart';
 
 class _TestAppLanguageController extends AppLanguageController {
   final AppLanguage initial;
@@ -264,6 +265,81 @@ void main() {
         expect(find.text('۱۰:۳۰'), findsOneWidget);
         expect(find.text('Secondary Task'), findsOneWidget);
         expect(find.text('۱۴:۳۰'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'showWheelTimePicker displays Set button in English',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              appLanguageProvider.overrideWith(
+                () => _TestAppLanguageController(AppLanguage.en),
+              ),
+            ],
+            child: MaterialApp(
+              theme: buildTheme(Tone.ember),
+              home: Builder(
+                builder: (context) => Scaffold(
+                  body: ElevatedButton(
+                    onPressed: () =>
+                        showWheelTimePicker(context, initialMinutes: 600),
+                    child: const Text('open_en'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('open_en'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+
+        expect(find.text('Set'), findsOneWidget);
+        expect(find.text('Select Time'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'showWheelTimePicker displays تنظیم button in Persian',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              appLanguageProvider.overrideWith(
+                () => _TestAppLanguageController(AppLanguage.fa),
+              ),
+            ],
+            child: MaterialApp(
+              locale: const Locale('fa'),
+              supportedLocales: const [Locale('fa'), Locale('en')],
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              theme: buildTheme(Tone.ember),
+              home: Builder(
+                builder: (context) => Scaffold(
+                  body: ElevatedButton(
+                    onPressed: () =>
+                        showWheelTimePicker(context, initialMinutes: 600),
+                    child: const Text('open_fa'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('open_fa'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+
+        expect(find.text('تنظیم'), findsOneWidget);
+        expect(find.text('انتخاب ساعت'), findsOneWidget);
       },
     );
   });

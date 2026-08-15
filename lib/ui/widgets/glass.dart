@@ -555,56 +555,62 @@ void showToast(
 Future<int?> showWheelTimePicker(
   BuildContext context, {
   required int initialMinutes,
-  String title = 'انتخاب ساعت',
+  String? title,
   String? sub,
+  String? confirmLabel,
 }) async {
   var selected = initialMinutes;
   final ok = await showGlassSheet<bool>(
     context,
-    builder: (ctx) => Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SheetHeader(title, sub: sub),
-          SizedBox(
-            height: 190,
-            child: CupertinoTheme(
-              data: const CupertinoThemeData(
-                brightness: Brightness.dark,
-                textTheme: CupertinoTextThemeData(
-                  dateTimePickerTextStyle: TextStyle(
-                    fontFamily: 'Vazirmatn',
-                    fontSize: 21,
-                    color: Tone.ink,
+    builder: (ctx) => Consumer(
+      builder: (context, ref, _) {
+        final lang = ref.watch(appLanguageProvider);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SheetHeader(title ?? L10n.selectTime(lang), sub: sub),
+              SizedBox(
+                height: 190,
+                child: CupertinoTheme(
+                  data: const CupertinoThemeData(
+                    brightness: Brightness.dark,
+                    textTheme: CupertinoTextThemeData(
+                      dateTimePickerTextStyle: TextStyle(
+                        fontFamily: 'Vazirmatn',
+                        fontSize: 21,
+                        color: Tone.ink,
+                      ),
+                    ),
+                  ),
+                  child: CupertinoDatePicker(
+                    mode: CupertinoDatePickerMode.time,
+                    use24hFormat: true,
+                    initialDateTime: DateTime(
+                      2026,
+                      1,
+                      1,
+                      initialMinutes ~/ 60,
+                      initialMinutes % 60,
+                    ),
+                    onDateTimeChanged: (d) => selected = d.hour * 60 + d.minute,
                   ),
                 ),
               ),
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.time,
-                use24hFormat: true,
-                initialDateTime: DateTime(
-                  2026,
-                  1,
-                  1,
-                  initialMinutes ~/ 60,
-                  initialMinutes % 60,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                child: Pill(
+                  confirmLabel ?? L10n.set(lang),
+                  style: PillStyle.ember,
+                  onTap: () => Navigator.pop(ctx, true),
                 ),
-                onDateTimeChanged: (d) => selected = d.hour * 60 + d.minute,
               ),
-            ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: Pill(
-              'تنظیم',
-              style: PillStyle.ember,
-              onTap: () => Navigator.pop(ctx, true),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     ),
   );
   return ok == true ? selected : null;
