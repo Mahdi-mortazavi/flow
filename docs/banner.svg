@@ -1,28 +1,28 @@
 <svg width="1200" height="420" viewBox="0 0 1200 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="re-flow — Flow / تک‌نقطه">
   <defs>
     <style>
-      @keyframes glowPulse {
-        0%, 100% { opacity: 0.35; transform: scale(1); }
-        50% { opacity: 0.65; transform: scale(1.08); }
+      @keyframes floatGlow {
+        0%, 100% { opacity: 0.40; transform: scale(1); }
+        50% { opacity: 0.70; transform: scale(1.06); }
       }
-      @keyframes ringPulse {
-        0%, 100% { stroke-opacity: 0.85; stroke-width: 10px; }
-        50% { stroke-opacity: 1; stroke-width: 12px; }
+      @keyframes pulseRing {
+        0%, 100% { stroke-opacity: 0.85; stroke-width: 12px; }
+        50% { stroke-opacity: 1; stroke-width: 14px; }
       }
       @keyframes dotPulse {
-        0%, 100% { r: 7px; opacity: 0.85; }
-        50% { r: 9px; opacity: 1; }
+        0%, 100% { r: 8px; opacity: 0.80; }
+        50% { r: 11px; opacity: 1; }
       }
       .glow-bg {
-        animation: glowPulse 4s ease-in-out infinite;
-        transform-origin: 600px 105px;
+        animation: floatGlow 5s ease-in-out infinite;
+        transform-origin: 170px 210px;
       }
       .ring-arc {
-        animation: ringPulse 3s ease-in-out infinite;
-        transform-origin: 600px 105px;
+        animation: pulseRing 3.5s ease-in-out infinite;
+        transform-origin: 170px 210px;
       }
       .dot-center {
-        animation: dotPulse 2s ease-in-out infinite;
+        animation: dotPulse 2.2s ease-in-out infinite;
       }
     </style>
 
@@ -33,7 +33,7 @@
     </linearGradient>
 
     <radialGradient id="emberGlow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0%" stop-color="#EFA55C" stop-opacity="0.40"/>
+      <stop offset="0%" stop-color="#EFA55C" stop-opacity="0.45"/>
       <stop offset="60%" stop-color="#EFA55C" stop-opacity="0.08"/>
       <stop offset="100%" stop-color="#EFA55C" stop-opacity="0"/>
     </radialGradient>
@@ -53,43 +53,58 @@
   <rect width="1200" height="420" rx="16" fill="url(#bgGrad)"/>
   <rect width="1200" height="420" rx="16" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="1.5" fill="none"/>
 
-  <!-- Centered Ambient Glow -->
-  <circle class="glow-bg" cx="600" cy="105" r="220" fill="url(#emberGlow)"/>
+  <!-- Left Ambient Glow -->
+  <circle class="glow-bg" cx="170" cy="210" r="260" fill="url(#emberGlow)"/>
 
-  <!-- Top Badges -->
-  <g transform="translate(40, 30)">
-    <rect width="180" height="34" rx="17" fill="url(#glassGrad)" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1"/>
-    <circle cx="20" cy="17" r="4" fill="#4ADE80"/>
-    <text x="34" y="21" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="600" fill="#F5F5F7">100% Offline</text>
+  <!-- Left Icon (The Boulder Glass Ring - 3/4 filled, blinking center dot) -->
+  <g transform="translate(170, 210)">
+    <!-- Outer Glass Ring -->
+    <circle r="80" fill="url(#glassGrad)" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="2"/>
+    <!-- Track Ring -->
+    <circle r="64" fill="none" stroke="#FFFFFF" stroke-opacity="0.07" stroke-width="12"/>
+    <!-- Active Progress Arc (3/4 filled, 1/4 empty) -->
+    <circle class="ring-arc" r="64" fill="none" stroke="url(#ringGrad)" stroke-width="12" stroke-linecap="round"
+            stroke-dasharray="300 400" transform="rotate(-90)"/>
+    <!-- Blinking Center Boulder Dot -->
+    <circle class="dot-center" cx="0" cy="0" r="9" fill="#EFA55C"/>
   </g>
 
-  <g transform="translate(980, 30)">
-    <rect width="180" height="34" rx="17" fill="url(#glassGrad)" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1"/>
-    <text x="20" y="21" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" fill="#EFA55C">🎨</text>
-    <text x="42" y="21" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="600" fill="#F5F5F7">Liquid Glass</text>
+  <!-- Main Wordmark Section (Generous Vertical Spacing & Zero Overlap!) -->
+  <g transform="translate(330, 110)">
+    <!-- Line 1: English Main Title -->
+    <text x="0" y="0" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="76" font-weight="800" fill="#F5F5F7" letter-spacing="-1.5">Flow</text>
+
+    <!-- Line 2: Persian Subtitle (Under Flow with generous gap) -->
+    <text x="4" y="52" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Vazirmatn', 'Tahoma', sans-serif" font-size="32" font-weight="700" fill="#EFA55C">تک‌نقطه</text>
+
+    <!-- Line 3: Main Persian Tagline (Under تک‌نقطه with generous gap) -->
+    <text x="4" y="112" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Vazirmatn', 'Tahoma', sans-serif" font-size="22" font-weight="500" fill="#A2ADC0">سیستم‌عاملِ تمرکز، انرژی و زمانِ تو</text>
+
+    <!-- Line 4: English Sub-Tagline (Under Persian tagline with generous gap) -->
+    <text x="4" y="160" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="15" font-weight="400" fill="#556070">Personal Focus &amp; Habit OS · 100% Offline &amp; Private · Dual Locale (EN / FA)</text>
   </g>
 
-  <!-- Centered Icon (The Boulder Glass Ring) -->
-  <g transform="translate(600, 105)">
-    <circle r="52" fill="url(#glassGrad)" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1.5"/>
-    <circle r="40" fill="none" stroke="#FFFFFF" stroke-opacity="0.07" stroke-width="10"/>
-    <circle class="ring-arc" r="40" fill="none" stroke="url(#ringGrad)" stroke-width="10" stroke-linecap="round"
-            stroke-dasharray="190 260" transform="rotate(-90)"/>
-    <circle class="dot-center" cx="0" cy="0" r="7" fill="#EFA55C"/>
-  </g>
+  <!-- Right Side Feature Glass Chips -->
+  <g transform="translate(890, 110)">
+    <!-- Chip 1: 100% Offline -->
+    <g transform="translate(0, 0)">
+      <rect width="250" height="50" rx="25" fill="url(#glassGrad)" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1"/>
+      <circle cx="26" cy="25" r="5" fill="#4ADE80"/>
+      <text x="44" y="30" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="600" fill="#F5F5F7">100% Offline · Local SQLite</text>
+    </g>
 
-  <!-- Centered Branding & Typography (Zero Collision!) -->
-  <g transform="translate(600, 205)">
-    <!-- Main Title -->
-    <text x="0" y="0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="72" font-weight="800" fill="#F5F5F7" letter-spacing="-1.5">Flow</text>
+    <!-- Chip 2: Dual Locale -->
+    <g transform="translate(0, 68)">
+      <rect width="250" height="50" rx="25" fill="url(#glassGrad)" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1"/>
+      <text x="24" y="30" font-family="system-ui, sans-serif" font-size="14" fill="#EFA55C">🌐</text>
+      <text x="48" y="30" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="600" fill="#F5F5F7">Persian (RTL) &amp; English (LTR)</text>
+    </g>
 
-    <!-- Persian Subtitle (Directly under Flow!) -->
-    <text x="0" y="42" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Vazirmatn', 'Tahoma', sans-serif" font-size="28" font-weight="700" fill="#EFA55C">تک‌نقطه</text>
-
-    <!-- Tagline (Directly under تک‌نقطه!) -->
-    <text x="0" y="82" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Vazirmatn', 'Tahoma', sans-serif" font-size="19" font-weight="500" fill="#A2ADC0">سیستم‌عاملِ تمرکز، انرژی و زمانِ تو</text>
-
-    <!-- Secondary Tagline -->
-    <text x="0" y="112" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="400" fill="#556070">Personal Focus &amp; Habit OS · 100% Offline &amp; Private · Dual Locale (EN / FA)</text>
+    <!-- Chip 3: Liquid Glass Themes -->
+    <g transform="translate(0, 136)">
+      <rect width="250" height="50" rx="25" fill="url(#glassGrad)" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1"/>
+      <text x="24" y="30" font-family="system-ui, sans-serif" font-size="14" fill="#EFA55C">🎨</text>
+      <text x="48" y="30" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="600" fill="#F5F5F7">6 Liquid Glass Themes</text>
+    </g>
   </g>
 </svg>
