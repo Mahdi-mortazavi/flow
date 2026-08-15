@@ -23,6 +23,7 @@ dependencies:
   file_picker: ^11.0.2
   android_intent_plus: ^6.0.0
   quick_actions: ^1.1.0
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:
