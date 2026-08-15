@@ -13,7 +13,7 @@ import '../focus/focus_screen.dart';
 import '../habits/habits_screen.dart';
 import '../leisure/leisure_screen.dart';
 import '../today/today_screen.dart';
-import '../vault/vault_screen.dart';
+import '../vault/vault_sheet.dart';
 import '../widgets/glass.dart';
 import '../wizard/morning_wizard.dart';
 
@@ -129,7 +129,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       const QuickActions()
         ..initialize((type) {
           if (type == 'new_thought' && mounted) {
-            setState(() => _currentIndex = 1);
+            openVaultSheet(context);
           }
         })
         ..setShortcutItems([
@@ -154,12 +154,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         children: [
           IndexedStack(
             index: _currentIndex,
-            children: const [
-              TodayScreen(),
-              VaultScreen(),
-              HabitsScreen(),
-              LeisureScreen(),
-            ],
+            children: const [TodayScreen(), HabitsScreen(), LeisureScreen()],
           ),
           Positioned(
             left: 0,
@@ -198,11 +193,11 @@ class _LiquidGlassNavBar extends StatelessWidget {
     return SafeArea(
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 460),
+          constraints: const BoxConstraints(maxWidth: 440),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
             child: GlassCard(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
               child: Row(
                 children: [
                   Expanded(
@@ -217,22 +212,12 @@ class _LiquidGlassNavBar extends StatelessWidget {
                   ),
                   Expanded(
                     child: _NavItem(
-                      key: const Key('tab_vault'),
-                      icon: Icons.psychology_outlined,
-                      activeIcon: Icons.psychology_rounded,
-                      label: L10n.vaultTab(lang),
-                      selected: currentIndex == 1,
-                      onTap: () => onTap(1),
-                    ),
-                  ),
-                  Expanded(
-                    child: _NavItem(
                       key: const Key('tab_habits'),
                       icon: Icons.repeat_rounded,
                       activeIcon: Icons.auto_awesome_rounded,
                       label: L10n.habitsTab(lang),
-                      selected: currentIndex == 2,
-                      onTap: () => onTap(2),
+                      selected: currentIndex == 1,
+                      onTap: () => onTap(1),
                     ),
                   ),
                   Expanded(
@@ -241,8 +226,8 @@ class _LiquidGlassNavBar extends StatelessWidget {
                       icon: Icons.spa_outlined,
                       activeIcon: Icons.spa_rounded,
                       label: L10n.leisureTab(lang),
-                      selected: currentIndex == 3,
-                      onTap: () => onTap(3),
+                      selected: currentIndex == 2,
+                      onTap: () => onTap(2),
                     ),
                   ),
                 ],

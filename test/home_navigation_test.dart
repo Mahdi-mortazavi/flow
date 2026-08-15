@@ -12,7 +12,6 @@ import 'package:taknoghte/ui/habits/habits_screen.dart';
 import 'package:taknoghte/ui/home/home_screen.dart';
 import 'package:taknoghte/ui/leisure/leisure_screen.dart';
 import 'package:taknoghte/ui/today/today_screen.dart';
-import 'package:taknoghte/ui/vault/vault_screen.dart';
 
 class _TestAppLanguageController extends AppLanguageController {
   final AppLanguage initial;
@@ -136,30 +135,23 @@ void main() {
     );
   }
 
-  group('4-Tab Bottom Navigation & Domain Separation', () {
-    testWidgets('Renders all 4 tabs in Persian and switches screens', (
+  group('3-Tab Bottom Navigation & Domain Separation', () {
+    testWidgets('Renders all 3 tabs in Persian and switches screens', (
       tester,
     ) async {
       await tester.pumpWidget(buildTestApp());
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Verify 4 bottom navigation items exist
+      // Verify 3 bottom navigation items exist
       expect(find.byKey(const Key('tab_tasks')), findsOneWidget);
-      expect(find.byKey(const Key('tab_vault')), findsOneWidget);
       expect(find.byKey(const Key('tab_habits')), findsOneWidget);
       expect(find.byKey(const Key('tab_leisure')), findsOneWidget);
+      expect(find.byKey(const Key('tab_vault')), findsNothing);
 
-      // Verify default tab is TodayScreen (Tasks)
+      // Verify default tab is TodayScreen (Tasks) and Vault FAB exists
       expect(find.byType(TodayScreen), findsOneWidget);
-
-      // Switch to Vault tab
-      await tester.tap(find.byKey(const Key('tab_vault')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-
-      expect(find.byType(VaultScreen), findsOneWidget);
-      expect(find.text('مخزن ذهن'), findsWidgets);
+      expect(find.text('مخزن ذهن'), findsOneWidget);
 
       // Switch to Habits tab
       await tester.tap(find.byKey(const Key('tab_habits')));
@@ -186,7 +178,7 @@ void main() {
       expect(find.byType(TodayScreen), findsOneWidget);
     });
 
-    testWidgets('Renders all 4 tabs in English with LTR layout', (
+    testWidgets('Renders all 3 tabs in English with LTR layout', (
       tester,
     ) async {
       await tester.pumpWidget(buildTestApp(lang: AppLanguage.en));
@@ -195,17 +187,12 @@ void main() {
 
       // Verify English bottom navigation items
       expect(find.byKey(const Key('tab_tasks')), findsOneWidget);
-      expect(find.byKey(const Key('tab_vault')), findsOneWidget);
       expect(find.byKey(const Key('tab_habits')), findsOneWidget);
       expect(find.byKey(const Key('tab_leisure')), findsOneWidget);
+      expect(find.byKey(const Key('tab_vault')), findsNothing);
 
-      // Switch to Vault tab
-      await tester.tap(find.byKey(const Key('tab_vault')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-
-      expect(find.byType(VaultScreen), findsOneWidget);
-      expect(find.text('Brain Vault'), findsWidgets);
+      // Verify Brain Vault FAB in English
+      expect(find.text('Brain Vault'), findsOneWidget);
 
       // Switch to Habits tab
       await tester.tap(find.byKey(const Key('tab_habits')));
@@ -223,7 +210,7 @@ void main() {
       expect(find.text("Antidote to Parkinson's Law"), findsOneWidget);
     });
 
-    testWidgets('Vault tab displays recorded thoughts and allow filtering', (
+    testWidgets('TodayScreen Vault FAB opens Brain Vault sheet', (
       tester,
     ) async {
       final sampleThoughts = [
@@ -241,8 +228,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Switch to Vault tab
-      await tester.tap(find.byKey(const Key('tab_vault')));
+      // Tap the Brain Vault FAB
+      await tester.tap(find.text('Brain Vault'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 

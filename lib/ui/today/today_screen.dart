@@ -12,6 +12,7 @@ import '../focus/focus_screen.dart';
 import '../settings/settings_sheet.dart';
 import '../stats/review_sheet.dart';
 import '../stats/stats_screen.dart';
+import '../vault/vault_sheet.dart';
 import '../widgets/glass.dart';
 import '../wizard/morning_wizard.dart';
 import 'task_edit_sheet.dart';
@@ -42,6 +43,8 @@ class TodayScreen extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      floatingActionButton: _VaultFab(onTap: () => openVaultSheet(context)),
     );
   }
 }
@@ -93,7 +96,7 @@ class _TodayBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(appLanguageProvider);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 140),
       children: [
         Reveal(child: _Header(plan: plan)),
         const Reveal(order: 1, child: _ReviewBanner()),
@@ -986,6 +989,59 @@ class _EnergyCard extends ConsumerWidget {
           const SizedBox(width: 5),
           chip(lang == AppLanguage.fa ? 'زیاد' : 'High', 3),
         ],
+      ),
+    );
+  }
+}
+
+class _VaultFab extends ConsumerWidget {
+  final VoidCallback onTap;
+  const _VaultFab({required this.onTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 74),
+      child: Pressable(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF232329), Color(0xFF141418)],
+            ),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: Tone.line),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .5),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.psychology_outlined, size: 18, color: Tone.ink2),
+              const SizedBox(width: 8),
+              Text(
+                L10n.brainVaultTitle(lang),
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: Tone.ink2,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
