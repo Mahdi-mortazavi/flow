@@ -97,8 +97,49 @@ abstract final class L10n {
   static String appTitle(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'تک‌نقطه' : 'Flow';
 
+  static String tasksTab(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'کارها' : 'Tasks';
+
+  static String habitsTab(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'عادت‌ها' : 'Habits';
+
+  static String leisureTab(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'تفریح‌ها' : 'Leisure';
+
   static String todayTitle(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'امروز' : 'Today';
+
+  static String habitsSubtitle(AppLanguage lang) => lang == AppLanguage.fa
+      ? 'معماری هویت از طریق تکرار روزانه'
+      : 'Identity architecture through daily repetition';
+
+  static String leisureSubtitle(AppLanguage lang) => lang == AppLanguage.fa
+      ? 'فضای رهایی و شارژ مجدد بدون عذاب وجدان'
+      : 'Guilt-free unwinding and cognitive recharge';
+
+  static String startLeisurePlay(AppLanguage lang) => lang == AppLanguage.fa
+      ? 'شروع تفریح بدون عذاب وجدان'
+      : 'Start Guilt-Free Play';
+
+  static String leisurePhilosophyTitle(AppLanguage lang) =>
+      lang == AppLanguage.fa
+      ? 'پادزهر قانون پارکینسون'
+      : "Antidote to Parkinson's Law";
+
+  static String leisurePhilosophyBody(AppLanguage lang) =>
+      lang == AppLanguage.fa
+      ? 'وقتی تفریح در تقویم زمان مشخصی دارد، ذهن هنگام کار با تمرکز عمیق پیش می‌رود چون می‌داند پاداش در انتظارش است.'
+      : 'When leisure is scheduled guilt-free, the mind focuses deeply during work knowing genuine rest awaits.';
+
+  static String emptyHabitsTitle(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'هنوز عادتی ثبت نشده' : 'No habits yet';
+
+  static String emptyHabitsSubtitle(AppLanguage lang) => lang == AppLanguage.fa
+      ? 'یک روتین کوچک را به عادتی پایدار تبدیل کن'
+      : 'Anchor a tiny routine into an enduring habit';
+
+  static String newHabit(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'عادت جدید' : 'New Habit';
 
   static String statsMirrorTitle(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'آینه' : 'Stats Mirror';

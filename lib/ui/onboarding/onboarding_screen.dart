@@ -9,7 +9,7 @@ import '../../core/l10n.dart';
 import '../../core/theme.dart';
 import '../../data/repo.dart';
 import '../../state/providers.dart';
-import '../today/today_screen.dart';
+import '../home/home_screen.dart';
 import '../widgets/glass.dart';
 
 const onboardedKey = 'onboarded_v1';
@@ -107,7 +107,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     unawaited(
       Navigator.of(context).pushReplacement(
         PageRouteBuilder<void>(
-          pageBuilder: (_, __, ___) => const TodayScreen(),
+          pageBuilder: (_, __, ___) => const HomeScreen(),
           transitionsBuilder: (_, anim, __, child) =>
               FadeTransition(opacity: anim, child: child),
           transitionDuration: const Duration(milliseconds: 450),

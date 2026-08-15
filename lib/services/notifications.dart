@@ -78,30 +78,34 @@ class Notifications {
   /// Handles the case where tapping a notification action launched the app.
   Future<void> consumeLaunchAction() async {
     await init();
-    final details = await _plugin.getNotificationAppLaunchDetails();
-    if (details?.didNotificationLaunchApp ?? false) {
-      final r = details!.notificationResponse;
-      if (r != null) await _handleAction(r.actionId, r.payload);
-    }
+    try {
+      final details = await _plugin.getNotificationAppLaunchDetails();
+      if (details?.didNotificationLaunchApp ?? false) {
+        final r = details!.notificationResponse;
+        if (r != null) await _handleAction(r.actionId, r.payload);
+      }
+    } catch (_) {}
   }
 
   Future<void> requestPermissions() async {
     await init();
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    await android?.requestNotificationsPermission();
     try {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      await android?.requestNotificationsPermission();
       if (!(await android?.canScheduleExactNotifications() ?? true)) {
         await android?.requestExactAlarmsPermission();
       }
     } catch (_) {}
-    await _plugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >()
-        ?.requestPermissions(alert: true, badge: true, sound: true);
+    try {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+    } catch (_) {}
   }
 
   Future<bool> exactAlarmsAllowed() async {

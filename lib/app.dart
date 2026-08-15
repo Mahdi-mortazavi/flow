@@ -6,8 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/l10n.dart';
 import 'core/theme.dart';
 import 'state/providers.dart';
+import 'ui/home/home_screen.dart';
 import 'ui/onboarding/onboarding_screen.dart';
-import 'ui/today/today_screen.dart';
 
 class TakNoghteApp extends ConsumerWidget {
   const TakNoghteApp({super.key});
@@ -72,7 +72,7 @@ class _GateState extends State<_Gate> {
     return switch (_onboarded) {
       null => const Scaffold(body: SizedBox.shrink()),
       false => const OnboardingScreen(),
-      true => const TodayScreen(),
+      true => const HomeScreen(),
     };
   }
 }
