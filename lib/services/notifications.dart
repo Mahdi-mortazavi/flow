@@ -24,6 +24,9 @@ class Notifications {
   static const _weeklyId = 3003;
   static const _habitDoneAction = 'habit_done';
   static const _habitCategory = 'habit_cue';
+  static const _taskCategory = 'task_reminder';
+  static const _taskFocusAction = 'task_focus';
+  static const _taskDoneAction = 'task_done';
   static const _ember = Color(0xFFEFA55C);
 
   final _plugin = FlutterLocalNotificationsPlugin();
@@ -32,6 +35,9 @@ class Notifications {
   /// Set by the UI to refresh providers after a notification action wrote to
   /// the database.
   void Function()? onHabitsChanged;
+
+  /// Triggered when the user taps a task reminder notification or action.
+  void Function(String taskId, String? actionId)? onTaskLaunch;
 
   Future<void> init() async {
     if (_ready) return;
@@ -48,6 +54,21 @@ class Notifications {
             DarwinNotificationAction.plain(
               _habitDoneAction,
               '✓',
+              options: {DarwinNotificationActionOption.foreground},
+            ),
+          ],
+        ),
+        DarwinNotificationCategory(
+          _taskCategory,
+          actions: [
+            DarwinNotificationAction.plain(
+              _taskFocusAction,
+              'Focus',
+              options: {DarwinNotificationActionOption.foreground},
+            ),
+            DarwinNotificationAction.plain(
+              _taskDoneAction,
+              'Done',
               options: {DarwinNotificationActionOption.foreground},
             ),
           ],
@@ -69,9 +90,20 @@ class Notifications {
       _handleAction(response.actionId, response.payload);
 
   Future<void> _handleAction(String? actionId, String? payload) async {
-    if (actionId == _habitDoneAction && payload != null && payload.isNotEmpty) {
-      await Repo().logHabit(payload, todayKey(), 'done');
+    if (payload == null || payload.isEmpty) return;
+    if (actionId == _habitDoneAction || payload.startsWith('habit:')) {
+      final habitId = payload.replaceFirst('habit:', '');
+      await Repo().logHabit(habitId, todayKey(), 'done');
       onHabitsChanged?.call();
+    } else if (payload.startsWith('task:')) {
+      final taskId = payload.replaceFirst('task:', '');
+      if (actionId == _taskDoneAction) {
+        await Repo().setTaskDone(todayKey(), taskId, true);
+        await cancelTaskReminder(taskId);
+        onTaskLaunch?.call(taskId, _taskDoneAction);
+      } else {
+        onTaskLaunch?.call(taskId, _taskFocusAction);
+      }
     }
   }
 
@@ -250,6 +282,90 @@ class Notifications {
     for (final h in habits) {
       await scheduleHabitReminder(h, lang: lang);
     }
+  }
+
+  // ---------- task scheduled reminders ----------
+
+  static int taskNotifId(String taskId) {
+    var hash = 0x811c9dc5;
+    for (final c in taskId.codeUnits) {
+      hash = ((hash ^ c) * 0x01000193) & 0x7fffffff;
+    }
+    return 20000 + (hash % 100000000);
+  }
+
+  Future<void> scheduleTaskReminder({
+    required String taskId,
+    required String taskTitle,
+    required int minutesOfDay,
+    required String dayKey,
+    AppLanguage lang = AppLanguage.fa,
+  }) async {
+    await init();
+    final id = taskNotifId(taskId);
+
+    final parts = dayKey.split('-');
+    final year = int.tryParse(parts[0]) ?? DateTime.now().year;
+    final month = int.tryParse(parts[1]) ?? DateTime.now().month;
+    final day = int.tryParse(parts[2]) ?? DateTime.now().day;
+    final when = tz.TZDateTime(
+      tz.local,
+      year,
+      month,
+      day,
+      minutesOfDay ~/ 60,
+      minutesOfDay % 60,
+    );
+
+    if (!when.isAfter(tz.TZDateTime.now(tz.local))) {
+      await _safeCancel(id);
+      return;
+    }
+
+    final details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'task_reminder',
+        L10n.taskReminderChannelName(lang),
+        channelDescription: L10n.taskReminderChannelName(lang),
+        importance: Importance.max,
+        priority: Priority.high,
+        category: AndroidNotificationCategory.alarm,
+        color: _ember,
+        actions: [
+          AndroidNotificationAction(
+            _taskFocusAction,
+            L10n.focusButton(lang),
+            showsUserInterface: true,
+          ),
+          AndroidNotificationAction(
+            _taskDoneAction,
+            lang == AppLanguage.fa ? 'انجام شد' : 'Done',
+            showsUserInterface: true,
+          ),
+        ],
+      ),
+      iOS: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentSound: true,
+        interruptionLevel: InterruptionLevel.timeSensitive,
+        categoryIdentifier: _taskCategory,
+      ),
+    );
+
+    await _safeZonedSchedule(
+      id: id,
+      title: L10n.taskReminderNotificationTitle(taskTitle, lang),
+      body: L10n.taskReminderNotificationBody(lang),
+      scheduledDate: when,
+      notificationDetails: details,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      payload: 'task:$taskId',
+    );
+  }
+
+  Future<void> cancelTaskReminder(String taskId) async {
+    await init();
+    await _safeCancel(taskNotifId(taskId));
   }
 
   // ---------- retention loop: morning / evening / weekly ----------

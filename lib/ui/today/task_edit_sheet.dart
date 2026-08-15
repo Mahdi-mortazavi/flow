@@ -1,23 +1,32 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/l10n.dart';
+import '../../core/theme.dart';
 import '../../state/providers.dart';
 import '../widgets/glass.dart';
 
-/// Long-press a task → fix a typo or drop it, without replanning the whole
-/// day. Deleting the boulder hands the crown to the next task.
+/// Long-press a task → fix a typo, set a reminder, or drop it, without
+/// replanning the whole day. Deleting the boulder hands the crown to the next task.
 Future<void> openTaskEditSheet(
   BuildContext context,
   WidgetRef ref, {
   required String taskId,
   required String title,
   required bool isBoulder,
+  int? reminderTime,
 }) {
   return showGlassSheet(
     context,
-    builder: (_) =>
-        _TaskEditSheet(taskId: taskId, title: title, isBoulder: isBoulder),
+    builder: (_) => _TaskEditSheet(
+      taskId: taskId,
+      title: title,
+      isBoulder: isBoulder,
+      reminderTime: reminderTime,
+    ),
   );
 }
 
@@ -25,10 +34,12 @@ class _TaskEditSheet extends ConsumerStatefulWidget {
   final String taskId;
   final String title;
   final bool isBoulder;
+  final int? reminderTime;
   const _TaskEditSheet({
     required this.taskId,
     required this.title,
     required this.isBoulder,
+    this.reminderTime,
   });
 
   @override
@@ -37,11 +48,31 @@ class _TaskEditSheet extends ConsumerStatefulWidget {
 
 class _TaskEditSheetState extends ConsumerState<_TaskEditSheet> {
   late final _controller = TextEditingController(text: widget.title);
+  late int? _reminderMinutes = widget.reminderTime;
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickReminderTime(AppLanguage lang) async {
+    final now = DateTime.now();
+    final initial = _reminderMinutes ?? (now.hour * 60 + now.minute);
+    final picked = await showWheelTimePicker(
+      context,
+      initialMinutes: initial,
+      title: L10n.setReminderTime(lang),
+    );
+    if (picked != null && mounted) {
+      unawaited(HapticFeedback.selectionClick());
+      setState(() => _reminderMinutes = picked);
+    }
+  }
+
+  void _clearReminder() {
+    unawaited(HapticFeedback.selectionClick());
+    setState(() => _reminderMinutes = null);
   }
 
   Future<void> _save() async {
@@ -56,6 +87,21 @@ class _TaskEditSheetState extends ConsumerState<_TaskEditSheet> {
     }
     if (title != widget.title) {
       await ref.read(todayProvider.notifier).renameTask(widget.taskId, title);
+    }
+    if (_reminderMinutes != widget.reminderTime) {
+      await ref
+          .read(todayProvider.notifier)
+          .updateTaskReminder(widget.taskId, _reminderMinutes);
+      if (mounted) {
+        if (_reminderMinutes != null) {
+          showToast(
+            context,
+            L10n.reminderSetToast(L10n.fmtTime(_reminderMinutes!, lang), lang),
+          );
+        } else {
+          showToast(context, L10n.reminderClearedToast(lang));
+        }
+      }
     }
     if (mounted) Navigator.pop(context);
   }
@@ -89,7 +135,10 @@ class _TaskEditSheetState extends ConsumerState<_TaskEditSheet> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(accentProvider);
     final lang = ref.watch(appLanguageProvider);
+    final hasReminder = _reminderMinutes != null;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
@@ -106,6 +155,78 @@ class _TaskEditSheetState extends ConsumerState<_TaskEditSheet> {
               hint: lang == AppLanguage.fa ? 'عنوان کار…' : 'Task title...',
               autofocus: true,
               onSubmitted: (_) => _save(),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Tone.glassA,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: hasReminder ? Tone.accent.withAlpha(80) : Tone.line,
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => _pickReminderTime(lang),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          hasReminder
+                              ? Icons.notifications_active_rounded
+                              : Icons.notifications_none_rounded,
+                          size: 19,
+                          color: hasReminder ? Tone.accent : Tone.ink2,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            hasReminder
+                                ? L10n.reminderTimeLabel(
+                                    L10n.fmtTime(_reminderMinutes!, lang),
+                                    lang,
+                                  )
+                                : L10n.setReminderTime(lang),
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              color: hasReminder ? Tone.ink : Tone.ink2,
+                              fontWeight: hasReminder
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                        if (hasReminder)
+                          GestureDetector(
+                            onTap: _clearReminder,
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 17,
+                                color: Tone.ink2,
+                              ),
+                            ),
+                          )
+                        else
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 19,
+                            color: Tone.ink2,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
           Padding(

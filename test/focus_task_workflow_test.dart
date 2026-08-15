@@ -98,7 +98,7 @@ void main() {
 
         await container
             .read(focusProvider.notifier)
-            .start(taskId: taskId, title: taskTitle, minutes: 25);
+            .start(taskId: taskId, title: taskTitle);
 
         final view = container.read(focusProvider);
         expect(view, isNotNull);

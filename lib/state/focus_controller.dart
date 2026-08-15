@@ -62,7 +62,7 @@ class FocusController extends Notifier<FocusView?> {
   Future<void> start({
     required String? taskId,
     required String title,
-    required int minutes,
+    int minutes = 25,
     String kind = 'task',
   }) async {
     final sessionId = await _repo.startFocusSession(

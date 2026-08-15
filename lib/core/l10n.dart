@@ -35,6 +35,13 @@ abstract final class L10n {
     return fmtNum('$mm:$ss', lang);
   }
 
+  /// Formats minutes since midnight as HH:mm (e.g. "14:30" or "۱۴:۳۰").
+  static String fmtTime(int minutesOfDay, AppLanguage lang) {
+    final h = (minutesOfDay ~/ 60).toString().padLeft(2, '0');
+    final m = (minutesOfDay % 60).toString().padLeft(2, '0');
+    return fmtNum('$h:$m', lang);
+  }
+
   /// Short day label (e.g., «۱۶ تیر» in Persian, "Jul 16" in English).
   static String fmtDayLabel(String dayKey, AppLanguage lang) {
     if (lang == AppLanguage.fa) {
@@ -355,6 +362,37 @@ abstract final class L10n {
   static String taskCompletedToast(AppLanguage lang) => lang == AppLanguage.fa
       ? 'تسک با موفقیت انجام شد ✓'
       : 'Task completed successfully ✓';
+
+  static String taskReminderChannelName(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'یادآور کارها' : 'Task Reminders';
+
+  static String taskReminderNotificationTitle(String title, AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'وقتِ انجام: $title' : 'Time to focus: $title';
+
+  static String taskReminderNotificationBody(AppLanguage lang) =>
+      lang == AppLanguage.fa
+      ? 'برای شروع تمرکز روی اعلان بزن.'
+      : 'Tap to launch your focus session.';
+
+  static String setReminderTime(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'تنظیم یادآور' : 'Set Reminder';
+
+  static String reminderTimeLabel(String time, AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'یادآور: $time' : 'Reminder: $time';
+
+  static String noReminder(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'بدون یادآور' : 'No Reminder';
+
+  static String clearReminder(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'حذف یادآور' : 'Clear Reminder';
+
+  static String reminderSetToast(String time, AppLanguage lang) =>
+      lang == AppLanguage.fa
+      ? 'یادآور برای ساعت $time تنظیم شد'
+      : 'Reminder set for $time';
+
+  static String reminderClearedToast(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'یادآور حذف شد' : 'Reminder cleared';
 
   static String changeBoulder(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'تغییر تخته‌سنگ' : 'Change Boulder';

@@ -150,15 +150,48 @@ class TodayController extends AsyncNotifier<DayPlan> {
 
   Future<void> setTaskDone(String taskId, bool done) async {
     await _repo.setTaskDone(_dayKey, taskId, done);
+    if (done) {
+      await Notifications.instance.cancelTaskReminder(taskId);
+    }
     await _reload();
   }
 
   Future<void> renameTask(String taskId, String title) async {
     await _repo.renameTask(_dayKey, taskId, title);
+    final task = await _repo.getTask(taskId);
+    if (task != null && task.reminderTime != null) {
+      await Notifications.instance.scheduleTaskReminder(
+        taskId: taskId,
+        taskTitle: title,
+        minutesOfDay: task.reminderTime!,
+        dayKey: _dayKey,
+        lang: ref.read(appLanguageProvider),
+      );
+    }
+    await _reload();
+  }
+
+  Future<void> updateTaskReminder(String taskId, int? reminderMinutes) async {
+    await _repo.updateTaskReminder(taskId, reminderMinutes);
+    final task = await _repo.getTask(taskId);
+    if (task != null) {
+      if (reminderMinutes != null) {
+        await Notifications.instance.scheduleTaskReminder(
+          taskId: taskId,
+          taskTitle: task.title,
+          minutesOfDay: reminderMinutes,
+          dayKey: _dayKey,
+          lang: ref.read(appLanguageProvider),
+        );
+      } else {
+        await Notifications.instance.cancelTaskReminder(taskId);
+      }
+    }
     await _reload();
   }
 
   Future<void> removeTask(String taskId) async {
+    await Notifications.instance.cancelTaskReminder(taskId);
     await _repo.removeTaskFromDay(_dayKey, taskId);
     await _reload();
   }

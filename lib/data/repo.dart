@@ -233,6 +233,50 @@ class Repo {
     );
   }
 
+  /// Updates or clears reminder_time on a task.
+  Future<void> updateTaskReminder(String taskId, int? reminderMinutes) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final d = await _db;
+    await d.update(
+      'tasks',
+      {'reminder_time': reminderMinutes, 'updated_at': now},
+      where: 'id = ?',
+      whereArgs: [taskId],
+    );
+  }
+
+  /// Retrieves a task by id.
+  Future<Task?> getTask(String taskId) async {
+    final d = await _db;
+    final rows = await d.query(
+      'tasks',
+      where: 'id = ?',
+      whereArgs: [taskId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    final r = rows.first;
+    return Task(
+      id: r['id'] as String,
+      title: r['title'] as String,
+      notes: (r['notes'] as String?) ?? '',
+      isBoulder: (r['is_boulder'] as int?) == 1,
+      status: (r['status'] as String?) ?? 'pending',
+      scheduledDate: r['scheduled_date'] as String?,
+      reminderTime: r['reminder_time'] as int?,
+      activeOrder: (r['active_order'] as int?) ?? 0,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        (r['created_at'] as int?) ?? 0,
+      ),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        (r['updated_at'] as int?) ?? 0,
+      ),
+      deletedAt: r['deleted_at'] == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(r['deleted_at'] as int),
+    );
+  }
+
   /// Removes a task from today's plan. If it was the boulder, the next task inherits the crown.
   Future<void> removeTaskFromDay(String dayKey, String taskId) async {
     final now = DateTime.now().millisecondsSinceEpoch;

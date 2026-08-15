@@ -76,6 +76,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     Notifications.instance.onHabitsChanged = () {
       if (mounted) ref.invalidate(habitsProvider);
     };
+    Notifications.instance.onTaskLaunch = (taskId, actionId) async {
+      if (!mounted) return;
+      if (actionId == 'task_done') {
+        ref.invalidate(todayProvider);
+        return;
+      }
+      final task = await ref.read(repoProvider).getTask(taskId);
+      if (task != null && mounted) {
+        await ref
+            .read(focusProvider.notifier)
+            .start(title: task.title, taskId: task.id);
+        if (mounted) {
+          unawaited(Navigator.of(context).push(FocusScreen.route()));
+        }
+      }
+    };
     await Notifications.instance.consumeLaunchAction();
     final lang = ref.read(appLanguageProvider);
     if (!WidgetsBinding.instance.runtimeType.toString().contains('Test')) {

@@ -335,6 +335,7 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
               taskId: b.taskId,
               title: b.title,
               isBoulder: true,
+              reminderTime: b.reminderTime,
             );
           },
           child: GlassCard(
@@ -355,7 +356,44 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _EmberTag(L10n.boulderTitle(lang)),
+                Row(
+                  children: [
+                    _EmberTag(L10n.boulderTitle(lang)),
+                    if (b.reminderTime != null && !b.done) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Tone.accent.withAlpha(25),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: Tone.accent.withAlpha(50)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.notifications_active_rounded,
+                              size: 11,
+                              color: Tone.accent,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              L10n.fmtTime(b.reminderTime!, lang),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Tone.accent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
                 const SizedBox(height: 13),
                 Text(
                   b.title,
@@ -549,6 +587,7 @@ class _OtherTaskRow extends ConsumerWidget {
               taskId: task.taskId,
               title: task.title,
               isBoulder: false,
+              reminderTime: task.reminderTime,
             );
           },
           child: GlassCard(
@@ -578,6 +617,28 @@ class _OtherTaskRow extends ConsumerWidget {
                               : null,
                         ),
                       ),
+                      if (task.reminderTime != null && !task.done) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.notifications_active_rounded,
+                              size: 12,
+                              color: Tone.accent,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              L10n.fmtTime(task.reminderTime!, lang),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Tone.accent,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       if (isPebble) ...[
                         const SizedBox(height: 3),
                         Row(
