@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart' show Color;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -42,6 +43,20 @@ class Notifications {
   Future<void> init() async {
     if (_ready) return;
     tzdata.initializeTimeZones();
+    try {
+      final info = await FlutterTimezone.getLocalTimezone();
+      final timeZoneName = info.identifier;
+      try {
+        tz.setLocalLocation(tz.getLocation(timeZoneName));
+      } catch (_) {
+        final loc = tz.timeZoneDatabase.locations[timeZoneName];
+        if (loc != null) {
+          tz.setLocalLocation(loc);
+        }
+      }
+    } catch (e) {
+      debugPrint('Notifications.init timezone detection failed: $e');
+    }
     const android = AndroidInitializationSettings('ic_stat_dot');
     final ios = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -308,8 +323,8 @@ class Notifications {
     final year = int.tryParse(parts[0]) ?? DateTime.now().year;
     final month = int.tryParse(parts[1]) ?? DateTime.now().month;
     final day = int.tryParse(parts[2]) ?? DateTime.now().day;
-    final when = tz.TZDateTime(
-      tz.local,
+
+    final target = DateTime(
       year,
       month,
       day,
@@ -317,10 +332,12 @@ class Notifications {
       minutesOfDay % 60,
     );
 
-    if (!when.isAfter(tz.TZDateTime.now(tz.local))) {
+    if (!target.isAfter(DateTime.now())) {
       await _safeCancel(id);
       return;
     }
+
+    final when = tz.TZDateTime.from(target, tz.local);
 
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -371,19 +388,18 @@ class Notifications {
   // ---------- retention loop: morning / evening / weekly ----------
 
   tz.TZDateTime _nextOccurrence(int minutesOfDay, {bool skipToday = false}) {
-    final now = tz.TZDateTime.now(tz.local);
-    var when = tz.TZDateTime(
-      tz.local,
+    final now = DateTime.now();
+    var target = DateTime(
       now.year,
       now.month,
       now.day,
       minutesOfDay ~/ 60,
       minutesOfDay % 60,
     );
-    if (skipToday || !when.isAfter(now)) {
-      when = when.add(const Duration(days: 1));
+    if (skipToday || !target.isAfter(now)) {
+      target = target.add(const Duration(days: 1));
     }
-    return when;
+    return tz.TZDateTime.from(target, tz.local);
   }
 
   /// Re-plans the morning/evening nudges around today's actual state.
@@ -431,8 +447,8 @@ class Notifications {
       );
     }
 
-    final now = tz.TZDateTime.now(tz.local);
-    var weekly = tz.TZDateTime(tz.local, now.year, now.month, now.day, 20, 30);
+    final now = DateTime.now();
+    var weekly = DateTime(now.year, now.month, now.day, 20, 30);
     while (weekly.weekday != DateTime.friday || !weekly.isAfter(now)) {
       weekly = weekly.add(const Duration(days: 1));
     }
@@ -440,7 +456,7 @@ class Notifications {
       id: _weeklyId,
       title: L10n.weeklyNotificationTitle(lang),
       body: L10n.weeklyNotificationBody(lang),
-      scheduledDate: weekly,
+      scheduledDate: tz.TZDateTime.from(weekly, tz.local),
       notificationDetails: quietDetails,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
@@ -474,6 +490,26 @@ class Notifications {
         matchDateTimeComponents: matchDateTimeComponents,
         payload: payload,
       );
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+        'zonedSchedule failed for id $id with $androidScheduleMode: $e',
+      );
+      if (androidScheduleMode == AndroidScheduleMode.exactAllowWhileIdle) {
+        try {
+          await _plugin.zonedSchedule(
+            id: id,
+            title: title,
+            body: body,
+            scheduledDate: scheduledDate,
+            notificationDetails: notificationDetails,
+            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            matchDateTimeComponents: matchDateTimeComponents,
+            payload: payload,
+          );
+        } catch (e2) {
+          debugPrint('zonedSchedule fallback inexact failed for id $id: $e2');
+        }
+      }
+    }
   }
 }
