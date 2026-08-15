@@ -336,9 +336,8 @@ abstract final class L10n {
   static String markTaskCompleted(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'تکمیل تسک' : 'Mark Task as Completed';
 
-  static String logFocusKeepPending(AppLanguage lang) => lang == AppLanguage.fa
-      ? 'فقط ثبت تمرکز'
-      : 'Log Focus Only & Keep Pending';
+  static String logFocusKeepPending(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'فقط ثبت تمرکز' : 'Log Focus Only';
 
   static String focusSessionCompleteTitle(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'پایان تمرکز' : 'Focus Complete';
