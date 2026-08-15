@@ -139,7 +139,8 @@ class _TaskEditSheetState extends ConsumerState<_TaskEditSheet> {
     final lang = ref.watch(appLanguageProvider);
     final hasReminder = _reminderMinutes != null;
 
-    return Padding(
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,

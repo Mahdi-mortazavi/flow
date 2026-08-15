@@ -125,133 +125,152 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
       child: Scaffold(
         backgroundColor: Colors.black,
         body: SafeArea(
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: (view.focus.isFun ? Tone.accent : Tone.ink).withValues(
-                    alpha: .08,
-                  ),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: Tone.line),
-                ),
-                child: Text(
-                  view.focus.isFun
-                      ? (lang == AppLanguage.fa ? 'وقتِ آزاد' : 'Free Time')
-                      : (lang == AppLanguage.fa
-                            ? 'جلسه تمرکز'
-                            : 'Focus Session'),
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: .5,
-                    color: view.focus.isFun ? Tone.accent : Tone.ink2,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 36),
-              RepaintBoundary(
-                child: SizedBox(
-                  width: 284,
-                  height: 284,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Positioned.fill(
-                        child: CustomPaint(
-                          painter: _RingPainter(
-                            progress: view.progress,
-                            color: Tone.accent,
-                          ),
-                        ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final h = constraints.maxHeight;
+              final ringSize = (h * 0.38).clamp(180.0, 284.0);
+              final clockFontSize = (ringSize * 0.185).clamp(34.0, 52.0);
+              final titleFontSize = (ringSize * 0.052).clamp(12.0, 14.5);
+              final pillSpacing = (h * 0.03).clamp(8.0, 36.0);
+              final btnSpacing = (h * 0.025).clamp(8.0, 30.0);
+
+              return Column(
+                children: [
+                  const Spacer(flex: 2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (view.focus.isFun ? Tone.accent : Tone.ink)
+                          .withValues(alpha: .08),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: Tone.line),
+                    ),
+                    child: Text(
+                      view.focus.isFun
+                          ? (lang == AppLanguage.fa ? 'وقتِ آزاد' : 'Free Time')
+                          : (lang == AppLanguage.fa
+                                ? 'جلسه تمرکز'
+                                : 'Focus Session'),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .5,
+                        color: view.focus.isFun ? Tone.accent : Tone.ink2,
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 26),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              view.clock,
-                              textDirection: TextDirection.ltr,
-                              style: const TextStyle(
-                                fontSize: 52,
-                                fontWeight: FontWeight.w200,
-                                fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  SizedBox(height: pillSpacing),
+                  RepaintBoundary(
+                    child: SizedBox(
+                      width: ringSize,
+                      height: ringSize,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: _RingPainter(
+                                progress: view.progress,
+                                color: Tone.accent,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              view.focus.title,
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w600,
-                                color: Tone.ink2,
-                                height: 1.35,
-                              ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: (ringSize * 0.09).clamp(12.0, 26.0),
                             ),
-                          ],
-                        ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  L10n.fmtClock(view.remainingSec, lang),
+                                  textDirection: TextDirection.ltr,
+                                  style: TextStyle(
+                                    fontSize: clockFontSize,
+                                    fontWeight: FontWeight.w200,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: (ringSize * 0.028).clamp(2.0, 8.0),
+                                ),
+                                Text(
+                                  view.focus.title,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: titleFontSize,
+                                    fontWeight: FontWeight.w600,
+                                    color: Tone.ink2,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: btnSpacing),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _RoundBtn(
+                        icon: view.focus.paused
+                            ? Icons.play_arrow_rounded
+                            : Icons.pause_rounded,
+                        onTap: () {
+                          final n = ref.read(focusProvider.notifier);
+                          view.focus.paused ? n.resume() : n.pause();
+                          HapticFeedback.selectionClick();
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      _RoundBtn(
+                        icon: Icons.psychology_outlined,
+                        onTap: () => _quickThought(lang),
                       ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _RoundBtn(
-                    icon: view.focus.paused
-                        ? Icons.play_arrow_rounded
-                        : Icons.pause_rounded,
-                    onTap: () {
-                      final n = ref.read(focusProvider.notifier);
-                      view.focus.paused ? n.resume() : n.pause();
-                      HapticFeedback.selectionClick();
-                    },
-                  ),
-                  const SizedBox(width: 12),
-                  _RoundBtn(
-                    icon: Icons.psychology_outlined,
-                    onTap: () => _quickThought(lang),
-                  ),
-                ],
-              ),
-              if (!_exactAlarms) ...[
-                const SizedBox(height: 16),
-                Text(
-                  lang == AppLanguage.fa
-                      ? 'اجازهٔ زنگ دقیق داده نشده — زنگ پایان ممکن است کمی دیر برسد.'
-                      : 'Exact alarms not granted — end alarm may arrive slightly late.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10.5, color: Tone.ink3),
-                ),
-              ],
-              const Spacer(flex: 3),
-              Pressable(
-                onTap: () => _attemptEarlyEnd(view, lang),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    lang == AppLanguage.fa ? 'پایان زودهنگام' : 'End Early',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: Tone.ink3,
+                  if (!_exactAlarms) ...[
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        lang == AppLanguage.fa
+                            ? 'اجازهٔ زنگ دقیق داده نشده — زنگ پایان ممکن است کمی دیر برسد.'
+                            : 'Exact alarms not granted — end alarm may arrive slightly late.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 10.5, color: Tone.ink3),
+                      ),
+                    ),
+                  ],
+                  const Spacer(flex: 3),
+                  Pressable(
+                    onTap: () => _attemptEarlyEnd(view, lang),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        lang == AppLanguage.fa ? 'پایان زودهنگام' : 'End Early',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: Tone.ink3,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
+                  const SizedBox(height: 6),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -372,7 +391,8 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
 
     final action = await showGlassSheet<String>(
       context,
-      builder: (ctx) => Padding(
+      builder: (ctx) => SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -482,7 +502,8 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
       context,
       builder: (ctx) {
         final noteController = TextEditingController();
-        return Padding(
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.only(bottom: 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -585,7 +606,8 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     final choice = await showGlassSheet<String>(
       context,
       isDismissible: false,
-      builder: (ctx) => Padding(
+      builder: (ctx) => SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,

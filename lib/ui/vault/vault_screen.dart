@@ -258,6 +258,8 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
         child: Center(
           child: Text(
             _localizedCategoryLabel(c, lang),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
@@ -287,6 +289,8 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
         ),
         child: Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 12,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,

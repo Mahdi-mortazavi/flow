@@ -397,6 +397,8 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
                 const SizedBox(height: 13),
                 Text(
                   b.title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 21,
                     fontWeight: FontWeight.w700,
@@ -607,6 +609,8 @@ class _OtherTaskRow extends ConsumerWidget {
                     children: [
                       Text(
                         task.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
@@ -939,7 +943,7 @@ class _EnergyCard extends ConsumerWidget {
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: .04),
           borderRadius: BorderRadius.circular(999),
@@ -958,7 +962,7 @@ class _EnergyCard extends ConsumerWidget {
 
     // One slim row — a two-second check-in, not a form.
     return GlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
           Icon(Icons.bolt_rounded, size: 16, color: Tone.ember),
@@ -966,17 +970,20 @@ class _EnergyCard extends ConsumerWidget {
           Expanded(
             child: Text(
               lang == AppLanguage.fa ? 'انرژی الان؟' : 'Energy right now?',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: Tone.ink2,
               ),
             ),
           ),
+          const SizedBox(width: 6),
           chip(lang == AppLanguage.fa ? 'کم' : 'Low', 1),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
           chip(lang == AppLanguage.fa ? 'متوسط' : 'Med', 2),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
           chip(lang == AppLanguage.fa ? 'زیاد' : 'High', 3),
         ],
       ),

@@ -279,6 +279,8 @@ class _MorningWizardState extends ConsumerState<_MorningWizard> {
                   children: [
                     Text(
                       b.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w500,

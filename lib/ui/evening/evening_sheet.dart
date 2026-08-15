@@ -143,6 +143,8 @@ class _EveningSheetState extends ConsumerState<_EveningSheet> {
                                     ),
                                 ],
                               ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],

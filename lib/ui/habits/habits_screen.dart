@@ -333,6 +333,8 @@ class _HabitCard extends ConsumerWidget {
                 children: [
                   Text(
                     habit.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 15.5,
                       fontWeight: FontWeight.w600,
@@ -345,6 +347,8 @@ class _HabitCard extends ConsumerWidget {
                     lang == AppLanguage.fa
                         ? 'بعد از ${habit.cue}'
                         : 'after ${habit.cue}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 12, color: Tone.ink3),
                   ),
                   if (note != null)
@@ -421,6 +425,8 @@ class _BadHabitCard extends ConsumerWidget {
                 children: [
                   Text(
                     habit.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 15.5,
                       fontWeight: FontWeight.w600,
@@ -431,6 +437,8 @@ class _BadHabitCard extends ConsumerWidget {
                     lang == AppLanguage.fa
                         ? 'محرک: ${habit.cue}'
                         : 'Trigger: ${habit.cue}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 12, color: Tone.ink3),
                   ),
                   if (status == 'resisted')

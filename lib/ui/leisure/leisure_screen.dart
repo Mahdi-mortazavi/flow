@@ -250,6 +250,8 @@ class _LeisureBody extends ConsumerWidget {
                         children: [
                           Text(
                             currentFun.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,

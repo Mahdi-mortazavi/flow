@@ -165,6 +165,8 @@ class _VaultSheetState extends ConsumerState<_VaultSheet> {
         child: Center(
           child: Text(
             _localizedCategoryLabel(c, lang),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,

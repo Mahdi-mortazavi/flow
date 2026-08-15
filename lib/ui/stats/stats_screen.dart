@@ -386,6 +386,8 @@ class _InterruptPattern extends StatelessWidget {
                     width: 96,
                     child: Text(
                       '${e.key.emoji}  ${_tagLabel(e.key, lang)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
