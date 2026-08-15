@@ -12,6 +12,7 @@ import 'package:taknoghte/ui/habits/habits_screen.dart';
 import 'package:taknoghte/ui/home/home_screen.dart';
 import 'package:taknoghte/ui/leisure/leisure_screen.dart';
 import 'package:taknoghte/ui/today/today_screen.dart';
+import 'package:taknoghte/ui/vault/vault_screen.dart';
 
 class _TestAppLanguageController extends AppLanguageController {
   final AppLanguage initial;
@@ -27,6 +28,14 @@ class _TestTodayController extends TodayController {
 
   @override
   Future<DayPlan> build() async => initial;
+}
+
+class _TestThoughtsController extends ThoughtsController {
+  final List<Thought> initial;
+  _TestThoughtsController(this.initial);
+
+  @override
+  Future<List<Thought>> build() async => initial;
 }
 
 class _TestHabitsController extends HabitsController {
@@ -59,6 +68,7 @@ void main() {
 
   Widget buildTestApp({
     AppLanguage lang = AppLanguage.fa,
+    List<Thought> thoughts = const [],
     List<Habit> habits = const [],
     FunConfig? fun,
   }) {
@@ -102,6 +112,7 @@ void main() {
           () => _TestAppLanguageController(lang),
         ),
         todayProvider.overrideWith(() => _TestTodayController(mockPlan)),
+        thoughtsProvider.overrideWith(() => _TestThoughtsController(thoughts)),
         habitsProvider.overrideWith(() => _TestHabitsController(habits)),
         funProvider.overrideWith(() => _TestFunController(fun)),
         statsProvider.overrideWith((ref) async => mockStats),
@@ -125,21 +136,30 @@ void main() {
     );
   }
 
-  group('3-Tab Bottom Navigation & Domain Separation', () {
-    testWidgets('Renders all 3 tabs in Persian and switches screens', (
+  group('4-Tab Bottom Navigation & Domain Separation', () {
+    testWidgets('Renders all 4 tabs in Persian and switches screens', (
       tester,
     ) async {
       await tester.pumpWidget(buildTestApp());
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Verify bottom navigation items exist
+      // Verify 4 bottom navigation items exist
       expect(find.byKey(const Key('tab_tasks')), findsOneWidget);
+      expect(find.byKey(const Key('tab_vault')), findsOneWidget);
       expect(find.byKey(const Key('tab_habits')), findsOneWidget);
       expect(find.byKey(const Key('tab_leisure')), findsOneWidget);
 
       // Verify default tab is TodayScreen (Tasks)
       expect(find.byType(TodayScreen), findsOneWidget);
+
+      // Switch to Vault tab
+      await tester.tap(find.byKey(const Key('tab_vault')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(VaultScreen), findsOneWidget);
+      expect(find.text('مخزن ذهن'), findsWidgets);
 
       // Switch to Habits tab
       await tester.tap(find.byKey(const Key('tab_habits')));
@@ -166,7 +186,7 @@ void main() {
       expect(find.byType(TodayScreen), findsOneWidget);
     });
 
-    testWidgets('Renders all 3 tabs in English with LTR layout', (
+    testWidgets('Renders all 4 tabs in English with LTR layout', (
       tester,
     ) async {
       await tester.pumpWidget(buildTestApp(lang: AppLanguage.en));
@@ -175,8 +195,17 @@ void main() {
 
       // Verify English bottom navigation items
       expect(find.byKey(const Key('tab_tasks')), findsOneWidget);
+      expect(find.byKey(const Key('tab_vault')), findsOneWidget);
       expect(find.byKey(const Key('tab_habits')), findsOneWidget);
       expect(find.byKey(const Key('tab_leisure')), findsOneWidget);
+
+      // Switch to Vault tab
+      await tester.tap(find.byKey(const Key('tab_vault')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(VaultScreen), findsOneWidget);
+      expect(find.text('Brain Vault'), findsWidgets);
 
       // Switch to Habits tab
       await tester.tap(find.byKey(const Key('tab_habits')));
@@ -192,6 +221,34 @@ void main() {
 
       expect(find.text('Start Guilt-Free Play'), findsOneWidget);
       expect(find.text("Antidote to Parkinson's Law"), findsOneWidget);
+    });
+
+    testWidgets('Vault tab displays recorded thoughts and allow filtering', (
+      tester,
+    ) async {
+      final sampleThoughts = [
+        Thought(
+          id: 'thought-1',
+          text: 'Redesign onboarding experience',
+          category: ThoughtCategory.idea,
+          createdAt: DateTime(2026, 8, 15),
+        ),
+      ];
+
+      await tester.pumpWidget(
+        buildTestApp(lang: AppLanguage.en, thoughts: sampleThoughts),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Switch to Vault tab
+      await tester.tap(find.byKey(const Key('tab_vault')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Redesign onboarding experience'), findsOneWidget);
+      expect(find.text('Idea'), findsWidgets);
+      expect(find.text('Promote to Task'), findsOneWidget);
     });
 
     testWidgets('Habits tab displays added habits and allows toggling', (

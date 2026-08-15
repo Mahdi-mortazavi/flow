@@ -1,11 +1,13 @@
-# ReFlow (تک‌نقطه) — v0.0.6
+# ReFlow (تک‌نقطه) — v0.0.7
 
-- پیاده‌سازی ناوبری ۳ تبه با تفکیک کامل قلمروهای کارها، عادت‌ها و تفریح
-- نوار ناوبری شیشه‌ای شناور (Liquid Glass) با فیدبک لمسی
-- تفکیک کامل استایل و منطق اختصاصی برای پیگیری عادت‌ها و تفریح بدون عذاب وجدان
+- اضافه شدن تب اختصاصی «مخزن ذهن» (Brain Vault) به ناوبری پایین در کنار کارها
+- ثبت سریع و دسته‌بندی افکار، ایده‌ها، کارها و نگرانی‌ها در فضایی شیشه‌ای و آرام
+- قابلیت فیلتر، جستجو و ارتقای مستقیم فکرها به کارهای روزانه یا ویزارد فردا
+- حذف دکمه شناور روی صفحه تسک‌ها و بهینه‌سازی نوار ناوبری ۴ تبه Liquid Glass
 
 ---
 
-- Implemented 3-tab navigation separating Tasks, Habits, and Leisure domains
-- Floating Liquid Glass bottom navigation dock with haptic feedback
-- Dedicated domain screens and logic for routine tracking and guilt-free play
+- Added dedicated "Brain Vault" tab to bottom navigation right next to Tasks
+- Fast capture and categorization of thoughts, ideas, tasks, and worries
+- Real-time search, category filters, and one-tap thought promotion to tasks
+- Clean 4-tab floating Liquid Glass navigation dock with haptic feedback

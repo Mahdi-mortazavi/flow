@@ -100,6 +100,9 @@ abstract final class L10n {
   static String tasksTab(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'کارها' : 'Tasks';
 
+  static String vaultTab(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'مخزن ذهن' : 'Vault';
+
   static String habitsTab(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'عادت‌ها' : 'Habits';
 
