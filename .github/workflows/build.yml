@@ -23,6 +23,8 @@ jobs:
       HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-java@v4
         with:
@@ -166,10 +168,25 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
+      - name: Extract Release Notes
+        if: startsWith(github.ref, 'refs/tags/')
+        id: release_notes
+        run: |
+          MSG="$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME" | sed '/^$/d')"
+          if [ -z "$MSG" ]; then
+            MSG="$(git log -1 --pretty=format:"%B")"
+          fi
+          if [ -z "$MSG" ]; then
+            MSG="Release ${{ github.ref_name }}"
+          fi
+          echo "notes<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$MSG" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           name: 'تک‌نقطه ${{ github.ref_name }}'
-          body_path: RELEASE_NOTES.md
+          body: ${{ steps.release_notes.outputs.notes }}
           files: dist/*
