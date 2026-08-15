@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/banner.svg" alt="Flow — تک‌نقطه" width="100%">
+<img src="docs/banner.png" alt="Flow — تک‌نقطه" width="100%">
 
 <br/>
 
