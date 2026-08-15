@@ -160,14 +160,16 @@ class Notifications {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
     } catch (_) {
-      await _plugin.zonedSchedule(
-        id: _focusEndId,
-        title: title,
-        body: body,
-        scheduledDate: when,
-        notificationDetails: details,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      );
+      try {
+        await _plugin.zonedSchedule(
+          id: _focusEndId,
+          title: title,
+          body: body,
+          scheduledDate: when,
+          notificationDetails: details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      } catch (_) {}
     }
   }
 

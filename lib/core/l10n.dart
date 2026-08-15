@@ -330,6 +330,33 @@ abstract final class L10n {
   static String startFocus(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'شروع تمرکز' : 'Start Focus';
 
+  static String focusButton(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'تمرکز' : 'Focus';
+
+  static String markTaskCompleted(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'تکمیل تسک' : 'Mark Task as Completed';
+
+  static String logFocusKeepPending(AppLanguage lang) => lang == AppLanguage.fa
+      ? 'فقط ثبت تمرکز'
+      : 'Log Focus Only & Keep Pending';
+
+  static String focusSessionCompleteTitle(AppLanguage lang) =>
+      lang == AppLanguage.fa ? 'پایان تمرکز' : 'Focus Complete';
+
+  static String focusSessionCompleteSub(String title, AppLanguage lang) =>
+      lang == AppLanguage.fa
+      ? 'کار «$title» انجام شد یا هنوز در جریان است؟'
+      : 'Is "$title" completed or still pending?';
+
+  static String focusLoggedKeepPendingToast(AppLanguage lang) =>
+      lang == AppLanguage.fa
+      ? 'زمان تمرکز ثبت شد. کار همچنان باز است.'
+      : 'Focus logged. Task kept pending.';
+
+  static String taskCompletedToast(AppLanguage lang) => lang == AppLanguage.fa
+      ? 'تسک با موفقیت انجام شد ✓'
+      : 'Task completed successfully ✓';
+
   static String changeBoulder(AppLanguage lang) =>
       lang == AppLanguage.fa ? 'تغییر تخته‌سنگ' : 'Change Boulder';
 

@@ -1,13 +1,13 @@
-# ReFlow (تک‌نقطه) — v0.0.7
+# ReFlow (تک‌نقطه) — v0.0.8
 
-- اضافه شدن تب اختصاصی «مخزن ذهن» (Brain Vault) به ناوبری پایین در کنار کارها
-- ثبت سریع و دسته‌بندی افکار، ایده‌ها، کارها و نگرانی‌ها در فضایی شیشه‌ای و آرام
-- قابلیت فیلتر، جستجو و ارتقای مستقیم فکرها به کارهای روزانه یا ویزارد فردا
-- حذف دکمه شناور روی صفحه تسک‌ها و بهینه‌سازی نوار ناوبری ۴ تبه Liquid Glass
+- اتصال مستقیم تسک‌ها به حالت تمرکز با یک ضربه روی کارت هر تسک
+- نمایش برجسته عنوان کار در داخل حلقه تایمر تمرکز با رنگ پویا و زنده
+- فرآیند هوشمند پایان تمرکز: انتخاب بین «تکمیل تسک» یا «فقط ثبت زمان و نگه داشتن تسک»
+- ثبت خودکار جلسات تمرکز در پایگاه داده متصل به شناسه تسک برای تحلیل عملکرد
 
 ---
 
-- Added dedicated "Brain Vault" tab to bottom navigation right next to Tasks
-- Fast capture and categorization of thoughts, ideas, tasks, and worries
-- Real-time search, category filters, and one-tap thought promotion to tasks
-- Clean 4-tab floating Liquid Glass navigation dock with haptic feedback
+- Direct one-tap task-to-focus workflow directly from any task card
+- Prominent task title display inside timer ring with dynamic theme accent colors
+- Smart session completion flow: choose between "Mark Task as Completed" or "Log Focus & Keep Pending"
+- Automatic focus session recording linked to task IDs for deep work analytics

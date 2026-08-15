@@ -128,36 +128,37 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           child: Column(
             children: [
               const Spacer(flex: 2),
-              Text(
-                view.focus.isFun
-                    ? (lang == AppLanguage.fa ? 'وقتِ آزاد' : 'Free Time')
-                    : (lang == AppLanguage.fa ? 'تمرکز' : 'Focus'),
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: .5,
-                  color: view.focus.isFun ? Tone.ember : Tone.ink3,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 5,
                 ),
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
+                decoration: BoxDecoration(
+                  color: (view.focus.isFun ? Tone.accent : Tone.ink).withValues(
+                    alpha: .08,
+                  ),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: Tone.line),
+                ),
                 child: Text(
-                  view.focus.title,
-                  textAlign: TextAlign.center,
+                  view.focus.isFun
+                      ? (lang == AppLanguage.fa ? 'وقتِ آزاد' : 'Free Time')
+                      : (lang == AppLanguage.fa
+                            ? 'جلسه تمرکز'
+                            : 'Focus Session'),
                   style: TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w500,
-                    color: Tone.ink2,
-                    height: 1.8,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: .5,
+                    color: view.focus.isFun ? Tone.accent : Tone.ink2,
                   ),
                 ),
               ),
-              const SizedBox(height: 38),
+              const SizedBox(height: 36),
               RepaintBoundary(
                 child: SizedBox(
-                  width: 272,
-                  height: 272,
+                  width: 284,
+                  height: 284,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
@@ -165,17 +166,38 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
                         child: CustomPaint(
                           painter: _RingPainter(
                             progress: view.progress,
-                            color: Tone.ember,
+                            color: Tone.accent,
                           ),
                         ),
                       ),
-                      Text(
-                        view.clock,
-                        textDirection: TextDirection.ltr,
-                        style: const TextStyle(
-                          fontSize: 62,
-                          fontWeight: FontWeight.w200,
-                          fontFeatures: [FontFeature.tabularFigures()],
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 26),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              view.clock,
+                              textDirection: TextDirection.ltr,
+                              style: const TextStyle(
+                                fontSize: 52,
+                                fontWeight: FontWeight.w200,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              view.focus.title,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w600,
+                                color: Tone.ink2,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -297,21 +319,160 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
 
   Future<void> _attemptEarlyEnd(FocusView view, AppLanguage lang) async {
     final n = ref.read(focusProvider.notifier);
-    final wasPaused = view.focus.paused;
+    final focus = view.focus;
+    final wasPaused = focus.paused;
     if (!wasPaused) await n.pause();
     if (!mounted) return;
-    final result = await _showInterruptSheet(lang);
+
+    if (focus.isFun) {
+      final end = await showGlassSheet<bool>(
+        context,
+        builder: (ctx) => Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SheetHeader(
+                lang == AppLanguage.fa ? 'پایان وقت آزاد' : 'End Free Time',
+                sub: lang == AppLanguage.fa
+                    ? 'پایان زودهنگام تفریح و بازگشت به روال روز'
+                    : 'End leisure block early and return to your day',
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+                child: Column(
+                  children: [
+                    Pill(
+                      lang == AppLanguage.fa ? 'پایان و خروج' : 'End & Exit',
+                      style: PillStyle.ember,
+                      onTap: () => Navigator.pop(ctx, true),
+                    ),
+                    const SizedBox(height: 10),
+                    Pill(
+                      lang == AppLanguage.fa ? 'ادامه تفریح' : 'Resume Leisure',
+                      style: PillStyle.quiet,
+                      onTap: () => Navigator.pop(ctx, false),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (!mounted) return;
+      if (end == true) {
+        await n.end(completed: true);
+      } else {
+        if (!wasPaused) await n.resume();
+      }
+      return;
+    }
+
+    final action = await showGlassSheet<String>(
+      context,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SheetHeader(
+              lang == AppLanguage.fa
+                  ? 'پایان زودهنگام تمرکز'
+                  : 'End Focus Early',
+              sub: lang == AppLanguage.fa
+                  ? 'کار زودتر تمام شد یا متوقف شد؟'
+                  : 'Did you finish early or get interrupted?',
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+              child: Column(
+                children: [
+                  Pill(
+                    L10n.markTaskCompleted(lang),
+                    style: PillStyle.ember,
+                    icon: Icons.check_circle_rounded,
+                    onTap: () => Navigator.pop(ctx, 'done'),
+                  ),
+                  const SizedBox(height: 10),
+                  Pill(
+                    lang == AppLanguage.fa
+                        ? 'ثبت وقفه و پایان'
+                        : 'Log Interruption & End',
+                    icon: Icons.pause_circle_outline_rounded,
+                    onTap: () => Navigator.pop(ctx, 'interrupt'),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Pill(
+                          L10n.logFocusKeepPending(lang),
+                          style: PillStyle.quiet,
+                          onTap: () => Navigator.pop(ctx, 'keep_pending'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Pill(
+                          lang == AppLanguage.fa
+                              ? 'ادامه تمرکز'
+                              : 'Resume Focus',
+                          style: PillStyle.quiet,
+                          onTap: () => Navigator.pop(ctx, 'resume'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
     if (!mounted) return;
-    if (result == null) {
-      // Cancelled → back to focus.
+    if (action == null || action == 'resume') {
       if (!wasPaused) await n.resume();
       return;
     }
-    await n.end(
-      completed: false,
-      interruptTag: result.$1.db,
-      interruptNote: result.$2,
-    );
+
+    if (action == 'done') {
+      final taskId = focus.taskId;
+      if (taskId != null) {
+        await ref.read(todayProvider.notifier).setTaskDone(taskId, true);
+      }
+      await n.end(completed: true);
+      if (mounted) {
+        showToast(context, L10n.taskCompletedToast(lang));
+      }
+      return;
+    }
+
+    if (action == 'keep_pending') {
+      await n.end(completed: true);
+      if (mounted) {
+        showToast(context, L10n.focusLoggedKeepPendingToast(lang));
+      }
+      return;
+    }
+
+    if (action == 'interrupt') {
+      final result = await _showInterruptSheet(lang);
+      if (!mounted) return;
+      if (result == null) {
+        if (!wasPaused) await n.resume();
+        return;
+      }
+      await n.end(
+        completed: false,
+        interruptTag: result.$1.db,
+        interruptNote: result.$2,
+      );
+    }
   }
 
   /// One-tap interrupt taxonomy — the friction of typing was why the pattern
@@ -431,39 +592,33 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SheetHeader(
-              lang == AppLanguage.fa ? 'وقت تمام شد' : 'Time is up',
-              sub: lang == AppLanguage.fa
-                  ? 'کمال‌گرایی را رها کن. هر چه ساختی را همین حالا ثبت کن.'
-                  : 'Let go of perfectionism. Save what you made right now.',
+              L10n.focusSessionCompleteTitle(lang),
+              sub: L10n.focusSessionCompleteSub(focus.title, lang),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
               child: Column(
                 children: [
                   Pill(
-                    lang == AppLanguage.fa ? 'انجام شد' : 'Done',
+                    L10n.markTaskCompleted(lang),
                     style: PillStyle.ember,
-                    icon: Icons.check_rounded,
+                    icon: Icons.check_circle_rounded,
                     onTap: () => Navigator.pop(ctx, 'done'),
                   ),
                   const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Pill(
-                          lang == AppLanguage.fa ? '+۱۰ دقیقه' : '+10 Minutes',
-                          onTap: () => Navigator.pop(ctx, 'extend'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Pill(
-                          lang == AppLanguage.fa ? 'هنوز نه' : 'Not Yet',
-                          style: PillStyle.quiet,
-                          onTap: () => Navigator.pop(ctx, 'not_yet'),
-                        ),
-                      ),
-                    ],
+                  Pill(
+                    L10n.logFocusKeepPending(lang),
+                    icon: Icons.timer_outlined,
+                    onTap: () => Navigator.pop(ctx, 'keep_pending'),
+                  ),
+                  const SizedBox(height: 10),
+                  Pill(
+                    lang == AppLanguage.fa
+                        ? '+۱۰ دقیقه ادامه'
+                        : '+10 Min Continue',
+                    style: PillStyle.quiet,
+                    icon: Icons.more_time_rounded,
+                    onTap: () => Navigator.pop(ctx, 'extend'),
                   ),
                 ],
               ),
@@ -482,20 +637,18 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
         }
         await n.end(completed: true);
         if (mounted) {
-          showToast(
-            context,
-            lang == AppLanguage.fa
-                ? 'ثبت شد. کار بعدی منتظر است.'
-                : 'Recorded. The next task awaits.',
-          );
+          showToast(context, L10n.taskCompletedToast(lang));
+        }
+      case 'keep_pending':
+        await n.end(completed: true);
+        if (mounted) {
+          showToast(context, L10n.focusLoggedKeepPendingToast(lang));
         }
       case 'extend':
         _timeUpShown = false;
         await n.extend(10);
       case _:
-        // «هنوز نه»: the session ran its course but the outcome wasn't
-        // confirmed — keep the stats honest.
-        await n.end(completed: false);
+        await n.end(completed: true);
     }
   }
 }

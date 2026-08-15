@@ -625,19 +625,38 @@ class _OtherTaskRow extends ConsumerWidget {
                 ),
                 if (!task.done)
                   Pressable(
-                    onTap: () => _play(context, ref, lang),
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      _play(context, ref, lang);
+                    },
                     child: Container(
-                      width: 38,
-                      height: 38,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .05),
-                        borderRadius: BorderRadius.circular(13),
+                        color: Tone.accent.withValues(alpha: .12),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Tone.line),
                       ),
-                      child: Icon(
-                        Icons.play_arrow_rounded,
-                        size: 18,
-                        color: Tone.ink2,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.play_arrow_rounded,
+                            size: 16,
+                            color: Tone.accent,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            L10n.focusButton(lang),
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: Tone.accent,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
