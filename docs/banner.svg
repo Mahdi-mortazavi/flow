@@ -1,74 +1,126 @@
-<svg width="1280" height="440" viewBox="0 0 1280 440" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow — تک‌نقطه">
+<svg width="1200" height="420" viewBox="0 0 1200 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="re-flow — Flow / تک‌نقطه">
   <defs>
     <style>
-      @keyframes pulseGlow {
-        0%, 100% { opacity: 0.45; transform: scale(1); }
-        50% { opacity: 0.75; transform: scale(1.08); }
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&amp;family=Vazirmatn:wght@500;700&amp;display=swap');
+      
+      @keyframes floatGlow {
+        0%, 100% { opacity: 0.40; transform: scale(1); }
+        50% { opacity: 0.70; transform: scale(1.05); }
       }
-      @keyframes pulseDot {
-        0%, 100% { transform: scale(1); opacity: 0.9; }
-        50% { transform: scale(1.25); opacity: 1; }
+      @keyframes pulseRing {
+        0%, 100% { stroke-opacity: 0.85; stroke-width: 12px; }
+        50% { stroke-opacity: 1; stroke-width: 14px; }
       }
-      .glowing-ember {
-        animation: pulseGlow 4s ease-in-out infinite;
-        transform-origin: 250px 200px;
+      @keyframes dotGlow {
+        0%, 100% { r: 8px; opacity: 0.85; }
+        50% { r: 10px; opacity: 1; }
       }
-      .pulsing-dot {
-        animation: pulseDot 2.5s ease-in-out infinite;
-        transform-origin: 250px 190px;
+      .bg-glow {
+        animation: floatGlow 5s ease-in-out infinite;
+        transform-origin: 160px 210px;
+      }
+      .active-ring {
+        animation: pulseRing 3.5s ease-in-out infinite;
+        transform-origin: 160px 210px;
+      }
+      .active-dot {
+        animation: dotGlow 2.5s ease-in-out infinite;
+      }
+      .title-text {
+        font-family: 'Outfit', -apple-system, system-ui, sans-serif;
+        font-weight: 800;
+      }
+      .fa-text {
+        font-family: 'Vazirmatn', system-ui, sans-serif;
+        font-weight: 700;
+      }
+      .sub-text {
+        font-family: 'Vazirmatn', 'Outfit', system-ui, sans-serif;
+        font-weight: 500;
       }
     </style>
-    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="440" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0a0a0e"/>
-      <stop offset="1" stop-color="#050507"/>
+
+    <!-- Background Gradients -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1200" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#08080C"/>
+      <stop offset="50%" stop-color="#050508"/>
+      <stop offset="100%" stop-color="#09090E"/>
     </linearGradient>
-    <radialGradient id="ember" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#EFA55C" stop-opacity="0.55"/>
-      <stop offset="0.55" stop-color="#EFA55C" stop-opacity="0.10"/>
-      <stop offset="1" stop-color="#EFA55C" stop-opacity="0"/>
+
+    <!-- Ember Ambient Radial -->
+    <radialGradient id="emberRadial" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#EFA55C" stop-opacity="0.45"/>
+      <stop offset="60%" stop-color="#EFA55C" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#EFA55C" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#F6C98A"/>
-      <stop offset="1" stop-color="#E08E3E"/>
+
+    <!-- Ring Gradient -->
+    <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F6B26E"/>
+      <stop offset="100%" stop-color="#E7994C"/>
     </linearGradient>
-    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.06"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0.015"/>
+
+    <!-- Glass Surface Gradient -->
+    <linearGradient id="glassGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.02"/>
     </linearGradient>
   </defs>
 
-  <rect width="1280" height="440" fill="url(#bg)"/>
+  <!-- Canvas -->
+  <rect width="1200" height="420" rx="16" fill="url(#bgGrad)"/>
+  <rect width="1200" height="420" rx="16" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="1.5" fill="none"/>
 
-  <!-- ambient ember glow, top-left where the boulder lives -->
-  <circle class="glowing-ember" cx="250" cy="200" r="360" fill="url(#ember)"/>
+  <!-- Background Ambient Glow -->
+  <circle class="bg-glow" cx="160" cy="210" r="240" fill="url(#emberRadial)"/>
 
-  <!-- faint grid of glass cards, monochrome -->
-  <g opacity="0.5">
-    <rect x="60" y="300" width="150" height="90" rx="18" fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.05"/>
-    <rect x="230" y="300" width="150" height="90" rx="18" fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.05"/>
-    <rect x="400" y="300" width="150" height="90" rx="18" fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.05"/>
+  <!-- Left Icon: The Boulder Glass Ring -->
+  <g transform="translate(160, 210)">
+    <!-- Outer Glass Ring -->
+    <circle r="76" fill="url(#glassGrad)" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="2"/>
+    <!-- Track Ring -->
+    <circle r="60" fill="none" stroke="#FFFFFF" stroke-opacity="0.07" stroke-width="12"/>
+    <!-- Active Progress Arc -->
+    <circle class="active-ring" r="60" fill="none" stroke="url(#ringGrad)" stroke-width="12" stroke-linecap="round"
+            stroke-dasharray="280 380" transform="rotate(-90)"/>
+    <!-- Center Boulder Dot -->
+    <circle class="active-dot" cx="0" cy="0" r="9" fill="#EFA55C"/>
   </g>
 
-  <!-- the boulder: one warm ring -->
-  <g transform="translate(250,190)">
-    <circle r="86" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="14"/>
-    <circle r="86" fill="none" stroke="url(#ring)" stroke-width="14" stroke-linecap="round"
-            stroke-dasharray="405 540" transform="rotate(-90)"/>
-    <circle class="pulsing-dot" r="9" fill="#EFA55C"/>
+  <!-- Wordmark Section (Main Brand Info) -->
+  <g transform="translate(290, 135)">
+    <!-- 1. English Main Title -->
+    <text x="0" y="0" class="title-text" font-size="80" fill="#F5F5F7" letter-spacing="-1.5">Flow</text>
+
+    <!-- 2. Persian Sub-Title (Directly under Flow!) -->
+    <text x="4" y="44" class="fa-text" font-size="32" fill="#EFA55C" direction="rtl">تک‌نقطه</text>
+
+    <!-- 3. Tagline (Directly under تک‌نقطه) -->
+    <text x="4" y="88" class="sub-text" font-size="21" fill="#A2ADC0" direction="rtl">سیستم‌عاملِ تمرکز، انرژی و زمانِ تو</text>
+    <text x="4" y="118" class="sub-text" font-size="15" fill="#556070">Personal Focus &amp; Habit OS — 100% Offline &amp; Private</text>
   </g>
 
-  <!-- wordmark -->
-  <g transform="translate(470,140)">
-    <text x="0" y="0" font-family="Georgia, 'Times New Roman', serif" font-size="96" font-weight="700" fill="#F4F4F6" letter-spacing="-2">Flow</text>
-    <text x="6" y="52" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="30" font-weight="600" fill="#EFA55C" direction="rtl">تک‌نقطه</text>
-    <text x="6" y="110" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="26" font-weight="400" fill="#B8B8C0" direction="rtl">سیستم‌عاملِ تمرکز، انرژی و زمانِ تو</text>
-    <text x="6" y="152" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="400" fill="#6E6E78">Personal focus OS &amp; habit tracker — 100% offline &amp; private.</text>
-  </g>
+  <!-- Right Side Feature Glass Chips -->
+  <g transform="translate(860, 115)">
+    <!-- Chip 1: 100% Offline -->
+    <g transform="translate(0, 0)">
+      <rect width="260" height="52" rx="26" fill="url(#glassGrad)" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1"/>
+      <circle cx="28" cy="26" r="6" fill="#4ADE80"/>
+      <text x="48" y="31" class="sub-text" font-size="14" fill="#F5F5F7" font-weight="600">100% Offline · Local SQLite</text>
+    </g>
 
-  <!-- privacy chip -->
-  <g transform="translate(1010,58)">
-    <rect x="0" y="0" width="210" height="40" rx="20" fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.07"/>
-    <circle cx="26" cy="20" r="5" fill="#4ade80"/>
-    <text x="44" y="26" font-family="system-ui, sans-serif" font-size="15" fill="#C9C9D1">100% offline · no server</text>
+    <!-- Chip 2: Dual Locale -->
+    <g transform="translate(0, 68)">
+      <rect width="260" height="52" rx="26" fill="url(#glassGrad)" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1"/>
+      <text x="26" y="31" class="sub-text" font-size="15" fill="#EFA55C">🌐</text>
+      <text x="52" y="31" class="sub-text" font-size="14" fill="#F5F5F7" font-weight="600">Persian (RTL) &amp; English (LTR)</text>
+    </g>
+
+    <!-- Chip 3: Liquid Glass Themes -->
+    <g transform="translate(0, 136)">
+      <rect width="260" height="52" rx="26" fill="url(#glassGrad)" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1"/>
+      <text x="26" y="31" class="sub-text" font-size="15" fill="#EFA55C">🎨</text>
+      <text x="52" y="31" class="sub-text" font-size="14" fill="#F5F5F7" font-weight="600">6 Liquid Glass Accent Themes</text>
+    </g>
   </g>
 </svg>
