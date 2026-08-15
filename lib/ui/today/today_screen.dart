@@ -606,8 +606,8 @@ class _BoulderCardState extends ConsumerState<BoulderCard>
       showToast(
         context,
         lang == AppLanguage.fa
-            ? 'تخته‌سنگ افتاد! 🏔️'
-            : 'The Boulder has fallen! 🏔️',
+            ? 'تخته‌سنگ افتاد! 🪨'
+            : 'The Boulder has fallen! 🪨',
       );
     }
   }

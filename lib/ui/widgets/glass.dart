@@ -444,9 +444,11 @@ class GlassField extends StatelessWidget {
 void showToast(
   BuildContext context,
   String message, {
+  TextDirection? textDirection,
   String? actionLabel,
   VoidCallback? onAction,
 }) {
+  final dir = textDirection ?? Directionality.of(context);
   final overlay = Overlay.of(context, rootOverlay: true);
   late final OverlayEntry entry;
   var handled = false;
@@ -490,11 +492,11 @@ void showToast(
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                textDirection: TextDirection.rtl,
+                textDirection: dir,
                 children: [
                   Text(
                     message,
-                    textDirection: TextDirection.rtl,
+                    textDirection: dir,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
