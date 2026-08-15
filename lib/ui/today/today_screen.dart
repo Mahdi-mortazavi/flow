@@ -1002,7 +1002,7 @@ class _VaultFab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(appLanguageProvider);
     return Padding(
-      padding: const EdgeInsetsDirectional.only(start: 6, bottom: 74),
+      padding: const EdgeInsetsDirectional.only(start: 14, bottom: 74),
       child: Pressable(
         onTap: () {
           HapticFeedback.selectionClick();
