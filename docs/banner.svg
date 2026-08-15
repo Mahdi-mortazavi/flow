@@ -1,5 +1,23 @@
 <svg width="1280" height="440" viewBox="0 0 1280 440" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow — تک‌نقطه">
   <defs>
+    <style>
+      @keyframes pulseGlow {
+        0%, 100% { opacity: 0.45; transform: scale(1); }
+        50% { opacity: 0.75; transform: scale(1.08); }
+      }
+      @keyframes pulseDot {
+        0%, 100% { transform: scale(1); opacity: 0.9; }
+        50% { transform: scale(1.25); opacity: 1; }
+      }
+      .glowing-ember {
+        animation: pulseGlow 4s ease-in-out infinite;
+        transform-origin: 250px 200px;
+      }
+      .pulsing-dot {
+        animation: pulseDot 2.5s ease-in-out infinite;
+        transform-origin: 250px 190px;
+      }
+    </style>
     <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="440" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#0a0a0e"/>
       <stop offset="1" stop-color="#050507"/>
@@ -22,7 +40,7 @@
   <rect width="1280" height="440" fill="url(#bg)"/>
 
   <!-- ambient ember glow, top-left where the boulder lives -->
-  <circle cx="250" cy="200" r="360" fill="url(#ember)"/>
+  <circle class="glowing-ember" cx="250" cy="200" r="360" fill="url(#ember)"/>
 
   <!-- faint grid of glass cards, monochrome -->
   <g opacity="0.5">
@@ -36,15 +54,15 @@
     <circle r="86" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="14"/>
     <circle r="86" fill="none" stroke="url(#ring)" stroke-width="14" stroke-linecap="round"
             stroke-dasharray="405 540" transform="rotate(-90)"/>
-    <circle r="9" fill="#EFA55C"/>
+    <circle class="pulsing-dot" r="9" fill="#EFA55C"/>
   </g>
 
   <!-- wordmark -->
-  <g transform="translate(470,150)">
+  <g transform="translate(470,140)">
     <text x="0" y="0" font-family="Georgia, 'Times New Roman', serif" font-size="96" font-weight="700" fill="#F4F4F6" letter-spacing="-2">Flow</text>
     <text x="6" y="52" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="30" font-weight="600" fill="#EFA55C" direction="rtl">تک‌نقطه</text>
     <text x="6" y="110" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="26" font-weight="400" fill="#B8B8C0" direction="rtl">سیستم‌عاملِ تمرکز، انرژی و زمانِ تو</text>
-    <text x="6" y="152" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="400" fill="#6E6E78">The focus OS built on behavioral science — not willpower.</text>
+    <text x="6" y="152" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="400" fill="#6E6E78">Personal focus OS &amp; habit tracker — 100% offline &amp; private.</text>
   </g>
 
   <!-- privacy chip -->

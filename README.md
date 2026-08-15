@@ -4,75 +4,79 @@
 
 <br/>
 
-[![Build & Release](https://github.com/re-code-sh/re-flow/actions/workflows/build.yml/badge.svg)](https://github.com/re-code-sh/re-flow/actions)
-[![Latest Release](https://img.shields.io/github/v/release/re-code-sh/re-flow?label=Release&color=EFA55C)](https://github.com/re-code-sh/re-flow/releases/latest)
-[![Platform](https://img.shields.io/badge/Platform-Android%20arm64-3DDC84?logo=android&logoColor=white)](https://github.com/re-code-sh/re-flow/releases/latest)
-[![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
-[![Language](https://img.shields.io/badge/Language-Persian%20%7C%20English-EFA55C)](#-fork-enhancements)
-[![Privacy](https://img.shields.io/badge/Privacy-100%25%20Offline-4ade80)](#)
+[![GitHub Release](https://img.shields.io/github/v/release/re-code-sh/re-flow?style=for-the-badge&logo=github&color=EFA55C&logoColor=white)](https://github.com/re-code-sh/re-flow/releases/latest)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/re-code-sh/re-flow/build.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=CI)](https://github.com/re-code-sh/re-flow/actions)
+[![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/re-code-sh/re-flow/releases/latest)
+[![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
+[![Locales](https://img.shields.io/badge/Locale-Persian%20%7C%20English-EFA55C?style=for-the-badge)](#-key-features)
+[![Privacy](https://img.shields.io/badge/Privacy-100%25%20Offline-4ade80?style=for-the-badge)](#-privacy--local-data)
 
-### **re-flow (Flow / تک‌نقطه) — Enhanced Fork**
-*A behavioral science-backed daily focus protocol, habit tracker, and self-calibration OS.*
+### **re-flow (Flow / تک‌نقطه)**
+*A liquid-glass daily focus protocol, habit engine, and self-calibration OS.*
 
-**[ ⬇️ Download Latest Release (APK) ](https://github.com/re-code-sh/re-flow/releases/latest)** · [Fork Enhancements](#-fork-enhancements) · [Core Protocol](#-core-protocol) · [Build from Source](#-build-from-source)
+[ **⬇️ Download Latest APK** ](https://github.com/re-code-sh/re-flow/releases/latest) · [Features](#-key-features) · [Accent Palettes](#-liquid-glass-accent-palettes) · [Build Instructions](#%EF%B8%8F-build-from-source)
 
 </div>
 
 ---
 
-## 🚀 Fork Enhancements
+## ⚡ Overview
 
-This repository (**`re-flow`**) is an internationalized, upgraded, and feature-enhanced fork of the original [Flow (تک‌نقطه)](https://github.com/Mahdi-mortazavi/flow) app.
+**re-flow** (**Flow / تک‌نقطه**) is an open-source, 100% offline daily focus app built with Flutter. Built around a dark "Liquid Glass" theme, it eliminates streak anxiety, remote tracking, and clutter — centering your daily energy around one primary goal (**The Boulder / تخته‌سنگ**).
 
-### 🌐 Full Dual-Language & Locale Engine
-- **Seamless Language Switching**: Instant toggling between **English (LTR)** and **Persian (RTL)** with complete UI & typography adaptation.
-- **Dynamic OS Launcher App Title**: Launcher label automatically switches between **Flow** and **تک‌نقطه** depending on system/app locale.
-- **Locale-Aware Local Notifications**: Morning planning nudges, evening review alarms, focus end timers, and habit reminders dynamically broadcast in the active language.
-- **Psychological Tone Localization**: Behavioral science concepts naturally translated into English (*The Boulder*, *Brain Vault*, *Stats Mirror*, *Optimism Gap*, *Pebble*).
-
-### 🎨 Liquid Glass Accent Color Palettes
-- **Dynamic Real-Time Theme Engine**: Instantly switch the entire app's accent color across primary buttons, Boulder highlights, timer progress rings, active state indicators, and glass glows without an app restart.
-- **6 Curated Liquid Glass Palettes**:
-  | Palette | Color Badge | Hex | Persian Name | English Name |
-  |---|---|---|---|---|
-  | **Ember** *(Default)* | ![](https://img.shields.io/badge/-%20-EFA55C) | `#EFA55C` | کهربایی | Ember |
-  | **Alpine Pine** | ![](https://img.shields.io/badge/-%20-4EAF7B) | `#4EAF7B` | سوزن کاج | Alpine Pine |
-  | **Abyssal Indigo** | ![](https://img.shields.io/badge/-%20-5486EB) | `#5486EB` | نیلی ژرف | Abyssal Indigo |
-  | **Smoked Mulberry** | ![](https://img.shields.io/badge/-%20-D65B6E) | `#D65B6E` | شاتوتی | Smoked Mulberry |
-  | **Mist Slate** | ![](https://img.shields.io/badge/-%20-A2ADC0) | `#A2ADC0` | گرانیت مه‌آلود | Mist Slate |
-  | **Night Iris** | ![](https://img.shields.io/badge/-%20-9F7AEA) | `#9F7AEA` | شفق شبانه | Night Iris |
-
-### 📈 Non-Punitive "Active Days" Task Capacity Progression
-- **Self-Compassion Progression System**: Unlocks daily task slots based on total completed active days in local SQLite without streak-reset punishment:
-  - **0–14 Active Days**: 3 tasks max (1 Boulder + 2 secondary tasks)
-  - **15–29 Active Days**: 4 tasks max (1 Boulder + 2 secondary + 1 Pebble)
-  - **30+ Active Days**: 5 tasks max hard cap (1 Boulder + 2 secondary + 2 Pebbles)
-- **"Pebble" (سنگریزه) Slots**: Slots 4 & 5 designated for low-energy, quick-win tasks (<15 minutes).
-
-### 📦 Automated CI/CD & Multi-ABI Release Pipeline
-- **Automated GitHub Release Workflows**: Triggers APK compilation (universal + split `arm64-v8a`, `armeabi-v7a`, `x86_64`) on version tags.
-- **Keystore Signing & Checksums**: Fully automated keystore signing and SHA-256 artifact verification.
-
-### 🧪 Reliability & Code Hygiene
-- **57+ Automated Unit & Widget Tests**: Full test coverage for L10n, capacity limits, repository layer, and state management.
-- **Zero-Issue Analysis & Formatting**: Enforces strict `flutter analyze` zero-issue policies and `dart format` compliance.
+> [!NOTE]
+> This repository is an enhanced, internationalized fork of [Mahdi-mortazavi/flow](https://github.com/Mahdi-mortazavi/flow) with full English/Persian LTR/RTL support, customizable accent palettes, dynamic OS launcher labels, active-days task scaling, and automated CI/CD releases.
 
 ---
 
-## 🧠 Core Protocol
+## 🎨 Liquid Glass Accent Palettes
 
-| Feature | Description |
-|---|---|
-| **🔥 The Boulder (تخته‌سنگ)** | Pick 1 primary goal each morning; secondary tasks queue behind it. |
-| **🎯 Prediction (پیش‌بینی)** | Calibrate morning success probability % vs night outcome to measure the *Optimism Gap*. |
-| **⏱ Deep Focus (تمرکز عمیق)** | Crash-proof timer tied to OS wall clock + intruding thought capture (*Brain Vault*). |
-| **🌱 Recovery Habits (عادت‌ها)** | Anchor cues + friction pause for bad habits. Measures *Recovery Rate* instead of streaks. |
-| **🌙 Night Review (مرور شب)** | 60-second review + 3-Why root cause analysis when The Boulder fails. |
-| **🪞 Stats Mirror (آینه)** | Judgment-free metrics: Win Rate, Optimism Gap, Recovery Rate & Golden Hour energy peak. |
+Instantly switch accent colors across buttons, progress rings, highlights, and glass glows in real-time — no app restart needed.
+
+| Accent Palette | Preview Badge | Hex Code | Persian Name | English Name |
+|---|---|---|---|---|
+| **Ember** *(Default)* | ![](https://img.shields.io/badge/-%20-EFA55C) | `#EFA55C` | کهربایی | Ember |
+| **Alpine Pine** | ![](https://img.shields.io/badge/-%20-4EAF7B) | `#4EAF7B` | سوزن کاج | Alpine Pine |
+| **Abyssal Indigo** | ![](https://img.shields.io/badge/-%20-5486EB) | `#5486EB` | نیلی ژرف | Abyssal Indigo |
+| **Smoked Mulberry** | ![](https://img.shields.io/badge/-%20-D65B6E) | `#D65B6E` | شاتوتی | Smoked Mulberry |
+| **Mist Slate** | ![](https://img.shields.io/badge/-%20-A2ADC0) | `#A2ADC0` | گرانیت مه‌آلود | Mist Slate |
+| **Night Iris** | ![](https://img.shields.io/badge/-%20-9F7AEA) | `#9F7AEA` | شفق شبانه | Night Iris |
 
 ---
 
-## 📱 Screenshots
+## 🚀 Key Features
+
+<details open>
+<summary><b>🌐 Full Dual-Language & Native Locale Engine</b></summary>
+
+- **Instant LTR / RTL Switching**: Seamless toggle between English and Persian with full typography and UI alignment.
+- **Dynamic OS Launcher Title**: Launcher icon title automatically switches between **Flow** and **تک‌نقطه** depending on system/app locale.
+- **Localized Notifications**: Morning planning nudges, evening review reminders, focus end alarms, and habit cues broadcast in your active language.
+</details>
+
+<details open>
+<summary><b>📈 Active Days Task Capacity Progression</b></summary>
+
+- **Non-Punitive Scaling**: Task slots unlock automatically based on total completed active days in local SQLite without streak-reset penalties:
+  - **0–14 Days**: 3 tasks max (1 Boulder + 2 secondary)
+  - **15–29 Days**: 4 tasks max (1 Boulder + 2 secondary + 1 Pebble)
+  - **30+ Days**: 5 tasks max cap (1 Boulder + 2 secondary + 2 Pebbles)
+- **Pebble Slots (سنگریزه)**: Slots 4 & 5 designated for quick-win, low-energy tasks (<15 minutes).
+</details>
+
+<details open>
+<summary><b>🧠 Core Focus Protocol & Calibrations</b></summary>
+
+- **🪨 The Boulder**: Lock in 1 primary goal each morning. Secondary tasks queue behind it.
+- **🎯 Prediction & Optimism Gap**: Estimate morning completion probability vs night outcome to track self-overestimation.
+- **⏱️ Focus Arena**: Crash-proof timer tied to OS wall clock + intruding thought capture (*Brain Vault*).
+- **🌱 Habit Anchor & Friction**: Anchor routine cues and set friction pauses for bad habits. Measures *Recovery Rate* instead of fragile streaks.
+- **🌙 60-Second Evening Review**: Nightly check-in + 3-Why root cause analysis when The Boulder fails.
+</details>
+
+---
+
+## 📱 Interface Showcase
 
 <div align="center">
 <table>
@@ -87,14 +91,15 @@ This repository (**`re-flow`**) is an internationalized, upgraded, and feature-e
 
 ---
 
-## 🔒 Privacy & Data Ownership
+## 🔒 Privacy & Local Data
 
-- **100% Offline**: No account creation, no internet connection required, no remote servers, zero analytics tracking.
-- **Local SQLite Storage**: All data stays securely on your device with JSON export, backup & restore options.
+- **100% Offline**: Zero remote telemetry, zero analytics tracking, no server dependency.
+- **Local SQLite Database**: All plans, focus sessions, and habit logs stay strictly on device.
+- **Backup & Restore**: JSON export/import for easy local data ownership and migrations.
 
 ---
 
-## 🛠 Build from Source
+## 🛠️ Build from Source
 
 ```bash
 git clone https://github.com/re-code-sh/re-flow.git
@@ -103,17 +108,23 @@ flutter pub get
 flutter run
 ```
 
-### 🧪 Quality Assurance Commands
+### 🧪 Code Hygiene & Verification
+
 ```bash
+# Verify formatting
 dart format --output=none --set-exit-if-changed lib test
+
+# Run static analysis
 flutter analyze
+
+# Run unit & widget test suite (60 tests)
 flutter test
 ```
 
 ---
 
-## 📄 License & Credits
+## 📜 Credits & License
 
 - Original project by [Mahdi-mortazavi/flow](https://github.com/Mahdi-mortazavi/flow).
-- Fork maintained by [re-code-sh/re-flow](https://github.com/re-code-sh/re-flow).
-- Released under the MIT License.
+- Maintained & upgraded by [re-code-sh/re-flow](https://github.com/re-code-sh/re-flow).
+- Released under the [MIT License](LICENSE).
