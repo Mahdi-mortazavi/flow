@@ -51,7 +51,41 @@ Instantly switch accent colors across buttons, progress rings, highlights, and g
 
 - **Instant LTR / RTL Switching**: Seamless toggle between English and Persian with full typography and UI alignment.
 - **Dynamic OS Launcher Title**: Launcher icon title automatically switches between **Flow** and **تک‌نقطه** depending on system/app locale.
-- **Localized Notifications**: Morning planning nudges, evening review reminders, focus end alarms, and habit cues broadcast in your active language.
+- **Localized Timer & Numbers**: Clock displays English digits (`24:59`) in English mode and Persian numerals (`۲۴:۵۹`) in Persian mode.
+- **Localized Notifications**: Morning planning nudges, evening review reminders, task alarms, and habit cues broadcast in your active language.
+</details>
+
+<details open>
+<summary><b>⏰ Exact Scheduled Task Reminders & Alarms (P0)</b></summary>
+
+- **Exact Background Alarms**: Set exact reminder times on any task with an iOS-style wheel time picker.
+- **Direct Notification Deep-Linking**: Tapping the notification or its "Focus" action launches the app directly into Focus mode pre-loaded with that task.
+- **Smart Lifecycle Management**: Notifications automatically cancel or reschedule if a task is marked done, edited, or deleted.
+- **Visual Reminder Badges**: Task cards display active reminder times directly in the Today view.
+</details>
+
+<details open>
+<summary><b>⚡ Direct Task-to-Focus Workflow & Auto-Completion</b></summary>
+
+- **One-Tap Focus Launch**: Launch a focus session directly from any task card (including The Boulder) without extra menus.
+- **In-Session Task Binding**: Active task title is prominently displayed inside the responsive focus ring with your chosen accent color.
+- **Session Completion Flow**: Seamless post-timer prompt allowing you to mark the task completed or log focus time only.
+</details>
+
+<details open>
+<summary><b>📱 Fluid Portrait Responsiveness & Overflow Protection</b></summary>
+
+- **Dynamic LayoutBuilder Ring**: Circular timer ring and typography adapt smoothly ($180\text{dp} - 284\text{dp}$) across all vertical screen heights.
+- **Zero RenderFlex Overflows**: Tested and verified across multiple aspect ratios (16:9, 19.5:9, 20:9, 21:9) and accessibility text scales ($1.3\times$).
+- **Keyboard-Proof Bottom Sheets**: All modal sheets and wizards smoothly scroll when the soft keyboard is open.
+- **Smart Multi-Line Truncation**: Ellipsis and wrapping for long task titles, habit cues, and category tags.
+</details>
+
+<details open>
+<summary><b>🧭 3-Tab Liquid Glass Navigation & Floating Brain Vault</b></summary>
+
+- **3-Tab Navigation Bar**: Floating glass bar separating **Tasks (کارها)**, **Habits (عادت‌ها)**, and **Leisure (فراغت)**.
+- **Floating Brain Vault Pill**: Ergonomically elevated pill button above the bottom bar for rapid 2-second thought dumping without visual clutter.
 </details>
 
 <details open>
@@ -65,11 +99,11 @@ Instantly switch accent colors across buttons, progress rings, highlights, and g
 </details>
 
 <details open>
-<summary><b>🧠 Core Focus Protocol & Calibrations</b></summary>
+<summary><b>🧠 Core Behavioral Psychology & Habit Protocol</b></summary>
 
 - **🪨 The Boulder**: Lock in 1 primary goal each morning. Secondary tasks queue behind it.
 - **🎯 Prediction & Optimism Gap**: Estimate morning completion probability vs night outcome to track self-overestimation.
-- **⏱️ Focus Arena**: Crash-proof timer tied to OS wall clock + intruding thought capture (*Brain Vault*).
+- **🏖️ Guilt-Free Play (Leisure)**: Dedicated leisure timer and block as the antidote to Parkinson's Law.
 - **🌱 Habit Anchor & Friction**: Anchor routine cues and set friction pauses for bad habits. Measures *Recovery Rate* instead of fragile streaks.
 - **🌙 60-Second Evening Review**: Nightly check-in + 3-Why root cause analysis when The Boulder fails.
 </details>
@@ -117,7 +151,7 @@ dart format --output=none --set-exit-if-changed lib test
 # Run static analysis
 flutter analyze
 
-# Run unit & widget test suite (60 tests)
+# Run unit & widget test suite (86 tests)
 flutter test
 ```
 
