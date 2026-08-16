@@ -3,8 +3,13 @@
 that was just published.
 
 Only the region between the RELEASE:START / RELEASE:END markers is touched, so
-the rest of the README stays hand-written. Exits 0 with no change when the
-block is already current, which lets the workflow skip an empty commit.
+the rest of the README stays hand-written. The block is deliberately narrow —
+one headline link plus a single line of alternatives — because the README is
+read on a phone as often as on a desktop, and a table would force sideways
+scrolling there.
+
+Exits 0 with no change when the block is already current, which lets the
+workflow skip an empty commit.
 """
 
 from __future__ import annotations
@@ -29,32 +34,35 @@ def build_block(repo: str, tag: str, dist: Path) -> str:
         if apk is None:
             return None
         url = f"https://github.com/{repo}/releases/download/{tag}/{apk.name}"
-        size = fa(f"{apk.stat().st_size / 1024 / 1024:.0f}")
-        return url, size
+        return url, fa(f"{apk.stat().st_size / 1024 / 1024:.0f}")
 
     universal = entry("universal")
     arm64 = entry("arm64-v8a")
-    rows = []
+    latest = f"https://github.com/{repo}/releases/latest"
+
     if universal:
-        rows.append(
-            f"| **[⬇️ یونیورسال]({universal[0]})** ⭐ | همه‌ی گوشی‌ها — اگر مطمئن نیستی همین | {universal[1]} MB |"
+        headline = (
+            f"**[نسخه‌ی همه‌ی گوشی‌ها · Universal APK — {universal[1]} MB]({universal[0]})**"
         )
+    else:
+        headline = f"**[دانلود از صفحه‌ی ریلیز · Download]({latest})**"
+
+    alternatives = []
     if arm64:
-        rows.append(
-            f"| [⬇️ arm64-v8a]({arm64[0]}) | گوشی‌های ۶۴بیتی (۲۰۱۷ به بعد) | {arm64[1]} MB |"
+        alternatives.append(
+            f'<a href="{arm64[0]}">arm64-v8a — {arm64[1]} MB</a>'
         )
-    table = "\n".join(rows)
+    alternatives.append(f'<a href="{latest}">همه‌ی فایل‌ها</a>')
+    note = "گوشی ۶۴بیتی و حجمِ کمتر؟ " + " · ".join(alternatives)
 
     return f"""{START}
 <div align="center">
 
-### آخرین نسخه: **{tag}**
+### ⬇️ دانلود · Download — {tag}
 
-| دانلود | برای چه کسی | حجم |
-|---|---|---|
-{table}
+{headline}
 
-<sub>سایر معماری‌ها و فایل‌های `.sha256` در <a href="https://github.com/{repo}/releases/latest">صفحه‌ی ریلیز</a> · اندروید ۷ به بالا</sub>
+<sub>{note}</sub>
 
 </div>
 {END}"""
