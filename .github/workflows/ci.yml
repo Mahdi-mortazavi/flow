@@ -7,6 +7,13 @@ on:
   pull_request:
   push:
     branches: [main]
+    # A README or docs commit cannot break the build, and running the full
+    # Android build for one takes ~8 minutes and leaves the branch badge
+    # flapping between cancelled runs.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/scripts/**'
   workflow_dispatch:
 
 permissions:
