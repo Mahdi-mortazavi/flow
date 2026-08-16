@@ -46,11 +46,26 @@
 
 <div align="center">
 
-<img src="docs/screenshots/today.png" alt="امروز" width="24%"> <img src="docs/screenshots/focus.png" alt="تمرکز" width="24%"> <img src="docs/screenshots/interrupt.png" alt="قطع تمرکز" width="24%"> <img src="docs/screenshots/mirror.png" alt="آینه" width="24%">
+<img src="docs/screenshots/today.png" alt="امروز" width="46%"> <img src="docs/screenshots/focus.png" alt="تمرکز" width="46%">
 
-<sub>امروز · تمرکز · قطعِ تمرکز · آینه</sub>
+<sub>امروز — تخته‌سنگ و پیش‌بینی · تمرکز — رینگِ ضدضربه</sub>
 
 </div>
+
+<details>
+<summary>دو تصویرِ دیگر</summary>
+
+<br/>
+
+<div align="center">
+
+<img src="docs/screenshots/interrupt.png" alt="قطع تمرکز" width="46%"> <img src="docs/screenshots/mirror.png" alt="آینه" width="46%">
+
+<sub>قطعِ تمرکز — ثبتِ یک‌لمسی · آینه — آمارِ بدونِ قضاوت</sub>
+
+</div>
+
+</details>
 
 ---
 
@@ -108,9 +123,9 @@
 
 ## 📥 نصب
 
-۱. فایل `.apk` را از بخشِ دانلودِ بالا بگیر
-۲. اگر پرسید، «نصب از منابعِ ناشناس» را اجازه بده
-۳. اجازه‌ی نوتیفیکیشن — و در اندروید ۱۲+ «زنگِ دقیق» — را بده
+1. فایل `.apk` را از بخشِ دانلودِ بالا بگیر
+2. اگر پرسید، «نصب از منابعِ ناشناس» را اجازه بده
+3. اجازه‌ی نوتیفیکیشن — و در اندروید ۱۲+ «زنگِ دقیق» — را بده
 
 <sub>اندروید ۷ به بالا · هر فایل یک `.sha256` دارد</sub>
 
@@ -137,7 +152,8 @@
 
 ```bash
 git clone https://github.com/Mahdi-mortazavi/flow.git
-cd flow && flutter pub get && flutter run
+cd flow
+flutter pub get && flutter run
 ```
 
 ```bash
@@ -258,7 +274,8 @@ Full JSON backup in one tap — your data is always yours.
 
 ```bash
 git clone https://github.com/Mahdi-mortazavi/flow.git
-cd flow && flutter pub get && flutter run
+cd flow
+flutter pub get && flutter run
 ```
 
 ```bash
