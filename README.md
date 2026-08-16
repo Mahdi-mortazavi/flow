@@ -2,157 +2,138 @@
 
 <img src="docs/banner.svg" alt="Flow — تک‌نقطه" width="100%">
 
-<br/>
+### هر روز، فقط یک تصمیم.
 
-[![Release](https://img.shields.io/github/v/release/Mahdi-mortazavi/flow?style=for-the-badge&label=%D9%86%D8%B3%D8%AE%D9%87&color=EFA55C&logo=github&logoColor=white)](https://github.com/Mahdi-mortazavi/flow/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/Mahdi-mortazavi/flow/ci.yml?branch=main&style=for-the-badge&label=CI&logo=githubactions&logoColor=white)](https://github.com/Mahdi-mortazavi/flow/actions/workflows/ci.yml)
-[![Platform](https://img.shields.io/badge/Android-arm64-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Mahdi-mortazavi/flow/releases/latest)
-[![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
-[![Locale](https://img.shields.io/badge/%D9%81%D8%A7%D8%B1%D8%B3%DB%8C%20%7C%20English-RTL%20%2F%20LTR-EFA55C?style=for-the-badge)](#-english)
-[![Privacy](https://img.shields.io/badge/100%25-Offline-4ade80?style=for-the-badge)](#-حریم-خصوصی)
+**تک‌نقطه** اپِ تمرکز و عادت است — کاملاً آفلاین، فارسی و انگلیسی.
 
-<h3>هر روز، فقط یک تصمیم.</h3>
+[![نسخه](https://img.shields.io/github/v/release/Mahdi-mortazavi/flow?style=flat-square&label=%D9%86%D8%B3%D8%AE%D9%87&color=EFA55C)](https://github.com/Mahdi-mortazavi/flow/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/Mahdi-mortazavi/flow/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/Mahdi-mortazavi/flow/actions/workflows/ci.yml)
+[![Android](https://img.shields.io/badge/Android-7%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#-نصب)
+[![Offline](https://img.shields.io/badge/100%25-offline-4ade80?style=flat-square)](#-حریم-خصوصی)
+[![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flutter.dev)
 
-**تک‌نقطه** یک اپِ کار نیست؛ یک **پروتکلِ روزانه‌ی مبتنی بر علومِ رفتاری** است.<br/>
-کاملاً آفلاین · دوزبانه (فارسی/انگلیسی) · ساخته‌شده با Flutter
-
-**[ ⬇️ دانلود APK ](https://github.com/Mahdi-mortazavi/flow/releases/latest)** · [پروتکل](#-پروتکل-روزانه) · [ویژگی‌ها](#-آنچه-داخل-اپ-است) · [ساخت از سورس](#-ساخت-از-سورس)
+**فارسی** · **[English ↓](#english)**
 
 </div>
 
+<!-- RELEASE:START -->
+<div align="center">
+
+### ⬇️ دانلود · Download — v0.6.0
+
+**[نسخه‌ی همه‌ی گوشی‌ها · Universal APK — ۵۵ MB](https://github.com/Mahdi-mortazavi/flow/releases/download/v0.6.0/taknoghte-v0.6.0-universal.apk)**
+
+<sub>گوشی ۶۴بیتی و حجمِ کمتر؟ <a href="https://github.com/Mahdi-mortazavi/flow/releases/download/v0.6.0/taknoghte-v0.6.0-arm64-v8a.apk">arm64-v8a — ۲۲ MB</a> · <a href="https://github.com/Mahdi-mortazavi/flow/releases/latest">همه‌ی فایل‌ها</a></sub>
+
+</div>
+<!-- RELEASE:END -->
+
 ---
 
-## ✦ چرا ساختمش
+## 🎯 چرا؟
 
-هر صبح با بیست کارِ «مهم» شروع می‌کردم و هر شب با احساسِ گناه تمام می‌شد. ابزارهای بیشتری نصب کردم، لیست‌های تمیزتری ساختم، هیچ‌کدام جواب نداد — چون **مشکل هیچ‌وقت لیست نبود، تصمیم بود.**
+صبح با بیست کارِ «مهم» شروع می‌کنی. شب با احساسِ گناه تمام می‌شود.
 
-تک‌نقطه از یک سؤال ساخته شد:
+مشکل، لیست نیست — **تصمیم** است.
 
-> ### «اگر امروز فقط یک کار انجام شود، کدام است؟»
+> ### اگر امروز فقط یک کار انجام شود، کدام است؟
 
-آن یک کار، **تخته‌سنگِ** توست. بقیه پشتش صف می‌کشند. همین.
+آن یک کار، **تخته‌سنگِ** توست. بقیه پشتش صف می‌کشند.
 
 ---
 
-## ◉ پروتکل روزانه
+## 📱 نگاه کن
 
 <div align="center">
 
-| ۱ · صبح | ۲ · روز | ۳ · شب | ۴ · هفته |
-|:---:|:---:|:---:|:---:|
-| **تخته‌سنگ + پیش‌بینی** | **تمرکزِ ضدضربه** | **مرورِ ۶۰ ثانیه‌ای** | **آینه** |
-| کمتر از ۹۰ ثانیه | + مخزنِ ذهن | + زنجیره‌ی «چرا» | + بازبینیِ مبنا-صفر |
+<img src="docs/screenshots/today.png" alt="امروز" width="24%"> <img src="docs/screenshots/focus.png" alt="تمرکز" width="24%"> <img src="docs/screenshots/interrupt.png" alt="قطع تمرکز" width="24%"> <img src="docs/screenshots/mirror.png" alt="آینه" width="24%">
 
-<sub>و اگر روز چیده یا بسته نشد، یادآورِ هوشمندِ سیستم‌عامل حلقه را می‌بندد.</sub>
+<sub>امروز · تمرکز · قطعِ تمرکز · آینه</sub>
 
 </div>
 
-حلقه بسته است: خروجیِ هر مرحله، ورودیِ مرحله‌ی بعد. کاربر هر روز **دستِ‌کم یک بار برنده می‌شود.**
+---
+
+## 🔄 یک روز با تک‌نقطه
+
+**۱ · صبح** — یک تخته‌سنگ انتخاب کن و حدس بزن چند درصد احتمال دارد بیفتد.
+<sub>کمتر از ۹۰ ثانیه</sub>
+
+**۲ · روز** — تایمرِ تمرکز را بزن. فکرِ مزاحم آمد؟ در **مخزنِ ذهن** رهایش کن و از تمرکز بیرون نیا.
+
+**۳ · شب** — یک مرورِ ۶۰ ثانیه‌ای. اگر تخته‌سنگ نیفتاد، «چرا» را تا ریشه دنبال کن — بدونِ سرزنش.
+
+**۴ · هفته** — **آینه**: نرخِ برد، شکافِ خوش‌بینی، ساعتِ طلایی‌ات.
+
+هر روز دستِ‌کم **یک بار برنده می‌شوی**. همین حلقه، خودش تو را برمی‌گرداند.
 
 ---
 
-## ✧ آنچه داخل اپ است
+## ✨ داخل اپ
 
-| | | |
-|---|---|---|
-| 🪨 **تخته‌سنگ** | یک کارِ ستاره‌دار در روز | ظرفیت با روزهای فعال رشد می‌کند (۳ → ۵) |
-| 🎯 **پیش‌بینی** | صبح حدس می‌زنی، شب چک می‌شود | شکافِ خوش‌بینی‌ات را نشانت می‌دهد |
-| ⏱ **تمرکز** | تایمر بر پایه‌ی ساعتِ سیستم | با بستنِ اپ یا ری‌استارت نمی‌پرد |
-| ⏰ **یادآورِ دقیق** | آلارمِ کار با انتخابگرِ چرخشی | از نوتیفیکیشن، مستقیم به تمرکز |
-| 🧠 **مخزنِ ذهن** | فکرِ مزاحم را دو ثانیه‌ای رها کن | بدونِ خروج از جلسه‌ی تمرکز |
-| 🌱 **عادت‌ها** | لنگر: «بعد از [X]، [رفتار کوچک]» | بدونِ streakِ تنبیهی — نرخِ **بازگشت** |
-| 🚫 **ترکِ عادتِ بد** | مکثِ اجباریِ ۱۰ ثانیه‌ای | یک دکمه: «به‌جایش: …» |
-| 🎮 **وقتِ آزاد** | تفریحِ زمان‌دار و بی‌عذاب | پاداشِ رسمیِ بعد از تخته‌سنگ |
-| 🪞 **آینه** | نرخِ برد، کارِ عمیق، ساعتِ طلایی | آمار، نه قضاوت |
+- 🪨 **تخته‌سنگ** — یک کارِ ستاره‌دار در روز؛ ظرفیت با روزهای فعال رشد می‌کند
+- ⏱ **تمرکزِ ضدضربه** — تایمر روی ساعتِ سیستم؛ با بستنِ اپ یا ری‌استارت نمی‌پرد
+- ⏰ **یادآورِ دقیق** — آلارمِ کار، و از نوتیفیکیشن مستقیم به تمرکز
+- 🧠 **مخزنِ ذهن** — فکرِ مزاحم را دو ثانیه‌ای رها کن
+- 🌱 **عادت‌ها** — «بعد از [X]، [رفتار کوچک]»؛ بدونِ streakِ تنبیهی
+- 🚫 **ترکِ عادتِ بد** — ۱۰ ثانیه مکث، بعد یک دکمه: «به‌جایش: …»
+- 🎮 **وقتِ آزاد** — تفریحِ زمان‌دار و بی‌عذاب، بعد از تخته‌سنگ
+- 🪞 **آینه** — آمار، نه قضاوت
+- 🌐 **دوزبانه** — فارسی و انگلیسی، با تعویضِ آنی
 
 <details>
-<summary><b>علمِ پشتِ هر تصمیم</b> — این اپ سلیقه نیست، پیاده‌سازیِ پژوهش است</summary>
+<summary><b>علمِ پشتِ هر تصمیم</b></summary>
 
 <br/>
 
-| تکنیک | منبع | کجای اپ |
-|---|---|---|
-| Implementation Intentions | Gollwitzer | فرمولِ لنگرِ عادت + یادآور روی محرک |
-| Tiny Habits / قانونِ ۲ دقیقه | BJ Fogg | کوچک‌سازیِ خودکار بعد از شکست |
-| Self-Compassion به‌جای streak | Kristin Neff | نرخِ بازگشت، پیام‌های بازگشت |
-| Metacognitive Calibration | — | پیش‌بینیِ صبح در برابرِ نتیجه‌ی شب |
-| Five Whys | Toyota / Lean | زنجیره‌ی «چرا» در مرورِ شب |
-| Zeigarnik Effect | — | مخزنِ ذهن، حتی وسطِ تمرکز |
-| Friction Engineering | — | مکثِ ۱۰ ثانیه‌ای + جایگزینِ یک‌لمسی |
-| Temptation Bundling | Katy Milkman | وقتِ آزادِ رسمی |
-| Zero-Based Thinking | — | بازبینیِ هفتگی |
+- **Implementation Intentions** (Gollwitzer) → فرمولِ لنگرِ عادت
+- **Tiny Habits** (BJ Fogg) → کوچک‌سازیِ خودکار بعد از شکست
+- **Self-Compassion** (Neff) → نرخِ بازگشت به‌جای streak
+- **Five Whys** (Lean) → زنجیره‌ی «چرا» در مرورِ شب
+- **Zeigarnik Effect** → مخزنِ ذهن
+- **Temptation Bundling** (Milkman) → وقتِ آزادِ رسمی
+- **Zero-Based Thinking** → بازبینیِ هفتگی
 
 </details>
 
 ---
 
-## ⌘ پیش‌نمایش
-
-<div align="center">
-<table>
-<tr>
-<td align="center" width="25%"><img src="docs/screenshots/today.png" width="190"/><br/><sub><b>امروز</b><br/>تخته‌سنگ + پیش‌بینی</sub></td>
-<td align="center" width="25%"><img src="docs/screenshots/focus.png" width="190"/><br/><sub><b>تمرکز</b><br/>رینگِ ضدضربه</sub></td>
-<td align="center" width="25%"><img src="docs/screenshots/interrupt.png" width="190"/><br/><sub><b>قطعِ تمرکز</b><br/>ثبتِ یک‌لمسی</sub></td>
-<td align="center" width="25%"><img src="docs/screenshots/mirror.png" width="190"/><br/><sub><b>آینه</b><br/>آمارِ بدونِ قضاوت</sub></td>
-</tr>
-</table>
-<sub>دستگاهِ واقعی · اندروید · RTL فارسی · فونتِ وزیرمتن</sub>
-</div>
-
----
-
-## 🎨 دیزاین — Liquid Glass
-
-بومِ تقریباً سیاه (`#060608`)، سطوحِ شیشه‌ایِ مونوکروم، و **دقیقاً یک رنگِ گرم** که فقط به مهم‌ترین چیزِ روز تعلق دارد. شش پالتِ لهجه، با تعویضِ آنی و بدونِ ری‌استارت:
-
-<div align="center">
-
-![](https://img.shields.io/badge/Ember-EFA55C?style=flat-square&color=EFA55C)
-![](https://img.shields.io/badge/AlpinePine-4EAF7B?style=flat-square&color=4EAF7B)
-![](https://img.shields.io/badge/AbyssalIndigo-5486EB?style=flat-square&color=5486EB)
-![](https://img.shields.io/badge/SmokedMulberry-D65B6E?style=flat-square&color=D65B6E)
-![](https://img.shields.io/badge/MistSlate-A2ADC0?style=flat-square&color=A2ADC0)
-![](https://img.shields.io/badge/NightIris-9F7AEA?style=flat-square&color=9F7AEA)
-
-</div>
-
-> «یک رنگ برای یک تصمیم» — کلِ فلسفه‌ی محصول، در سیستمِ رنگش.
-
----
-
 ## 🔒 حریم خصوصی
 
-**همه‌چیز فقط روی گوشیِ خودت.** پایگاه‌داده‌ی محلیِ SQLite — بدونِ اکانت، بدونِ سرور، بدونِ آنالیتیکس، بدونِ اینترنت. پشتیبان‌گیری و بازیابیِ کاملِ JSON با یک ضربه؛ داده‌ات همیشه قابلِ خروج است.
+همه‌چیز فقط روی گوشیِ خودت می‌ماند. بدونِ اکانت، بدونِ سرور، بدونِ اینترنت.
 
-> در دنیایی که هر اپِ بهره‌وری داده‌ات را می‌فروشد، آفلاین‌بودن یک ویژگی نیست — یک **موضع** است.
+پشتیبان‌گیریِ کاملِ JSON با یک ضربه — داده‌ات همیشه مالِ توست.
 
 ---
 
 ## 📥 نصب
 
-<!-- RELEASE:START -->
+۱. فایل `.apk` را از بخشِ دانلودِ بالا بگیر
+۲. اگر پرسید، «نصب از منابعِ ناشناس» را اجازه بده
+۳. اجازه‌ی نوتیفیکیشن — و در اندروید ۱۲+ «زنگِ دقیق» — را بده
+
+<sub>اندروید ۷ به بالا · هر فایل یک `.sha256` دارد</sub>
+
+---
+
+## 🎨 دیزاین
+
+بومِ تقریباً سیاه، سطوحِ شیشه‌ای، و **دقیقاً یک رنگِ گرم** که فقط به مهم‌ترین چیزِ روز تعلق دارد.
+
 <div align="center">
 
-### آخرین نسخه: **v0.6.0**
+![](https://img.shields.io/badge/-Ember-EFA55C?style=flat-square) ![](https://img.shields.io/badge/-Pine-4EAF7B?style=flat-square) ![](https://img.shields.io/badge/-Indigo-5486EB?style=flat-square) ![](https://img.shields.io/badge/-Mulberry-D65B6E?style=flat-square) ![](https://img.shields.io/badge/-Slate-A2ADC0?style=flat-square) ![](https://img.shields.io/badge/-Iris-9F7AEA?style=flat-square)
 
-| دانلود | برای چه کسی | حجم |
-|---|---|---|
-| **[⬇️ یونیورسال](https://github.com/Mahdi-mortazavi/flow/releases/download/v0.6.0/taknoghte-v0.6.0-universal.apk)** ⭐ | همه‌ی گوشی‌ها — اگر مطمئن نیستی همین | ۵۵ MB |
-| [⬇️ arm64-v8a](https://github.com/Mahdi-mortazavi/flow/releases/download/v0.6.0/taknoghte-v0.6.0-arm64-v8a.apk) | گوشی‌های ۶۴بیتی (۲۰۱۷ به بعد) | ۲۲ MB |
-
-<sub>سایر معماری‌ها و فایل‌های `.sha256` در <a href="https://github.com/Mahdi-mortazavi/flow/releases/latest">صفحه‌ی ریلیز</a> · اندروید ۷ به بالا</sub>
+<sub>شش پالت، با تعویضِ آنی</sub>
 
 </div>
-<!-- RELEASE:END -->
 
-1. فایل `.apk` را باز کن (اگر مطمئن نیستی، **یونیورسال** را بگیر)
-2. «نصب از منابعِ ناشناس» را اجازه بده
-3. اجازه‌ی نوتیفیکیشن — و در اندروید ۱۲+ «زنگِ دقیق» — را تأیید کن
+---
 
-<sub>پیش‌نیاز: اندروید ۷ (API 24) به بالا · هر فایل یک `.sha256` کنارش دارد</sub>
+<details>
+<summary><b>🛠 برای توسعه‌دهنده‌ها</b></summary>
 
-## 🛠 ساخت از سورس
+<br/>
 
 ```bash
 git clone https://github.com/Mahdi-mortazavi/flow.git
@@ -160,18 +141,13 @@ cd flow && flutter pub get && flutter run
 ```
 
 ```bash
-flutter analyze     # 0 warnings
-flutter test        # 86 unit + widget tests
+flutter analyze   # 0 warnings
+flutter test      # 86 tests
 ```
 
-<sub>Flutter 3.35 · Riverpod 3 · SQLite · flutter_local_notifications · تقویمِ جلالی · وزیرمتن</sub>
+**پشته:** Flutter 3.35 · Riverpod 3 · SQLite · تقویمِ جلالی · وزیرمتن
 
-<details>
-<summary><b>انتشار چطور کار می‌کند</b></summary>
-
-<br/>
-
-یک عدد همه‌چیز را می‌چرخاند: `version:` در `pubspec.yaml`. با تغییرِ آن روی `main`،‏ `release.yml` خودش کامیت را تگ می‌زند، هر چهار APK را می‌سازد و با کلیدِ دائمی امضا می‌کند، تک‌تک را بازرسی می‌کند (سلامتِ آرشیو، مانیفست، `minSdk`، حضورِ همه‌ی معماری‌ها در نسخه‌ی یونیورسال، امضای v2+v3، ردِ قطعیِ کلیدِ دیباگ)، متنِ ریلیز را از تاریخچه‌ی کامیت‌ها می‌نویسد، منتشر می‌کند و همین بخشِ دانلودِ ردمی را به‌روز می‌کند.
+**انتشار:** فقط `version:` را در `pubspec.yaml` عوض کن. بقیه‌اش خودکار است — تگ، بیلدِ چهار APK، امضا، بازرسی، متنِ ریلیز از تاریخچه‌ی کامیت‌ها، و آپدیتِ همین بخشِ دانلود.
 
 </details>
 
@@ -179,31 +155,131 @@ flutter test        # 86 unit + widget tests
 
 ## 🤝 تشکر
 
-این نسخه با کارِ درخشانِ **[@re-code-sh](https://github.com/re-code-sh)** به اینجا رسید — دوزبانه‌سازیِ کامل (فارسی/انگلیسی با RTL و LTR)، یادآورهای دقیقِ کار، مسیرِ مستقیمِ «کار ← تمرکز»، واکنش‌گراییِ سیّالِ رابط، پالت‌های رنگ، ناوبریِ سه‌تبی و ۸۶ تستِ خودکار ([PR #12](https://github.com/Mahdi-mortazavi/flow/pull/12)).
+از **[@re-code-sh](https://github.com/re-code-sh)** برای دوزبانه‌سازیِ کامل، یادآورهای دقیق، پالت‌های رنگ و ۸۶ تستِ خودکار ([#12](https://github.com/Mahdi-mortazavi/flow/pull/12)). 🙏
 
-صمیمانه ممنونم — این پروژه با مشارکتِ آدم‌هایی مثل تو بهتر می‌شود. 🙏
+مشارکت جدید؟ Issue باز کن یا PR بفرست.
 
-<sub>مشارکت جدید؟ Issue باز کن یا PR بفرست — خوش‌آمدی.</sub>
-
----
-
-## 🌍 English
-
-**Flow (تک‌نقطه, "single point")** is an offline-first **focus & habit OS** for Android — built on behavioral science, not willpower.
-
-Todo apps hand you a list. Your problem was never the list — it's **the decision**. Flow replaces the infinite backlog with one daily protocol: a single starred **Boulder** task with a morning success **prediction** checked honestly at night, a crash-proof wall-clock **focus timer** with exact task alarms and one-tap task→focus deep links, anchor-based **habits** measured by *recovery rate* instead of punishing streaks, a 10-second **friction pause** for breaking bad ones, guilt-free scheduled **leisure**, and a judgment-free stats **mirror**.
-
-Fully bilingual (Persian/English, RTL & LTR), six liquid-glass accent palettes, 86 automated tests, **100% on-device — no account, no server, no tracking.**
-
-**[ ⬇️ Download the latest release ](https://github.com/Mahdi-mortazavi/flow/releases/latest)**
+<br/>
 
 ---
 
 <div align="center">
 
-<sub>ساخته‌شده با ☕ و کمی وسواسِ سالم توسط</sub><br/>
-**[مهدی مرتضوی](https://github.com/Mahdi-mortazavi)** · Mahdi Mortazavi
+# English
 
-<sub>اگر این پروژه به‌کارت آمد، یک ⭐ بزرگ‌ترین دلگرمی است.</sub>
+### One decision a day.
+
+**Flow** is an offline focus & habit app — Persian and English.
+
+**[⬇️ Download](https://github.com/Mahdi-mortazavi/flow/releases/latest)** · **[فارسی ↑](#-چرا)**
+
+</div>
+
+---
+
+## 🎯 Why
+
+You start the morning with twenty "important" tasks. You end the night with guilt.
+
+The problem was never the list — it's **the decision**.
+
+> ### If only one thing gets done today, which one?
+
+That one thing is your **Boulder**. Everything else queues behind it.
+
+---
+
+## 🔄 A day with Flow
+
+**1 · Morning** — Pick your Boulder and predict the odds it falls.
+<sub>Under 90 seconds</sub>
+
+**2 · Day** — Start the focus timer. Intrusive thought? Drop it in the **Brain Vault** without leaving focus.
+
+**3 · Night** — A 60-second review. If the Boulder didn't fall, chase the *why* to its root — no blame.
+
+**4 · Week** — The **Mirror**: win rate, optimism gap, your golden hour.
+
+You win **at least once every day**, and the loop pulls you back on its own.
+
+---
+
+## ✨ Inside
+
+- 🪨 **The Boulder** — one starred task a day; capacity grows with active days
+- ⏱ **Crash-proof focus** — wall-clock timer; survives app close and reboot
+- ⏰ **Exact reminders** — task alarms that deep-link straight into focus
+- 🧠 **Brain Vault** — park a distracting thought in two seconds
+- 🌱 **Habits** — "after [X], [tiny behavior]"; recovery rate, not punishing streaks
+- 🚫 **Breaking bad habits** — a 10-second pause, then one button: "instead: …"
+- 🎮 **Guilt-free leisure** — scheduled fun, unlocked after the Boulder
+- 🪞 **The Mirror** — statistics, not judgment
+- 🌐 **Bilingual** — Persian and English, switched instantly (RTL ⇄ LTR)
+
+<details>
+<summary><b>The science behind each decision</b></summary>
+
+<br/>
+
+- **Implementation Intentions** (Gollwitzer) → the habit anchor formula
+- **Tiny Habits** (BJ Fogg) → automatic shrinking after a miss
+- **Self-Compassion** (Neff) → recovery rate instead of streaks
+- **Five Whys** (Lean) → the why-chain in the evening review
+- **Zeigarnik Effect** → the Brain Vault
+- **Temptation Bundling** (Milkman) → scheduled leisure
+- **Zero-Based Thinking** → the weekly review
+
+</details>
+
+---
+
+## 🔒 Privacy
+
+Everything stays on your phone. No account, no server, no internet.
+
+Full JSON backup in one tap — your data is always yours.
+
+---
+
+## 📥 Install
+
+1. Grab the `.apk` from the download section above
+2. Allow "install from unknown sources" if prompted
+3. Grant notification — and on Android 12+, exact alarm — permission
+
+<sub>Android 7+ · every file ships a `.sha256`</sub>
+
+---
+
+<details>
+<summary><b>🛠 For developers</b></summary>
+
+<br/>
+
+```bash
+git clone https://github.com/Mahdi-mortazavi/flow.git
+cd flow && flutter pub get && flutter run
+```
+
+```bash
+flutter analyze   # 0 warnings
+flutter test      # 86 tests
+```
+
+**Stack:** Flutter 3.35 · Riverpod 3 · SQLite · Jalali calendar · Vazirmatn
+
+**Releasing:** bump `version:` in `pubspec.yaml` — the pipeline tags the commit, builds four signed APKs, verifies each one, writes the notes from the commit history, publishes, and updates the download block above.
+
+</details>
+
+---
+
+<div align="center">
+
+**100% offline · no account · no tracking**
+
+<sub>Built by <a href="https://github.com/Mahdi-mortazavi">Mahdi Mortazavi</a> · مهدی مرتضوی</sub>
+
+<sub>If this is useful to you, a ⭐ is the biggest encouragement.</sub>
 
 </div>
