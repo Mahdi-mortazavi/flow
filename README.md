@@ -134,11 +134,14 @@
 <!-- RELEASE:START -->
 <div align="center">
 
-### آخرین نسخه
+### آخرین نسخه: **v0.6.0**
 
-**[ ⬇️ دانلود از صفحه‌ی ریلیز ](https://github.com/Mahdi-mortazavi/flow/releases/latest)**
+| دانلود | برای چه کسی | حجم |
+|---|---|---|
+| **[⬇️ یونیورسال](https://github.com/Mahdi-mortazavi/flow/releases/download/v0.6.0/taknoghte-v0.6.0-universal.apk)** ⭐ | همه‌ی گوشی‌ها — اگر مطمئن نیستی همین | ۵۵ MB |
+| [⬇️ arm64-v8a](https://github.com/Mahdi-mortazavi/flow/releases/download/v0.6.0/taknoghte-v0.6.0-arm64-v8a.apk) | گوشی‌های ۶۴بیتی (۲۰۱۷ به بعد) | ۲۲ MB |
 
-<sub>این بخش در هر انتشار خودکار به‌روز می‌شود.</sub>
+<sub>سایر معماری‌ها و فایل‌های `.sha256` در <a href="https://github.com/Mahdi-mortazavi/flow/releases/latest">صفحه‌ی ریلیز</a> · اندروید ۷ به بالا</sub>
 
 </div>
 <!-- RELEASE:END -->
