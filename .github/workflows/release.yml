@@ -218,7 +218,7 @@ jobs:
             # 4. The signature must verify with the production certificate.
             "$BT/apksigner" verify --verbose --print-certs "$apk" > sig.txt || {
               echo "SIGNATURE VERIFICATION FAILED: $apk"; fail=1; }
-            grep -E "Verified using v(1|2|3) scheme|Signer #1 certificate DN" sig.txt || true
+            grep -E "Verified using v(1|2|3) scheme|certificate DN" sig.txt || true
 
             if grep -q "CN=Android Debug" sig.txt; then
               # The CI debug keystore is regenerated on every run, so a
@@ -232,7 +232,10 @@ jobs:
                 grep -q "Verified using $scheme.*: true" sig.txt \
                   || { echo "MISSING SIGNATURE SCHEME: $scheme in $apk"; fail=1; }
               done
-              fp="$(sed -nE 's/^Signer #1 certificate SHA-256 digest: (.*)$/\1/p' sig.txt | head -1)"
+              # Matches both apksigner spellings: "Signer #1 certificate SHA-256
+              # digest:" and the per-scheme "Signer (APK Signature Scheme vN) #1
+              # certificate SHA-256 digest:".
+              fp="$(sed -nE 's/.*certificate SHA-256 digest:[[:space:]]*([0-9a-fA-F:]+).*/\1/p' sig.txt | head -1)"
               if [ -n "$fp" ]; then
                 if [ -z "$cert" ]; then
                   cert="$fp"
@@ -249,8 +252,11 @@ jobs:
 
           rm -f sig.txt
           [ "$fail" -eq 0 ] || { echo "::error::APK verification failed."; exit 1; }
+          if [ -z "$cert" ]; then
+            echo "::warning::Could not read the signing certificate fingerprint; release notes will omit it."
+          fi
           echo "cert_sha256=$cert" >> "$GITHUB_OUTPUT"
-          echo "All APKs verified. Signing certificate SHA-256: $cert"
+          echo "All APKs verified. Signing certificate SHA-256: ${cert:-unknown}"
 
       - name: Generate SHA256 checksums
         run: |
