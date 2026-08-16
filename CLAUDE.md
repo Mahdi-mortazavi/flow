@@ -45,6 +45,12 @@ boulder (تخته‌سنگ) and primary CTAs. Font: Vazirmatn (bundled, weights 
   releases now ship a universal APK alongside the per-ABI splits, are signed
   with a real release key, and every artifact is verified in CI before it can
   be published. README has a real-device screenshot gallery.
+- Internationalisation sprint (done, v0.6.0, contributed by @re-code-sh in
+  #12): full en/fa localisation with live RTL⇄LTR switching and localised
+  digits/notifications, exact per-task reminder alarms with deep links into
+  focus, one-tap task→focus, six switchable accent palettes, 3-tab bottom
+  navigation with a floating brain-vault pill, active-days task capacity
+  (3→5 slots), and portrait overflow fixes. 86 automated tests.
 - Phase 4: home widget, live activity, identity/values layer, DND.
 
 ## Known quirks
@@ -68,20 +74,35 @@ boulder (تخته‌سنگ) and primary CTAs. Font: Vazirmatn (bundled, weights 
   isolates must not share one sqlite file.
 
 ## Releases
-- Pushing a `v*` tag publishes a GitHub Release with FOUR APKs + a `.sha256`
-  each: `universal` (all ABIs — the one to hand users) plus `arm64-v8a`,
-  `armeabi-v7a`, `x86_64`. Release body comes from RELEASE_NOTES.md — update
-  it BEFORE tagging with clean, concise bilingual bullet points (FA/EN).
-  Version lives in pubspec (`version: x.y.z+n`).
+- **One knob: `version:` in pubspec.yaml.** Bumping it on `main` is the whole
+  release procedure. `.github/workflows/release.yml` then tags the commit,
+  builds and signs FOUR APKs + a `.sha256` each — `universal` (all ABIs, the
+  one to hand users) plus `arm64-v8a`, `armeabi-v7a`, `x86_64` — verifies each
+  one, publishes the release, and rewrites the README download block. Do NOT
+  create tags by hand: an existing tag turns the run into a no-op. The same
+  workflow can be dispatched manually with an explicit version.
+- The release body is GENERATED, not written: `.github/scripts/release_notes.py`
+  turns the commits since the previous tag into a categorised Persian
+  changelog (conventional-commit prefixes pick the section), plus a download
+  table with real file sizes, install steps, checksum and certificate
+  verification, and the contributor list. Write commit subjects accordingly:
+  `feat:` and `fix:` surface at the top, everything else folds into a
+  `<details>`. RELEASE_NOTES.md is no longer read by anything.
+- The README download block lives between `<!-- RELEASE:START -->` and
+  `<!-- RELEASE:END -->` and is rewritten by `.github/scripts/update_readme.py`
+  after every release. Edit around those markers, never inside them.
+- `ci.yml` (format, analyze, test, Android smoke build) runs on every push and
+  pull request and never publishes anything.
 - Release signing (v0.5.2+) uses a real keystore, NOT the debug key. The
   keystore lives OUTSIDE the repo at `E:\flow-signing\` (with backups +
   KEYSTORE-README.txt); CI reads it from the `ANDROID_KEYSTORE_BASE64` /
   `_PASSWORD` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD` secrets. Losing
   that keystore means no user can ever update in place again.
-- The workflow verifies every APK before publishing and aborts on failure:
-  zip integrity, `aapt dump badging` (minSdk 24), universal really carries all
-  three ABIs, `apksigner verify` with v2+v3, and it REFUSES to publish
-  anything signed with the Android debug certificate.
+- Verification aborts the release on any failure: zip integrity, `aapt dump
+  badging` (minSdk 24 and the versionName matching the tag), the universal APK
+  really carrying all three ABIs, `apksigner verify` with v2+v3, one shared
+  certificate across every artifact, and a hard refusal to publish anything
+  signed with the Android debug certificate.
 - SDK levels are pinned explicitly in `app/build.gradle.kts` (minSdk 24 /
   target 36 / compile 36), not inherited from `flutter.*`, so an SDK bump
   can't silently change which devices can install.
