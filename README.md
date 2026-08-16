@@ -5,7 +5,7 @@
 <br/>
 
 [![Release](https://img.shields.io/github/v/release/Mahdi-mortazavi/flow?style=for-the-badge&label=%D9%86%D8%B3%D8%AE%D9%87&color=EFA55C&logo=github&logoColor=white)](https://github.com/Mahdi-mortazavi/flow/releases/latest)
-[![Build](https://img.shields.io/github/actions/workflow/status/Mahdi-mortazavi/flow/build.yml?branch=main&style=for-the-badge&label=CI&logo=githubactions&logoColor=white)](https://github.com/Mahdi-mortazavi/flow/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/Mahdi-mortazavi/flow/ci.yml?branch=main&style=for-the-badge&label=CI&logo=githubactions&logoColor=white)](https://github.com/Mahdi-mortazavi/flow/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Android-arm64-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Mahdi-mortazavi/flow/releases/latest)
 [![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Locale](https://img.shields.io/badge/%D9%81%D8%A7%D8%B1%D8%B3%DB%8C%20%7C%20English-RTL%20%2F%20LTR-EFA55C?style=for-the-badge)](#-english)
@@ -131,11 +131,23 @@
 
 ## 📥 نصب
 
-1. آخرین `.apk` را از [Releases](https://github.com/Mahdi-mortazavi/flow/releases/latest) بگیر
-2. «نصب از منابعِ ناشناس» را اجازه بده
-3. اجازه‌ی نوتیفیکیشن را تأیید کن (زنگِ تمرکز و یادآورها)
+<!-- RELEASE:START -->
+<div align="center">
 
-<sub>پیش‌نیاز: اندروید ۵+ · arm64-v8a</sub>
+### آخرین نسخه
+
+**[ ⬇️ دانلود از صفحه‌ی ریلیز ](https://github.com/Mahdi-mortazavi/flow/releases/latest)**
+
+<sub>این بخش در هر انتشار خودکار به‌روز می‌شود.</sub>
+
+</div>
+<!-- RELEASE:END -->
+
+1. فایل `.apk` را باز کن (اگر مطمئن نیستی، **یونیورسال** را بگیر)
+2. «نصب از منابعِ ناشناس» را اجازه بده
+3. اجازه‌ی نوتیفیکیشن — و در اندروید ۱۲+ «زنگِ دقیق» — را تأیید کن
+
+<sub>پیش‌نیاز: اندروید ۷ (API 24) به بالا · هر فایل یک `.sha256` کنارش دارد</sub>
 
 ## 🛠 ساخت از سورس
 
@@ -150,6 +162,15 @@ flutter test        # 86 unit + widget tests
 ```
 
 <sub>Flutter 3.35 · Riverpod 3 · SQLite · flutter_local_notifications · تقویمِ جلالی · وزیرمتن</sub>
+
+<details>
+<summary><b>انتشار چطور کار می‌کند</b></summary>
+
+<br/>
+
+یک عدد همه‌چیز را می‌چرخاند: `version:` در `pubspec.yaml`. با تغییرِ آن روی `main`،‏ `release.yml` خودش کامیت را تگ می‌زند، هر چهار APK را می‌سازد و با کلیدِ دائمی امضا می‌کند، تک‌تک را بازرسی می‌کند (سلامتِ آرشیو، مانیفست، `minSdk`، حضورِ همه‌ی معماری‌ها در نسخه‌ی یونیورسال، امضای v2+v3، ردِ قطعیِ کلیدِ دیباگ)، متنِ ریلیز را از تاریخچه‌ی کامیت‌ها می‌نویسد، منتشر می‌کند و همین بخشِ دانلودِ ردمی را به‌روز می‌کند.
+
+</details>
 
 ---
 
