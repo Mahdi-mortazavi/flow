@@ -6,7 +6,7 @@
 
 **تک‌نقطه** اپِ تمرکز و عادت است — کاملاً آفلاین، فارسی و انگلیسی.
 
-[![نسخه](https://img.shields.io/github/v/release/Mahdi-mortazavi/flow?style=flat-square&label=%D9%86%D8%B3%D8%AE%D9%87&color=EFA55C)](https://github.com/Mahdi-mortazavi/flow/releases/latest)
+[![Release](https://img.shields.io/github/v/release/Mahdi-mortazavi/flow?style=flat-square&label=release&color=EFA55C)](https://github.com/Mahdi-mortazavi/flow/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/Mahdi-mortazavi/flow/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/Mahdi-mortazavi/flow/actions/workflows/ci.yml)
 [![Android](https://img.shields.io/badge/Android-7%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#-نصب)
 [![Offline](https://img.shields.io/badge/100%25-offline-4ade80?style=flat-square)](#-حریم-خصوصی)
