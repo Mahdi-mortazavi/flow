@@ -21,9 +21,9 @@
 
 ### ⬇️ دانلود · Download — v0.6.0
 
-**[نسخه‌ی همه‌ی گوشی‌ها · Universal APK — ۵۵ MB](https://github.com/Mahdi-mortazavi/flow/releases/download/v0.6.0/taknoghte-v0.6.0-universal.apk)**
+**[نسخه‌ی همه‌ی گوشی‌ها · Universal APK — ۵۵ MB](https://github.com/re-code-sh/re-flow/releases/download/v0.6.0/taknoghte-v0.6.0-universal.apk)**
 
-<sub>گوشی ۶۴بیتی و حجمِ کمتر؟ <a href="https://github.com/Mahdi-mortazavi/flow/releases/download/v0.6.0/taknoghte-v0.6.0-arm64-v8a.apk">arm64-v8a — ۲۲ MB</a> · <a href="https://github.com/Mahdi-mortazavi/flow/releases/latest">همه‌ی فایل‌ها</a></sub>
+<sub>گوشی ۶۴بیتی و حجمِ کمتر؟ <a href="https://github.com/re-code-sh/re-flow/releases/download/v0.6.0/taknoghte-v0.6.0-arm64-v8a.apk">arm64-v8a — ۲۲ MB</a> · <a href="https://github.com/re-code-sh/re-flow/releases/latest">همه‌ی فایل‌ها</a></sub>
 
 </div>
 <!-- RELEASE:END -->
