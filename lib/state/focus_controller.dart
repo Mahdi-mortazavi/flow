@@ -51,6 +51,7 @@ class FocusController extends Notifier<FocusView?> {
       await _repo.endFocusSession(
         sessionId: focus.sessionId,
         completed: true,
+        durationSeconds: focus.totalSec,
         endedAtMs: focus.endAtMs,
       );
     } else {
@@ -149,6 +150,7 @@ class FocusController extends Notifier<FocusView?> {
   /// [completed] marks the session (not the task) as finished-on-purpose.
   Future<void> end({
     required bool completed,
+    int? durationSeconds,
     String? interruptNote,
     String? interruptTag,
   }) async {
@@ -156,9 +158,13 @@ class FocusController extends Notifier<FocusView?> {
     _stopTicker();
     await Notifications.instance.cancelFocusEnd();
     if (f != null) {
+      final elapsedSec =
+          durationSeconds ??
+          (f.totalSec - f.remainingSec()).clamp(0, f.totalSec);
       await _repo.endFocusSession(
         sessionId: f.sessionId,
         completed: completed,
+        durationSeconds: elapsedSec,
         interruptNote: interruptNote,
         interruptTag: interruptTag,
       );

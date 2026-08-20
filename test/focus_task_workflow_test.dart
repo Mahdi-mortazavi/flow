@@ -134,7 +134,9 @@ void main() {
 
         final focus = container.read(focusProvider)!.focus;
 
-        await container.read(focusProvider.notifier).end(completed: true);
+        await container
+            .read(focusProvider.notifier)
+            .end(completed: true, durationSeconds: 10 * 60);
 
         final db = await AppDatabase.instance.db;
         final rows = await db.query(
@@ -144,8 +146,57 @@ void main() {
         );
         expect(rows.length, 1);
         expect(rows.first['completed'], 1);
+        expect(rows.first['duration_seconds'], 10 * 60);
         expect(rows.first['completed_at'], isNotNull);
         expect(container.read(focusProvider), isNull);
+      },
+    );
+
+    test(
+      'Pausing focus and ending later logs actual worked seconds, not wall-clock gap',
+      () async {
+        final container = ProviderContainer(
+          overrides: [repoProvider.overrideWithValue(repo)],
+        );
+        addTearDown(container.dispose);
+
+        await container
+            .read(focusProvider.notifier)
+            .start(taskId: 'task-pause-1', title: 'Deep coding');
+
+        // Pause after 10 minutes remaining (15 minutes worked)
+        final notifier = container.read(focusProvider.notifier);
+        await notifier.pause();
+
+        // Simulate that 8 hours passed while paused by shifting started_at backwards in DB
+        final focus = container.read(focusProvider)!.focus;
+        final db = await AppDatabase.instance.db;
+        final eightHoursAgo =
+            DateTime.now().millisecondsSinceEpoch - (8 * 3600 * 1000);
+        await db.update(
+          'focus_sessions',
+          {'started_at': eightHoursAgo},
+          where: 'id = ?',
+          whereArgs: [focus.sessionId],
+        );
+
+        // End session with completed: true (e.g. session countdown completed or user completed work)
+        await notifier.end(completed: true, durationSeconds: 25 * 60);
+
+        final rows = await db.query(
+          'focus_sessions',
+          where: 'id = ?',
+          whereArgs: [focus.sessionId],
+        );
+        expect(rows.length, 1);
+        expect(
+          rows.first['duration_seconds'],
+          25 * 60,
+        ); // 25 minutes, NOT 8+ hours
+
+        // Check mirror / stats: deep-work minutes for today should be 25 min, not 480 min
+        final stats = await repo.stats();
+        expect(stats.focusMinutesLast7[6], 25);
       },
     );
 
