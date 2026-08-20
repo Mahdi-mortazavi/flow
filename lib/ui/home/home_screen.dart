@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -196,41 +197,66 @@ class _LiquidGlassNavBar extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 440),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: GlassCard(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _NavItem(
-                      key: const Key('tab_tasks'),
-                      icon: Icons.check_circle_outline_rounded,
-                      activeIcon: Icons.check_circle_rounded,
-                      label: L10n.tasksTab(lang),
-                      selected: currentIndex == 0,
-                      onTap: () => onTap(0),
-                    ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(Tone.rCard),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 7,
                   ),
-                  Expanded(
-                    child: _NavItem(
-                      key: const Key('tab_habits'),
-                      icon: Icons.repeat_rounded,
-                      activeIcon: Icons.auto_awesome_rounded,
-                      label: L10n.habitsTab(lang),
-                      selected: currentIndex == 1,
-                      onTap: () => onTap(1),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF222228), Color(0xFF131317)],
                     ),
+                    borderRadius: BorderRadius.circular(Tone.rCard),
+                    border: Border.all(color: Tone.line),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: .6),
+                        blurRadius: 30,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: _NavItem(
-                      key: const Key('tab_leisure'),
-                      icon: Icons.spa_outlined,
-                      activeIcon: Icons.spa_rounded,
-                      label: L10n.leisureTab(lang),
-                      selected: currentIndex == 2,
-                      onTap: () => onTap(2),
-                    ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _NavItem(
+                          key: const Key('tab_tasks'),
+                          icon: Icons.check_circle_outline_rounded,
+                          activeIcon: Icons.check_circle_rounded,
+                          label: L10n.tasksTab(lang),
+                          selected: currentIndex == 0,
+                          onTap: () => onTap(0),
+                        ),
+                      ),
+                      Expanded(
+                        child: _NavItem(
+                          key: const Key('tab_habits'),
+                          icon: Icons.repeat_rounded,
+                          activeIcon: Icons.auto_awesome_rounded,
+                          label: L10n.habitsTab(lang),
+                          selected: currentIndex == 1,
+                          onTap: () => onTap(1),
+                        ),
+                      ),
+                      Expanded(
+                        child: _NavItem(
+                          key: const Key('tab_leisure'),
+                          icon: Icons.spa_outlined,
+                          activeIcon: Icons.spa_rounded,
+                          label: L10n.leisureTab(lang),
+                          selected: currentIndex == 2,
+                          onTap: () => onTap(2),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
