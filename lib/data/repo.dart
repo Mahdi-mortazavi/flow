@@ -558,6 +558,7 @@ class Repo {
   Future<void> endFocusSession({
     required String sessionId,
     required bool completed,
+    int? durationSeconds,
     String? interruptNote,
     String? interruptTag,
     int? endedAtMs,
@@ -570,10 +571,13 @@ class Repo {
       where: 'id = ?',
       whereArgs: [sessionId],
     );
-    int durationSec = 0;
-    if (rows.isNotEmpty) {
+    int durationSec = durationSeconds ?? 0;
+    if (durationSeconds == null && rows.isNotEmpty) {
+      final plannedMin = (rows.first['planned_min'] as int?) ?? 25;
       final startedAt = (rows.first['started_at'] as int?) ?? now;
-      durationSec = ((endedAt - startedAt) / 1000).round().clamp(0, 86400);
+      final wallSec = ((endedAt - startedAt) / 1000).round();
+      // Clamp wall-clock elapsed time to planned duration so pauses / backgrounding don't inflate stats
+      durationSec = wallSec.clamp(0, plannedMin * 60);
     }
 
     await d.update(
@@ -1041,8 +1045,20 @@ class Repo {
             today,
           ).difference(DateTime.parse(s['day_key'] as String)).inDays;
       if (idx < 0 || idx > 6) continue;
-      final ms = (s['ended_at'] as int) - (s['started_at'] as int);
-      focusMinutes[idx] += (ms / 60000).round().clamp(0, 24 * 60);
+
+      int sec = (s['duration_seconds'] as int?) ?? 0;
+      if (sec <= 0) {
+        final startedAt = s['started_at'] as int?;
+        final endedAt = s['ended_at'] as int?;
+        final plannedMin = (s['planned_min'] as int?) ?? 25;
+        if (startedAt != null && endedAt != null) {
+          final wallSec = ((endedAt - startedAt) / 1000).round();
+          sec = wallSec.clamp(0, plannedMin * 60);
+        } else {
+          sec = plannedMin * 60;
+        }
+      }
+      focusMinutes[idx] += (sec / 60).round().clamp(0, 24 * 60);
     }
 
     // Interrupt patterns: tag counts over the last 30 days
